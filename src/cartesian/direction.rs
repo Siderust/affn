@@ -401,12 +401,24 @@ impl<F: ReferenceFrame> std::fmt::Display for Direction<F> {
 mod tests {
     use super::*;
     // Import the derive
+    use crate::DeriveReferenceCenter as ReferenceCenter;
     use crate::DeriveReferenceFrame as ReferenceFrame;
-    use qtty::Meter;
+    use qtty::*;
 
     // Define test-specific frame
     #[derive(Debug, Copy, Clone, ReferenceFrame)]
     struct TestFrame;
+    #[derive(Debug, Copy, Clone, ReferenceCenter)]
+    struct TestCenter;
+
+    #[derive(Clone, Debug, Default, PartialEq)]
+    struct TestParams {
+        tag: i32,
+    }
+
+    #[derive(Debug, Copy, Clone, ReferenceCenter)]
+    #[center(params = TestParams)]
+    struct ParamCenter;
 
     #[test]
     fn test_direction_normalization() {
@@ -461,5 +473,55 @@ mod tests {
         let b = Direction::<TestFrame>::new(0.0, 1.0, 0.0);
         let angle = a.angle_to(&b);
         assert!((angle - std::f64::consts::FRAC_PI_2).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_direction_helpers_and_accessors() {
+        let dir = Direction::<TestFrame>::normalize(0.0, 3.0, 4.0);
+        let vec3 = dir.as_vec3();
+        assert!((vec3.x - 0.0).abs() < 1e-12);
+        assert!((vec3.y - 0.6).abs() < 1e-12);
+        assert!((vec3.z - 0.8).abs() < 1e-12);
+
+        let from_vec3 = Direction::<TestFrame>::from_vec3(nalgebra::Vector3::new(0.0, 3.0, 4.0));
+        assert!((from_vec3.y() - 0.6).abs() < 1e-12);
+        assert!((from_vec3.z() - 0.8).abs() < 1e-12);
+
+        let unchecked = Direction::<TestFrame>::new_unchecked(1.0, 0.0, 0.0);
+        assert!((unchecked.x() - 1.0).abs() < 1e-12);
+        assert!(unchecked.y().abs() < 1e-12);
+
+        let spherical = unchecked.to_spherical();
+        assert!((spherical.polar.value()).abs() < 1e-12);
+        assert!((spherical.azimuth.value()).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_direction_position_helpers() {
+        let dir = Direction::<TestFrame>::new(1.0, 0.0, 0.0);
+        let pos = dir.position::<TestCenter, Meter>(2.0 * M);
+        assert!((pos.x().value() - 2.0).abs() < 1e-12);
+        assert!(pos.y().value().abs() < 1e-12);
+
+        let params = TestParams { tag: 7 };
+        let pos_params = dir.position_with_params::<ParamCenter, Meter>(params.clone(), 3.0 * M);
+        assert_eq!(pos_params.center_params(), &params);
+        assert!((pos_params.x().value() - 3.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_direction_scaling_operator_left() {
+        let dir = Direction::<TestFrame>::new(0.0, 1.0, 0.0);
+        let disp: Displacement<TestFrame, Meter> = 4.0 * M * dir;
+        assert!((disp.y().value() - 4.0).abs() < 1e-12);
+        assert!(disp.x().value().abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_direction_display() {
+        let dir = Direction::<TestFrame>::new(1.0, 0.0, 0.0);
+        let text = dir.display();
+        assert!(text.contains("Frame: TestFrame"));
+        assert!(text.contains("X: 1.000000"));
     }
 }

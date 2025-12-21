@@ -767,4 +767,85 @@ mod tests {
         let result = iso.apply_vector(v);
         assert_array_eq(result, [0.0, 1.0, 0.0], "Vector ignores translation");
     }
+
+    #[test]
+    fn test_rotation_euler_and_matrix_helpers() {
+        let v = [1.0, 2.0, 3.0];
+        let r_xyz = Rotation3::from_euler_xyz(0.1, 0.2, 0.3);
+        let manual = Rotation3::from_z_rotation(0.3)
+            * Rotation3::from_y_rotation(0.2)
+            * Rotation3::from_x_rotation(0.1);
+        assert_array_eq(r_xyz.apply_array(v), manual.apply_array(v), "Euler XYZ");
+
+        let r_zxz = Rotation3::from_euler_zxz(0.1, 0.2, 0.3);
+        let manual_zxz = Rotation3::from_z_rotation(0.3)
+            * Rotation3::from_x_rotation(0.2)
+            * Rotation3::from_z_rotation(0.1);
+        assert_array_eq(r_zxz.apply_array(v), manual_zxz.apply_array(v), "Euler ZXZ");
+
+        let identity = Rotation3::default();
+        assert_eq!(identity, Rotation3::IDENTITY);
+        let matrix = *identity.as_matrix();
+        let from_matrix = Rotation3::from_matrix(matrix);
+        assert_eq!(from_matrix, Rotation3::IDENTITY);
+    }
+
+    #[test]
+    fn test_translation_helpers_and_ops() {
+        let t = Translation3::from_array([1.0, 2.0, 3.0]);
+        assert_eq!(t.as_array(), &[1.0, 2.0, 3.0]);
+        let xyz = XYZ::new(1.0, 2.0, 3.0);
+        let from_xyz = Translation3::from_xyz(xyz);
+        assert_eq!(from_xyz, t);
+
+        let applied = t.apply_xyz(XYZ::new(0.0, 0.0, 0.0));
+        assert_array_eq(
+            [applied.x(), applied.y(), applied.z()],
+            [1.0, 2.0, 3.0],
+            "apply_xyz",
+        );
+
+        let sum = t + Translation3::new(1.0, 0.0, 0.0);
+        assert_eq!(sum.as_array(), &[2.0, 2.0, 3.0]);
+        let neg = -t;
+        assert_eq!(neg.as_array(), &[-1.0, -2.0, -3.0]);
+
+        let default = Translation3::default();
+        assert_eq!(default, Translation3::ZERO);
+        let as_xyz = t.as_xyz();
+        assert_array_eq(
+            [as_xyz.x(), as_xyz.y(), as_xyz.z()],
+            [1.0, 2.0, 3.0],
+            "as_xyz",
+        );
+    }
+
+    #[test]
+    fn test_isometry_helpers_and_ops() {
+        let iso = Isometry3::default();
+        assert_eq!(iso, Isometry3::IDENTITY);
+
+        let iso1 = Isometry3::new(
+            Rotation3::from_z_rotation(FRAC_PI_2),
+            Translation3::new(1.0, 0.0, 0.0),
+        );
+        let iso2 = Isometry3::from_translation(Translation3::new(0.0, 1.0, 0.0));
+        let composed = iso1 * iso2;
+
+        let p = XYZ::new(1.0, 0.0, 0.0);
+        let applied = composed.apply_xyz(p);
+        assert_array_eq(
+            [applied.x(), applied.y(), applied.z()],
+            [0.0, 1.0, 0.0],
+            "apply_xyz",
+        );
+
+        let v = XYZ::new(1.0, 0.0, 0.0);
+        let vec_only = composed.apply_vector_xyz(v);
+        assert_array_eq(
+            [vec_only.x(), vec_only.y(), vec_only.z()],
+            [0.0, 1.0, 0.0],
+            "apply_vector_xyz",
+        );
+    }
 }

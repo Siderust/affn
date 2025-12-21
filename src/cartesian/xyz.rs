@@ -328,6 +328,7 @@ impl<T: std::fmt::Display + Copy> std::fmt::Display for XYZ<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use qtty::{Meter, Quantity, M};
 
     #[test]
     fn test_xyz_basic_ops() {
@@ -383,5 +384,45 @@ mod tests {
     fn test_xyz_zero_normalize() {
         let zero = XYZ::<f64>::ZERO;
         assert!(zero.try_normalize().is_none());
+    }
+
+    #[test]
+    fn test_xyz_quantity_ops() {
+        let a = XYZ::new(3.0 * M, 4.0 * M, 0.0 * M);
+        let b = XYZ::new(1.0 * M, 2.0 * M, 3.0 * M);
+
+        let sum = a + b;
+        assert!((sum.x().value() - 4.0).abs() < f64::EPSILON);
+        assert!((sum.y().value() - 6.0).abs() < f64::EPSILON);
+
+        let diff = a - b;
+        assert!((diff.x().value() - 2.0).abs() < f64::EPSILON);
+        assert!((diff.y().value() - 2.0).abs() < f64::EPSILON);
+
+        let mag = a.magnitude();
+        assert!((mag.value() - 5.0).abs() < f64::EPSILON);
+        let mag_sq = a.magnitude_squared();
+        assert!((mag_sq - 25.0).abs() < f64::EPSILON);
+
+        let raw = a.to_raw();
+        assert!((raw.x() - 3.0).abs() < f64::EPSILON);
+        let back = XYZ::<Quantity<Meter>>::from_raw(raw);
+        assert!((back.y().value() - 4.0).abs() < f64::EPSILON);
+
+        let neg = -b;
+        assert!((neg.z().value() + 3.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_xyz_vec3_roundtrip() {
+        let vec3: nalgebra::Vector3<f64> = nalgebra::Vector3::new(1.0, 2.0, 3.0);
+        let xyz: XYZ<f64> = XYZ::from_vec3(vec3);
+        assert!((xyz.x() - 1.0).abs() < f64::EPSILON);
+
+        let as_vec3 = xyz.as_vec3();
+        assert!((as_vec3[2] - 3.0).abs() < f64::EPSILON);
+
+        let into_vec3 = xyz.into_vec3();
+        assert!((into_vec3[1] - 2.0).abs() < f64::EPSILON);
     }
 }

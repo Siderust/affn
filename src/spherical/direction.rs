@@ -278,6 +278,15 @@ mod tests {
     #[derive(Debug, Copy, Clone, ReferenceCenter)]
     struct TestCenter;
 
+    #[derive(Clone, Debug, Default, PartialEq)]
+    struct TestParams {
+        id: i32,
+    }
+
+    #[derive(Debug, Copy, Clone, ReferenceCenter)]
+    #[center(params = TestParams)]
+    struct ParamCenter;
+
     #[test]
     fn creates_valid_spherical_direction() {
         let polar = Degrees::new(45.0);
@@ -420,5 +429,23 @@ mod tests {
         let cart360 = dir360.to_cartesian();
         let rec360 = Direction::from_cartesian(&cart360);
         assert!((rec360.azimuth.value() - 359.9).abs() < EPS);
+    }
+
+    #[test]
+    fn uses_raw_construction_and_ra_dec_aliases() {
+        let dir = Direction::<TestFrame>::new_raw(Degrees::new(10.0), Degrees::new(20.0));
+        assert!((dir.polar.value() - 10.0).abs() < EPS);
+        assert!((dir.azimuth.value() - 20.0).abs() < EPS);
+        assert!((dir.ra().value() - 20.0).abs() < EPS);
+        assert!((dir.dec().value() - 10.0).abs() < EPS);
+    }
+
+    #[test]
+    fn position_with_params_preserves_center() {
+        let dir = Direction::<TestFrame>::new(Degrees::new(15.0), Degrees::new(25.0));
+        let params = TestParams { id: 7 };
+        let pos = dir.position_with_params::<ParamCenter, Meter>(params.clone(), 2.5 * M);
+        assert_eq!(pos.center_params(), &params);
+        assert!((pos.distance - 2.5 * M).abs() < EPS * M);
     }
 }
