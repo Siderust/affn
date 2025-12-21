@@ -17,7 +17,7 @@ Add the dependency:
 
 ```toml
 [dependencies]
-affn = "0.1"
+affn = "0.2"
 qtty = "0.2"
 ```
 
@@ -128,11 +128,6 @@ Run the included examples:
 - `cargo run --example basic_cartesian`
 - `cargo run --example parameterized_center`
 - `cargo run --example spherical_roundtrip`
-
-## Publishing Notes
-
-`affn` re-exports proc-macros from the companion crate `affn-derive`. If publishing to crates.io,
-publish `affn-derive` first (same version), then publish `affn`.
 
 ## License
 
