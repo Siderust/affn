@@ -135,7 +135,7 @@ use qtty::{LengthUnit, Quantity};
 /// # Requirements
 ///
 /// Both positions must be in the **same center and frame**. If they are not,
-/// convert them first using center and/or frame transformations.
+/// convert them first in your domain layer (where you define the semantics of those transforms).
 ///
 /// # Example
 ///
@@ -178,7 +178,7 @@ where
     U: LengthUnit,
 {
     // Position - Position -> Displacement
-    let displacement: Displacement<F, U> = target.sub(observer);
+    let displacement: Displacement<F, U> = target - observer;
 
     // normalize(Displacement) -> Direction
     displacement
@@ -234,7 +234,7 @@ where
     F: ReferenceFrame,
     U: LengthUnit,
 {
-    let displacement: Displacement<F, U> = target.sub(observer);
+    let displacement: Displacement<F, U> = target - observer;
     let distance = displacement.magnitude();
     let direction = displacement
         .normalize()
@@ -256,7 +256,7 @@ where
     F: ReferenceFrame,
     U: LengthUnit,
 {
-    let displacement: Displacement<F, U> = target.sub(observer);
+    let displacement: Displacement<F, U> = target - observer;
     displacement.normalize()
 }
 
