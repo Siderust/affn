@@ -24,7 +24,7 @@ fn main() {
     let observer = Position::<Origin, World, Meter>::new(0.0, 0.0, 0.0);
     let target = Position::<Origin, World, Meter>::new(3.0, 4.0, 0.0);
 
-    let displacement: Displacement<World, Meter> = &target - &observer;
+    let displacement: Displacement<World, Meter> = target - observer;
     println!("displacement = {}", displacement);
     println!("distance = {}", displacement.magnitude());
 
