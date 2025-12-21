@@ -162,11 +162,24 @@ where
     /// # Example
     /// ```rust
     /// use affn::cartesian::Position;
-    /// use affn::centers::Heliocentric;
-    /// use affn::frames::Ecliptic;
+    /// use affn::frames::ReferenceFrame;
+    /// use affn::centers::ReferenceCenter;
     /// use qtty::*;
     ///
-    /// let pos = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(1.0, 0.0, 0.0);
+    /// #[derive(Debug, Copy, Clone)]
+    /// struct WorldFrame;
+    /// impl ReferenceFrame for WorldFrame {
+    ///     fn frame_name() -> &'static str { "WorldFrame" }
+    /// }
+    ///
+    /// #[derive(Debug, Copy, Clone)]
+    /// struct WorldOrigin;
+    /// impl ReferenceCenter for WorldOrigin {
+    ///     type Params = ();
+    ///     fn center_name() -> &'static str { "WorldOrigin" }
+    /// }
+    ///
+    /// let pos = Position::<WorldOrigin, WorldFrame, Meter>::new(1.0, 0.0, 0.0);
     /// ```
     #[inline]
     pub fn new<T: Into<Quantity<U>>>(x: T, y: T, z: T) -> Self {
@@ -392,19 +405,21 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::centers::Heliocentric;
-    use crate::frames::Ecliptic;
-    use qtty::AstronomicalUnit;
+    use qtty::Meter;
 
-    type PosAu = Position<Heliocentric, Ecliptic, AstronomicalUnit>;
-    type DispAu = Displacement<Ecliptic, AstronomicalUnit>;
+    // Define test-specific frame and center
+    crate::new_frame!(TestFrame);
+    crate::new_center!(TestCenter);
+
+    type TestPos = Position<TestCenter, TestFrame, Meter>;
+    type TestDisp = Displacement<TestFrame, Meter>;
 
     #[test]
     fn test_position_minus_position_gives_vector() {
-        let a = PosAu::new(1.0, 2.0, 3.0);
-        let b = PosAu::new(4.0, 5.0, 6.0);
+        let a = TestPos::new(1.0, 2.0, 3.0);
+        let b = TestPos::new(4.0, 5.0, 6.0);
 
-        let displacement: DispAu = b - a;
+        let displacement: TestDisp = b - a;
         assert!((displacement.x().value() - 3.0).abs() < 1e-12);
         assert!((displacement.y().value() - 3.0).abs() < 1e-12);
         assert!((displacement.z().value() - 3.0).abs() < 1e-12);
@@ -412,10 +427,10 @@ mod tests {
 
     #[test]
     fn test_position_plus_vector_gives_position() {
-        let pos = PosAu::new(1.0, 2.0, 3.0);
-        let vec = DispAu::new(1.0, 1.0, 1.0);
+        let pos = TestPos::new(1.0, 2.0, 3.0);
+        let vec = TestDisp::new(1.0, 1.0, 1.0);
 
-        let result: PosAu = pos + vec;
+        let result: TestPos = pos + vec;
         assert!((result.x().value() - 2.0).abs() < 1e-12);
         assert!((result.y().value() - 3.0).abs() < 1e-12);
         assert!((result.z().value() - 4.0).abs() < 1e-12);
@@ -423,8 +438,8 @@ mod tests {
 
     #[test]
     fn test_position_roundtrip() {
-        let a = PosAu::new(1.0, 2.0, 3.0);
-        let b = PosAu::new(4.0, 5.0, 6.0);
+        let a = TestPos::new(1.0, 2.0, 3.0);
+        let b = TestPos::new(4.0, 5.0, 6.0);
 
         // a + (b - a) == b
         let displacement = b - a;
@@ -436,13 +451,13 @@ mod tests {
 
     #[test]
     fn test_position_distance() {
-        let pos = PosAu::new(3.0, 4.0, 0.0);
+        let pos = TestPos::new(3.0, 4.0, 0.0);
         assert!((pos.distance().value() - 5.0).abs() < 1e-12);
     }
 
     #[test]
     fn test_position_direction() {
-        let pos = PosAu::new(3.0, 4.0, 0.0);
+        let pos = TestPos::new(3.0, 4.0, 0.0);
         let dir = pos.direction().expect("non-zero position");
         let norm = (dir.x() * dir.x() + dir.y() * dir.y() + dir.z() * dir.z()).sqrt();
         assert!((norm - 1.0).abs() < 1e-12);

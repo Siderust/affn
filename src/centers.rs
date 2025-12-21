@@ -5,196 +5,126 @@
 //!
 //! ## Overview
 //!
-//! The [`ReferenceCenter`] trait provides a common interface for all reference center types. Each center is
-//! represented as a zero-sized struct and implements the trait to provide its canonical name.
+//! The [`ReferenceCenter`] trait provides a common interface for all reference center types.
+//! Each center is represented as a zero-sized struct and implements the trait to provide
+//! its canonical name.
 //!
-//! ## Predefined Centers
+//! ## Domain-Agnostic Design
 //!
-//! The following reference centers are provided out of the box:
-//!
-//! - `Barycentric`: Center of mass of the solar system.
-//! - `Heliocentric`: Center of the Sun.
-//! - `Geocentric`: Center of the Earth.
-//! - `Topocentric`: Observer's location on the surface of the Earth (parameterized by [`ObserverSite`]).
+//! This module provides **only** the trait infrastructure. Concrete center types
+//! (e.g., astronomical centers, robotic bases, reference origins) should be defined
+//! in domain-specific crates that depend on `affn`.
 //!
 //! ## Parameterized Centers
 //!
-//! Some reference centers require runtime parameters. For example, [`Topocentric`] coordinates
-//! need to know the observer's geographic location. This is achieved through the associated
-//! `Params` type on [`ReferenceCenter`]:
+//! Some reference centers require runtime parameters. For example, a "topocentric"
+//! center in astronomy needs the observer's location. This is achieved through the
+//! associated `Params` type on [`ReferenceCenter`]:
 //!
-//! - For most centers (Barycentric, Heliocentric, Geocentric), `Params = ()` (zero-cost).
-//! - For [`Topocentric`], `Params = ObserverSite` which stores longitude, latitude, and height.
+//! - For most centers, `Params = ()` (zero-cost).
+//! - For parameterized centers, `Params` stores the required data.
 //!
-//! This allows coordinate values to carry their reference information inline without external context.
+//! ## Creating Custom Centers
 //!
-//! ## Example
+//! Use the [`new_center!`] macro for simple centers with no parameters:
+//!
+//! ```rust,ignore
+//! // From external crate:
+//! affn::new_center!(MyOrigin);
+//! assert_eq!(MyOrigin::center_name(), "MyOrigin");
+//! ```
+//!
+//! Or implement the trait manually:
 //!
 //! ```rust
-//! use affn::centers::{ReferenceCenter, Geocentric};
+//! use affn::centers::ReferenceCenter;
 //!
-//! let name = Geocentric::center_name();
-//! assert_eq!(name, "Geocentric");
+//! #[derive(Debug, Copy, Clone)]
+//! pub struct MyCenter;
+//!
+//! impl ReferenceCenter for MyCenter {
+//!     type Params = ();
+//!     fn center_name() -> &'static str { "MyCenter" }
+//! }
+//!
+//! assert_eq!(MyCenter::center_name(), "MyCenter");
 //! ```
+//!
+//! For parameterized centers, implement the trait manually.
+//!
+//! ## Special Markers
+//!
+//! - [`NoCenter`]: Marker for translation-invariant objects (free vectors).
+//! - [`AffineCenter`]: Marker trait for genuine spatial centers (not `NoCenter`).
 
-use qtty::{Degrees, Meter, Quantity};
 use std::fmt::Debug;
 
 /// A trait for defining a reference center (coordinate origin).
 ///
 /// # Associated Types
 ///
-/// - `Params`: Runtime parameters for this center. For most centers this is `()` (zero-cost).
-///   For parameterized centers like [`Topocentric`], this carries observer location.
-pub trait ReferenceCenter {
+/// - `Params`: Runtime parameters for this center. Use `()` for centers that
+///   don't need parameters. For parameterized centers, this carries the required data.
+///
+/// # Implementing
+///
+/// ```rust
+/// use affn::centers::ReferenceCenter;
+///
+/// #[derive(Debug, Copy, Clone)]
+/// pub struct MyCenter;
+///
+/// impl ReferenceCenter for MyCenter {
+///     type Params = ();
+///     fn center_name() -> &'static str {
+///         "MyCenter"
+///     }
+/// }
+/// ```
+pub trait ReferenceCenter: Copy + Clone + std::fmt::Debug {
     /// Runtime parameters for this center. Use `()` for centers that don't need parameters.
     type Params: Clone + Debug + Default + PartialEq;
 
+    /// Returns the canonical name of this reference center.
     fn center_name() -> &'static str;
 }
 
-// =============================================================================
-// Standard Centers (Params = ())
-// =============================================================================
-
-/// Center of the Sun.
-#[derive(Debug, Copy, Clone)]
-pub struct Heliocentric;
-
-impl ReferenceCenter for Heliocentric {
-    type Params = ();
-
-    fn center_name() -> &'static str {
-        stringify!(Heliocentric)
-    }
-}
-
-/// Center of mass of the solar system.
-#[derive(Debug, Copy, Clone)]
-pub struct Barycentric;
-
-impl ReferenceCenter for Barycentric {
-    type Params = ();
-
-    fn center_name() -> &'static str {
-        stringify!(Barycentric)
-    }
-}
-
-/// Center of the Earth.
-#[derive(Debug, Copy, Clone)]
-pub struct Geocentric;
-
-impl ReferenceCenter for Geocentric {
-    type Params = ();
-
-    fn center_name() -> &'static str {
-        "Geocentric"
-    }
-}
-
-// =============================================================================
-// ObserverSite: Parameters for Topocentric coordinates
-// =============================================================================
-
-/// Geographic location of an observer, used as parameters for [`Topocentric`] coordinates.
+/// Macro to conveniently declare new reference center types with no parameters.
 ///
-/// This struct stores the observer's position on or above Earth's surface.
-/// It is embedded in coordinate values when the center is [`Topocentric`],
-/// allowing transformations to use the site information without external context.
-///
-/// # Fields
-///
-/// - `lon`: Geodetic longitude, positive eastward, in degrees.
-/// - `lat`: Geodetic latitude, positive northward, in degrees.
-/// - `height`: Height above the reference ellipsoid (WGS84), in meters.
+/// This creates a zero-sized struct that implements [`ReferenceCenter`] with `Params = ()`.
 ///
 /// # Example
 ///
-/// ```rust
-/// use affn::centers::ObserverSite;
-/// use qtty::*;
-///
-/// let greenwich = ObserverSite {
-///     lon: 0.0 * DEG,
-///     lat: 51.4769 * DEG,
-///     height: 0.0 * M,
-/// };
+/// ```rust,ignore
+/// // From external crate:
+/// affn::new_center!(WorldOrigin);
+/// assert_eq!(WorldOrigin::center_name(), "WorldOrigin");
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct ObserverSite {
-    /// Geodetic longitude (positive eastward), in degrees.
-    pub lon: Degrees,
-    /// Geodetic latitude (positive northward), in degrees.
-    pub lat: Degrees,
-    /// Height above the WGS84 ellipsoid, in meters.
-    pub height: Quantity<Meter>,
-}
+#[macro_export]
+macro_rules! new_center {
+    ($name:ident) => {
+        #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+        pub struct $name;
 
-impl Default for ObserverSite {
-    /// Returns an observer at the origin (0°, 0°, 0m).
-    ///
-    /// Note: This default is primarily for internal use. In practice, you should
-    /// always provide meaningful site coordinates for topocentric calculations.
-    fn default() -> Self {
-        Self {
-            lon: Degrees::new(0.0),
-            lat: Degrees::new(0.0),
-            height: Quantity::<Meter>::new(0.0),
+        impl $crate::centers::ReferenceCenter for $name {
+            type Params = ();
+
+            fn center_name() -> &'static str {
+                stringify!($name)
+            }
         }
-    }
-}
 
-impl ObserverSite {
-    /// Creates a new observer site from longitude, latitude, and height.
-    ///
-    /// # Arguments
-    ///
-    /// - `lon`: Geodetic longitude (positive eastward), in degrees.
-    /// - `lat`: Geodetic latitude (positive northward), in degrees.
-    /// - `height`: Height above the WGS84 ellipsoid, in meters.
-    pub fn new(lon: Degrees, lat: Degrees, height: Quantity<Meter>) -> Self {
-        Self { lon, lat, height }
-    }
+        impl $crate::centers::AffineCenter for $name {}
+    };
 }
 
 // =============================================================================
-// Topocentric Center (parameterized)
+// Unit implementation (for generic code)
 // =============================================================================
-
-/// Observer's location on the surface of the Earth.
-///
-/// Unlike other reference centers, `Topocentric` is *parameterized*: coordinates
-/// with this center carry an [`ObserverSite`] that specifies the observer's
-/// geographic location. This allows horizontal coordinates to know their
-/// observation site without external context.
-///
-/// # Example
-///
-/// ```rust
-/// use affn::centers::{Topocentric, ObserverSite, ReferenceCenter};
-/// use qtty::*;
-///
-/// // Topocentric coordinates require an ObserverSite
-/// let site = ObserverSite::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
-///
-/// // The site is stored as Topocentric::Params
-/// assert_eq!(std::mem::size_of::<<Topocentric as ReferenceCenter>::Params>(),
-///            std::mem::size_of::<ObserverSite>());
-/// ```
-#[derive(Debug, Copy, Clone)]
-pub struct Topocentric;
-
-impl ReferenceCenter for Topocentric {
-    type Params = ObserverSite;
-
-    fn center_name() -> &'static str {
-        "Topocentric"
-    }
-}
 
 impl ReferenceCenter for () {
     type Params = ();
+
     fn center_name() -> &'static str {
         ""
     }
@@ -224,114 +154,57 @@ impl ReferenceCenter for () {
 /// - **Positions** are points in affine space; changing the origin (center) is a translation.
 /// - **Directions** and **velocities** are elements of the underlying vector space;
 ///   they are translation-invariant and do not have an "origin" to change.
-///
-/// # Example
-///
-/// ```rust
-/// use affn::cartesian::Direction;
-/// use affn::frames::Ecliptic;
-/// use affn::centers::NoCenter;
-///
-/// // Directions use NoCenter - they cannot be center-transformed
-/// let dir: Direction<Ecliptic> = Direction::normalize(1.0, 0.0, 0.0);
-/// ```
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 pub struct NoCenter;
+
+// NOTE: NoCenter deliberately does NOT implement ReferenceCenter or AffineCenter.
+// This prevents center transformations on directions and velocities.
+
+// =============================================================================
+// AffineCenter: Marker for genuine spatial centers
+// =============================================================================
 
 /// Marker trait for types that represent genuine spatial centers (origins).
 ///
 /// This trait is implemented only for center types that represent actual
-/// coordinate origins (Barycentric, Heliocentric, Geocentric, etc.).
-/// It is NOT implemented for `NoCenter`, which prevents center transformations
-/// from being applied to free vectors (directions, velocities).
+/// coordinate origins. It is NOT implemented for `NoCenter`, which prevents
+/// center transformations from being applied to free vectors (directions, velocities).
 ///
 /// # Usage
 ///
 /// Use this trait as a bound when implementing center transformations:
 ///
 /// ```ignore
-/// impl<F, U> TransformCenter<Position<Geocentric, F, U>> for Position<Heliocentric, F, U>
+/// impl<F, U> TransformCenter<Position<C2, F, U>> for Position<C1, F, U>
 /// where
-///     Heliocentric: AffineCenter,
-///     Geocentric: AffineCenter,
+///     C1: AffineCenter,
+///     C2: AffineCenter,
 ///     // ...
 /// ```
 pub trait AffineCenter: ReferenceCenter {}
 
-// Implement AffineCenter for all actual coordinate centers
-impl AffineCenter for Barycentric {}
-impl AffineCenter for Heliocentric {}
-impl AffineCenter for Geocentric {}
-impl AffineCenter for Topocentric {}
-
-// NOTE: NoCenter deliberately does NOT implement AffineCenter
-// This prevents center transformations on directions and velocities
-
-// NoCenter does NOT implement ReferenceCenter - it's a separate marker
-// that indicates the object is translation-invariant
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::*;
+
+    // Test with a locally defined center
+    new_center!(TestCenter);
 
     #[test]
-    fn center_names_are_correct() {
-        assert_eq!(Barycentric::center_name(), "Barycentric");
-        assert_eq!(Heliocentric::center_name(), "Heliocentric");
-        assert_eq!(Topocentric::center_name(), "Topocentric");
-        assert_eq!(Geocentric::center_name(), "Geocentric");
+    fn test_center_name() {
+        assert_eq!(TestCenter::center_name(), "TestCenter");
         assert_eq!(<() as ReferenceCenter>::center_name(), "");
     }
 
     #[test]
-    fn standard_centers_have_unit_params() {
-        // Verify that standard centers use () as Params (zero-cost)
-        let _: <Barycentric as ReferenceCenter>::Params = ();
-        let _: <Heliocentric as ReferenceCenter>::Params = ();
-        let _: <Geocentric as ReferenceCenter>::Params = ();
-        let _: <() as ReferenceCenter>::Params = ();
-
-        // Verify zero size
+    fn test_center_params_zero_size() {
         assert_eq!(
-            std::mem::size_of::<<Barycentric as ReferenceCenter>::Params>(),
+            std::mem::size_of::<<TestCenter as ReferenceCenter>::Params>(),
             0
         );
         assert_eq!(
-            std::mem::size_of::<<Heliocentric as ReferenceCenter>::Params>(),
+            std::mem::size_of::<<() as ReferenceCenter>::Params>(),
             0
         );
-        assert_eq!(
-            std::mem::size_of::<<Geocentric as ReferenceCenter>::Params>(),
-            0
-        );
-    }
-
-    #[test]
-    fn topocentric_has_observer_site_params() {
-        // Verify Topocentric uses ObserverSite as Params
-        let site = ObserverSite::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
-        let _: <Topocentric as ReferenceCenter>::Params = site;
-
-        // Verify non-zero size (stores actual data)
-        assert!(std::mem::size_of::<<Topocentric as ReferenceCenter>::Params>() > 0);
-    }
-
-    #[test]
-    fn observer_site_default() {
-        let site = ObserverSite::default();
-        assert_eq!(site.lon.value(), 0.0);
-        assert_eq!(site.lat.value(), 0.0);
-        assert_eq!(site.height.value(), 0.0);
-    }
-
-    #[test]
-    fn observer_site_equality() {
-        let site1 = ObserverSite::new(10.0 * DEG, 20.0 * DEG, 100.0 * M);
-        let site2 = ObserverSite::new(10.0 * DEG, 20.0 * DEG, 100.0 * M);
-        let site3 = ObserverSite::new(10.0 * DEG, 20.0 * DEG, 200.0 * M);
-
-        assert_eq!(site1, site2);
-        assert_ne!(site1, site3);
     }
 }

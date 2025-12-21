@@ -5,58 +5,89 @@
 //!
 //! ## Overview
 //!
-//! The [`ReferenceFrame`] trait provides a common interface for all reference frame types. Each frame is
-//! represented as a zero-sized struct and implements the trait to provide its canonical name.
+//! The [`ReferenceFrame`] trait provides a common interface for all reference frame types.
+//! Each frame is represented as a zero-sized struct and implements the trait to provide
+//! its canonical name.
 //!
-//! The `new_frame!` macro is used to conveniently declare new reference frame types, ensuring consistency
-//! and reducing boilerplate.
+//! ## Domain-Agnostic Design
 //!
-//! ## Predefined Frames
+//! This module provides **only** the trait infrastructure. Concrete frame types
+//! (e.g., astronomical frames, geographic frames, robotic frames) should be defined
+//! in domain-specific crates that depend on `affn`.
 //!
-//! The following reference frames are provided out of the box:
+//! ## Creating Custom Frames
 //!
-//! - `ICRS`: International Celestial Reference System (quasi-inertial, used for most modern astronomy).
-//! - `Horizontal`: Local horizon system (altitude-azimuth).
-//! - `Equatorial`: Equatorial coordinate system (right ascension and declination).
-//! - `Ecliptic`: Ecliptic coordinate system (based on the plane of Earth's orbit).
-//! - `ITRF`: International Terrestrial Reference Frame (Earth-fixed).
-//! - `ECEF`: Earth-Centered, Earth-Fixed (geocentric, rotating with the Earth).
+//! Use the [`new_frame!`] macro to define frame marker types:
 //!
-//! ## Extending
+//! ```rust,ignore
+//! // From external crate:
+//! affn::new_frame!(MyCustomFrame);
+//! ```
 //!
-//! To define a new reference frame, use the `new_frame!` macro.
-//! This creates a new zero-sized type that implements [`ReferenceFrame`].
-//!
-//! ## Example
+//! Or implement the trait manually:
 //!
 //! ```rust
-//! use affn::frames::{ReferenceFrame, ICRS};
+//! use affn::frames::ReferenceFrame;
 //!
-//! let name = ICRS::frame_name();
-//! assert_eq!(name, "ICRS");
+//! #[derive(Debug, Copy, Clone)]
+//! pub struct MyFrame;
+//!
+//! impl ReferenceFrame for MyFrame {
+//!     fn frame_name() -> &'static str {
+//!         "MyFrame"
+//!     }
+//! }
+//! assert_eq!(MyFrame::frame_name(), "MyFrame");
 //! ```
 
 /// A trait for defining a reference frame (orientation).
-pub trait ReferenceFrame {
+///
+/// Reference frames define the orientation of coordinate axes. Different frames
+/// represent different ways of orienting a coordinate system (e.g., aligned with
+/// an equator, an orbital plane, a horizon, etc.).
+///
+/// # Implementing
+///
+/// Implement this trait for zero-sized marker types that represent different frames:
+///
+/// ```rust
+/// use affn::frames::ReferenceFrame;
+///
+/// #[derive(Debug, Copy, Clone)]
+/// pub struct MyFrame;
+///
+/// impl ReferenceFrame for MyFrame {
+///     fn frame_name() -> &'static str {
+///         "MyFrame"
+///     }
+/// }
+/// ```
+pub trait ReferenceFrame: Copy + Clone + std::fmt::Debug {
+    /// Returns the canonical name of this reference frame.
     fn frame_name() -> &'static str;
 }
 
+/// Macro to conveniently declare new reference frame types.
+///
+/// This creates a zero-sized struct that implements [`ReferenceFrame`].
+///
+/// # Example
+///
+/// ```rust,ignore
+/// // From external crate:
+/// affn::new_frame!(LocalFrame);
+/// assert_eq!(LocalFrame::frame_name(), "LocalFrame");
+/// ```
+#[macro_export]
 macro_rules! new_frame {
     ($name:ident) => {
-        #[derive(Debug, Copy, Clone)]
+        #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
         pub struct $name;
 
-        impl ReferenceFrame for $name {
+        impl $crate::frames::ReferenceFrame for $name {
             fn frame_name() -> &'static str {
                 stringify!($name)
             }
         }
     };
 }
-
-new_frame!(ICRS);
-new_frame!(Horizontal);
-new_frame!(Equatorial);
-new_frame!(Ecliptic);
-new_frame!(ITRF);
-new_frame!(ECEF);

@@ -4,17 +4,22 @@
 //! scientific computing applications. It defines the mathematical foundation for
 //! working with positions, directions, and displacements in various reference frames.
 //!
+//! ## Domain-Agnostic Design
+//!
+//! `affn` is a **pure geometry kernel** that contains no domain-specific vocabulary.
+//! Concrete frame and center types (e.g., astronomical frames, robotic frames)
+//! should be defined in downstream crates that depend on `affn`.
+//!
 //! ## Core Concepts
 //!
 //! ### Reference Centers
 //!
 //! A [`ReferenceCenter`](centers::ReferenceCenter) defines the origin point of a coordinate system.
-//! Some centers require runtime parameters (like observer location for topocentric coordinates).
+//! Some centers require runtime parameters (stored in `ReferenceCenter::Params`).
 //!
 //! ### Reference Frames
 //!
 //! A [`ReferenceFrame`](frames::ReferenceFrame) defines the orientation of coordinate axes.
-//! Common frames include ICRS, Ecliptic, Equatorial, and Horizontal.
 //!
 //! ### Coordinate Types
 //!
@@ -22,16 +27,35 @@
 //! - **Direction**: A unit vector representing orientation (frame only)
 //! - **Displacement/Velocity**: Free vectors (frame + magnitude)
 //!
-//! ## Usage Modes
+//! ## Creating Custom Frames and Centers
 //!
-//! This crate can be used in two ways:
+//! Use the provided macros to define domain-specific marker types:
 //!
-//! 1. **Standalone**: Use the provided `cartesian` and `spherical` modules directly
-//!    for complete coordinate type implementations.
+//! ```rust,ignore
+//! // From external crate:
+//! affn::new_frame!(MyLocalFrame);
+//! affn::new_center!(MyOrigin);
+//! ```
 //!
-//! 2. **Framework**: Import only the traits (`ReferenceFrame`, `ReferenceCenter`, etc.)
-//!    and marker types (ICRS, Ecliptic, Heliocentric, etc.) to build your own
-//!    coordinate types with custom transformations.
+//! Or implement the traits manually:
+//!
+//! ```rust
+//! use affn::frames::ReferenceFrame;
+//! use affn::centers::ReferenceCenter;
+//!
+//! #[derive(Debug, Copy, Clone)]
+//! struct MyFrame;
+//! impl ReferenceFrame for MyFrame {
+//!     fn frame_name() -> &'static str { "MyFrame" }
+//! }
+//!
+//! #[derive(Debug, Copy, Clone)]
+//! struct MyOrigin;
+//! impl ReferenceCenter for MyOrigin {
+//!     type Params = ();
+//!     fn center_name() -> &'static str { "MyOrigin" }
+//! }
+//! ```
 //!
 //! ## Algebraic Rules
 //!
@@ -45,19 +69,33 @@
 //! | `Direction * Length` | `Displacement` | Scale direction |
 //! | `normalize(Displacement)` | `Direction` | Extract orientation |
 //!
-//! ## Example (Standalone Mode)
+//! ## Example
 //!
 //! ```rust
 //! use affn::cartesian::{Position, Displacement};
-//! use affn::centers::Geocentric;
-//! use affn::frames::ICRS;
+//! use affn::frames::ReferenceFrame;
+//! use affn::centers::ReferenceCenter;
 //! use qtty::*;
 //!
-//! let a = Position::<Geocentric, ICRS, Kilometer>::new(100.0, 200.0, 300.0);
-//! let b = Position::<Geocentric, ICRS, Kilometer>::new(150.0, 250.0, 350.0);
+//! // Define domain-specific types
+//! #[derive(Debug, Copy, Clone)]
+//! struct WorldFrame;
+//! impl ReferenceFrame for WorldFrame {
+//!     fn frame_name() -> &'static str { "WorldFrame" }
+//! }
+//!
+//! #[derive(Debug, Copy, Clone)]
+//! struct WorldOrigin;
+//! impl ReferenceCenter for WorldOrigin {
+//!     type Params = ();
+//!     fn center_name() -> &'static str { "WorldOrigin" }
+//! }
+//!
+//! let a = Position::<WorldOrigin, WorldFrame, Kilometer>::new(100.0, 200.0, 300.0);
+//! let b = Position::<WorldOrigin, WorldFrame, Kilometer>::new(150.0, 250.0, 350.0);
 //!
 //! // Positions subtract to give displacements
-//! let displacement: Displacement<ICRS, Kilometer> = b - a;
+//! let displacement: Displacement<WorldFrame, Kilometer> = b - a;
 //! ```
 
 // Coordinate type implementations
@@ -69,7 +107,7 @@ pub mod centers;
 pub mod frames;
 
 // Re-export commonly used traits at crate level
-pub use centers::{AffineCenter, NoCenter, ObserverSite, ReferenceCenter};
+pub use centers::{AffineCenter, NoCenter, ReferenceCenter};
 pub use frames::ReferenceFrame;
 
 // Re-export concrete Position/Direction types for standalone usage
