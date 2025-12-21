@@ -59,5 +59,3 @@ pub trait ReferenceFrame: Copy + Clone + std::fmt::Debug {
     /// Returns the canonical name of this reference frame.
     fn frame_name() -> &'static str;
 }
-
-

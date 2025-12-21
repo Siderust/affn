@@ -313,8 +313,7 @@ mod tests {
     #[test]
     fn position_method_promotes_with_given_radius() {
         let dir = Direction::<TestFrame>::new(Degrees::new(-30.0), Degrees::new(120.0));
-        let pos =
-            dir.position::<TestCenter, Meter>(Quantity::<Meter>::new(2.0));
+        let pos = dir.position::<TestCenter, Meter>(Quantity::<Meter>::new(2.0));
 
         // angles are preserved
         assert!(

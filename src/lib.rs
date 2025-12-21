@@ -99,9 +99,11 @@ pub mod frames;
 // Affine operators (rotation, translation, isometry)
 pub mod ops;
 
-// Re-export derive macros from affn-derive  
+// Re-export derive macros from affn-derive
 // Named with Derive prefix to avoid conflicts with trait names
-pub use affn_derive::{ReferenceCenter as DeriveReferenceCenter, ReferenceFrame as DeriveReferenceFrame};
+pub use affn_derive::{
+    ReferenceCenter as DeriveReferenceCenter, ReferenceFrame as DeriveReferenceFrame,
+};
 
 // Re-export traits at crate level with their original names
 // This is the standard pattern: traits and derives co-exist with same names
@@ -112,7 +114,7 @@ pub use frames::ReferenceFrame;
 pub use ops::{Isometry3, Rotation3, Translation3};
 
 // Re-export concrete Position/Direction types for standalone usage
-pub use cartesian::{Direction as CartesianDirection, Displacement, Position, Velocity, Vector};
+pub use cartesian::{Direction as CartesianDirection, Displacement, Position, Vector, Velocity};
 pub use spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 
 /// Prelude module for convenient imports.
@@ -123,7 +125,9 @@ pub use spherical::{Direction as SphericalDirection, Position as SphericalPositi
 /// ```
 pub mod prelude {
     // Derive macros - aliased to standard names in prelude
-    pub use crate::{DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame};
+    pub use crate::{
+        DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame,
+    };
 
     // Traits - keep full names to avoid conflicts with derives
     pub use crate::centers::{AffineCenter, NoCenter, ReferenceCenter as ReferenceCenterTrait};
@@ -131,7 +135,7 @@ pub mod prelude {
 
     // Core coordinate types
     pub use crate::cartesian::{
-        Direction as CartesianDirection, Displacement, Position, Velocity, Vector,
+        Direction as CartesianDirection, Displacement, Position, Vector, Velocity,
     };
     pub use crate::spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 

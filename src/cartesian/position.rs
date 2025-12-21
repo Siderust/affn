@@ -277,7 +277,10 @@ impl<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> Position<C, F, U> {
     /// Returns `None` if the position is at the origin.
     #[inline]
     pub fn direction(&self) -> Option<super::Direction<F>> {
-        self.xyz.to_raw().try_normalize().map(super::Direction::from_xyz_unchecked)
+        self.xyz
+            .to_raw()
+            .try_normalize()
+            .map(super::Direction::from_xyz_unchecked)
     }
 
     /// Returns the direction, assuming non-zero distance from origin.
@@ -368,7 +371,10 @@ where
     /// Translates the position by a displacement vector.
     #[inline]
     fn add(self, displacement: Displacement<F, U>) -> Self::Output {
-        Self::from_xyz_with_params(self.center_params.clone(), self.xyz + XYZ::from_vec3(*displacement.as_vec3()))
+        Self::from_xyz_with_params(
+            self.center_params.clone(),
+            self.xyz + XYZ::from_vec3(*displacement.as_vec3()),
+        )
     }
 }
 
@@ -383,7 +389,10 @@ where
     /// Translates the position backwards by a displacement vector.
     #[inline]
     fn sub(self, displacement: Displacement<F, U>) -> Self::Output {
-        Self::from_xyz_with_params(self.center_params.clone(), self.xyz - XYZ::from_vec3(*displacement.as_vec3()))
+        Self::from_xyz_with_params(
+            self.center_params.clone(),
+            self.xyz - XYZ::from_vec3(*displacement.as_vec3()),
+        )
     }
 }
 
@@ -438,7 +447,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    // Import the derives 
+    // Import the derives
     use crate::{DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame};
     use qtty::Meter;
 

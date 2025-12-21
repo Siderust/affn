@@ -236,12 +236,7 @@ impl<U: Unit> XYZ<Quantity<U>> {
     /// Computes the Euclidean magnitude in the same unit.
     #[inline]
     pub fn magnitude(&self) -> Quantity<U> {
-        let mag = Vector3::new(
-            self.0[0].value(),
-            self.0[1].value(),
-            self.0[2].value(),
-        )
-        .magnitude();
+        let mag = Vector3::new(self.0[0].value(), self.0[1].value(), self.0[2].value()).magnitude();
         Quantity::new(mag)
     }
 
@@ -257,11 +252,7 @@ impl<U: Unit> XYZ<Quantity<U>> {
     /// Extracts raw f64 values as an XYZ<f64>.
     #[inline]
     pub fn to_raw(&self) -> XYZ<f64> {
-        XYZ::new(
-            self.0[0].value(),
-            self.0[1].value(),
-            self.0[2].value(),
-        )
+        XYZ::new(self.0[0].value(), self.0[1].value(), self.0[2].value())
     }
 
     /// Creates from raw f64 values.

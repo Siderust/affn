@@ -256,8 +256,9 @@ impl std::ops::Mul for Rotation3 {
         let mut m = [[0.0; 3]; 3];
         for i in 0..3 {
             for j in 0..3 {
-                m[i][j] =
-                    self.m[i][0] * rhs.m[0][j] + self.m[i][1] * rhs.m[1][j] + self.m[i][2] * rhs.m[2][j];
+                m[i][j] = self.m[i][0] * rhs.m[0][j]
+                    + self.m[i][1] * rhs.m[1][j]
+                    + self.m[i][2] * rhs.m[2][j];
             }
         }
         Self { m }
@@ -627,14 +628,22 @@ mod tests {
     fn test_translation_zero() {
         let t = Translation3::ZERO;
         let v = [1.0, 2.0, 3.0];
-        assert_array_eq(t.apply_array(v), v, "Zero translation should not change point");
+        assert_array_eq(
+            t.apply_array(v),
+            v,
+            "Zero translation should not change point",
+        );
     }
 
     #[test]
     fn test_translation_apply() {
         let t = Translation3::new(1.0, 2.0, 3.0);
         let p = [0.0, 0.0, 0.0];
-        assert_array_eq(t.apply_array(p), [1.0, 2.0, 3.0], "Translation should offset point");
+        assert_array_eq(
+            t.apply_array(p),
+            [1.0, 2.0, 3.0],
+            "Translation should offset point",
+        );
     }
 
     #[test]
@@ -652,7 +661,11 @@ mod tests {
         let t2 = Translation3::new(0.0, 1.0, 0.0);
         let composed = t1.compose(&t2);
         let p = [0.0, 0.0, 0.0];
-        assert_array_eq(composed.apply_array(p), [1.0, 1.0, 0.0], "Composed translation");
+        assert_array_eq(
+            composed.apply_array(p),
+            [1.0, 1.0, 0.0],
+            "Composed translation",
+        );
     }
 
     // -------------------------------------------------------------------------
@@ -663,7 +676,11 @@ mod tests {
     fn test_isometry_identity() {
         let iso = Isometry3::IDENTITY;
         let p = [1.0, 2.0, 3.0];
-        assert_array_eq(iso.apply_point(p), p, "Identity isometry should not change point");
+        assert_array_eq(
+            iso.apply_point(p),
+            p,
+            "Identity isometry should not change point",
+        );
     }
 
     #[test]
