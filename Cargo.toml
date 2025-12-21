@@ -1,0 +1,20 @@
+[package]
+name = "affn"
+version = "0.1.0"
+edition = "2021"
+authors = ["VPRamon <vallespuigramon@gmail.com>"]
+description = "Affine geometry primitives: strongly-typed coordinate systems, reference frames, and centers for scientific computing."
+license = "AGPL-3.0-only"
+readme = "README.md"
+repository = "https://github.com/Siderust/affn"
+keywords = ["geometry", "coordinates", "affine", "algebra", "science"]
+categories = ["science", "mathematics"]
+
+[lib]
+name = "affn"
+
+[dependencies]
+nalgebra = "0.34.1"
+qtty = "0.2.0"
+
+[dev-dependencies]
