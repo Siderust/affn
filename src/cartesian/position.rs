@@ -32,20 +32,34 @@
 //!
 //! ```rust
 //! use affn::cartesian::{Position, Displacement};
-//! use affn::centers::Heliocentric;
-//! use affn::frames::Ecliptic;
+//! use affn::centers::ReferenceCenter;
+//! use affn::frames::ReferenceFrame;
 //! use qtty::*;
 //!
-//! // Two positions in heliocentric ecliptic coordinates
-//! let earth = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(1.0, 0.0, 0.0);
-//! let mars = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(1.5, 0.0, 0.0);
+//! // Define custom center and frame (astronomy types are in downstream crates)
+//! #[derive(Debug, Copy, Clone)]
+//! struct MyCenter;
+//! impl ReferenceCenter for MyCenter {
+//!     type Params = ();
+//!     fn center_name() -> &'static str { "MyCenter" }
+//! }
 //!
-//! // Displacement from Earth to Mars
-//! let displacement: Displacement<Ecliptic, AstronomicalUnit> = mars - earth;
+//! #[derive(Debug, Copy, Clone)]
+//! struct MyFrame;
+//! impl ReferenceFrame for MyFrame {
+//!     fn frame_name() -> &'static str { "MyFrame" }
+//! }
+//!
+//! // Two positions in the custom coordinate system
+//! let pos1 = Position::<MyCenter, MyFrame, AstronomicalUnit>::new(1.0, 0.0, 0.0);
+//! let pos2 = Position::<MyCenter, MyFrame, AstronomicalUnit>::new(1.5, 0.0, 0.0);
+//!
+//! // Displacement between positions
+//! let displacement: Displacement<MyFrame, AstronomicalUnit> = pos2 - pos1;
 //! assert!((displacement.x().value() - 0.5).abs() < 1e-12);
 //!
-//! // Translate Earth by the displacement to get Mars
-//! let result = earth + displacement;
+//! // Translate pos1 by the displacement to get pos2
+//! let result = pos1 + displacement;
 //! assert!((result.x().value() - 1.5).abs() < 1e-12);
 //! ```
 
@@ -273,6 +287,25 @@ impl<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> Position<C, F, U> {
     #[inline]
     pub fn direction_unchecked(&self) -> super::Direction<F> {
         super::Direction::from_xyz_unchecked(self.xyz.to_raw().normalize_unchecked())
+    }
+
+    /// Converts this Cartesian position to spherical coordinates.
+    ///
+    /// Returns a spherical position with the same center and frame,
+    /// with (polar, azimuth, distance) computed from (x, y, z).
+    #[must_use]
+    #[inline]
+    pub fn to_spherical(&self) -> crate::spherical::Position<C, F, U> {
+        crate::spherical::Position::from_cartesian(self)
+    }
+
+    /// Constructs a Cartesian position from spherical coordinates.
+    ///
+    /// This is equivalent to `spherical_pos.to_cartesian()`.
+    #[must_use]
+    #[inline]
+    pub fn from_spherical(sph: &crate::spherical::Position<C, F, U>) -> Self {
+        sph.to_cartesian()
     }
 }
 
