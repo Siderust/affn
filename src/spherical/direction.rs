@@ -30,11 +30,17 @@
 //!
 //! ```rust
 //! use affn::spherical::Direction;
-//! use affn::frames::ICRS;
+//! use affn::frames::ReferenceFrame;
 //! use qtty::*;
 //!
+//! #[derive(Debug, Copy, Clone)]
+//! struct WorldFrame;
+//! impl ReferenceFrame for WorldFrame {
+//!     fn frame_name() -> &'static str { "WorldFrame" }
+//! }
+//!
 //! // Create a spherical direction
-//! let dir = Direction::<ICRS>::new(45.0 * DEG, 30.0 * DEG);
+//! let dir = Direction::<WorldFrame>::new(45.0 * DEG, 30.0 * DEG);
 //! ```
 
 use crate::centers::ReferenceCenter;
@@ -75,7 +81,7 @@ fn canonicalize_polar(polar: Degrees) -> Degrees {
 /// For a spherical coordinate with explicit distance, use [`Position`](super::Position).
 ///
 /// # Type Parameters
-/// - `F`: The reference frame (e.g., `ICRS`, `Ecliptic`, `Equatorial`)
+/// - `F`: The reference frame (defines axis orientation)
 ///
 /// # Invariants
 ///
@@ -135,12 +141,25 @@ impl<F: ReferenceFrame> Direction<F> {
     /// # Example
     /// ```rust
     /// use affn::spherical::Direction;
-    /// use affn::centers::Geocentric;
-    /// use affn::frames::Ecliptic;
+    /// use affn::frames::ReferenceFrame;
+    /// use affn::centers::ReferenceCenter;
     /// use qtty::*;
     ///
-    /// let dir = Direction::<Ecliptic>::new(0.0*DEG, 0.0*DEG);
-    /// let pos = dir.position::<Geocentric, AstronomicalUnit>(1.0*AU);
+    /// #[derive(Debug, Copy, Clone)]
+    /// struct WorldFrame;
+    /// impl ReferenceFrame for WorldFrame {
+    ///     fn frame_name() -> &'static str { "WorldFrame" }
+    /// }
+    ///
+    /// #[derive(Debug, Copy, Clone)]
+    /// struct WorldOrigin;
+    /// impl ReferenceCenter for WorldOrigin {
+    ///     type Params = ();
+    ///     fn center_name() -> &'static str { "WorldOrigin" }
+    /// }
+    ///
+    /// let dir = Direction::<WorldFrame>::new(0.0*DEG, 0.0*DEG);
+    /// let pos = dir.position::<WorldOrigin, Meter>(1.0*M);
     /// assert_eq!(pos.distance.value(), 1.0);
     /// ```
     #[must_use]
@@ -249,15 +268,18 @@ impl<F: ReferenceFrame> std::fmt::Display for Direction<F> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::frames;
     use qtty::*;
+
+    // Define test-specific frame and center
+    crate::new_frame!(TestFrame);
+    crate::new_center!(TestCenter);
 
     #[test]
     fn creates_valid_spherical_direction() {
         let polar = Degrees::new(45.0);
         let azimuth = Degrees::new(90.0);
 
-        let coord = Direction::<frames::ICRS>::new(polar, azimuth);
+        let coord = Direction::<TestFrame>::new(polar, azimuth);
 
         assert_eq!(coord.azimuth.value(), 90.0);
         assert_eq!(coord.polar.value(), 45.0);
@@ -265,7 +287,7 @@ mod tests {
 
     #[test]
     fn displays_coordinate_as_string_correctly() {
-        let coord = Direction::<frames::ICRS>::new(Degrees::new(30.0), Degrees::new(60.0));
+        let coord = Direction::<TestFrame>::new(Degrees::new(30.0), Degrees::new(60.0));
         let output = coord.to_string();
         assert!(output.contains("θ: 30"), "Missing polar angle");
         assert!(output.contains("φ: 60"), "Missing azimuth");
@@ -276,7 +298,7 @@ mod tests {
         let polar = Degrees::new(45.123_456);
         let azimuth = Degrees::new(90.654_321);
 
-        let coord = Direction::<frames::ICRS>::new(polar, azimuth);
+        let coord = Direction::<TestFrame>::new(polar, azimuth);
 
         assert!((coord.polar.value() - 45.123_456).abs() < 1e-6);
         assert!((coord.azimuth.value() - 90.654_321).abs() < 1e-6);
@@ -286,11 +308,9 @@ mod tests {
 
     #[test]
     fn position_method_promotes_with_given_radius() {
-        use crate::centers::Barycentric;
-
-        let dir = Direction::<frames::ICRS>::new(Degrees::new(-30.0), Degrees::new(120.0));
+        let dir = Direction::<TestFrame>::new(Degrees::new(-30.0), Degrees::new(120.0));
         let pos =
-            dir.position::<Barycentric, AstronomicalUnit>(Quantity::<AstronomicalUnit>::new(2.0));
+            dir.position::<TestCenter, Meter>(Quantity::<Meter>::new(2.0));
 
         // angles are preserved
         assert!(
@@ -305,12 +325,12 @@ mod tests {
         );
 
         // distance matches the supplied magnitude
-        assert!((pos.distance - 2.0 * AU).abs() < EPS * AU);
+        assert!((pos.distance - 2.0 * M).abs() < EPS * M);
     }
 
     #[test]
     fn angular_separation_identity() {
-        let a = Direction::<frames::ICRS>::new(Degrees::new(45.0), Degrees::new(30.0));
+        let a = Direction::<TestFrame>::new(Degrees::new(45.0), Degrees::new(30.0));
         let sep = a.angular_separation(&a);
         assert!(sep.abs().value() < 1e-10, "expected 0°, got {}", sep);
     }
@@ -322,26 +342,26 @@ mod tests {
     #[test]
     fn canonicalizes_azimuth_to_positive_range() {
         // Negative azimuth
-        let dir = Direction::<frames::ICRS>::new(Degrees::new(0.0), Degrees::new(-90.0));
+        let dir = Direction::<TestFrame>::new(Degrees::new(0.0), Degrees::new(-90.0));
         assert!((dir.azimuth.value() - 270.0).abs() < EPS);
 
         // Azimuth > 360
-        let dir2 = Direction::<frames::ICRS>::new(Degrees::new(0.0), Degrees::new(450.0));
+        let dir2 = Direction::<TestFrame>::new(Degrees::new(0.0), Degrees::new(450.0));
         assert!((dir2.azimuth.value() - 90.0).abs() < EPS);
 
         // Large negative
-        let dir3 = Direction::<frames::ICRS>::new(Degrees::new(0.0), Degrees::new(-720.0));
+        let dir3 = Direction::<TestFrame>::new(Degrees::new(0.0), Degrees::new(-720.0));
         assert!(dir3.azimuth.value().abs() < EPS);
     }
 
     #[test]
     fn clamps_polar_to_valid_range() {
         // Polar > 90 gets clamped
-        let dir = Direction::<frames::ICRS>::new(Degrees::new(100.0), Degrees::new(0.0));
+        let dir = Direction::<TestFrame>::new(Degrees::new(100.0), Degrees::new(0.0));
         assert!((dir.polar.value() - 90.0).abs() < EPS);
 
         // Polar < -90 gets clamped
-        let dir2 = Direction::<frames::ICRS>::new(Degrees::new(-100.0), Degrees::new(0.0));
+        let dir2 = Direction::<TestFrame>::new(Degrees::new(-100.0), Degrees::new(0.0));
         assert!((dir2.polar.value() - (-90.0)).abs() < EPS);
     }
 
@@ -351,7 +371,7 @@ mod tests {
 
     #[test]
     fn roundtrip_spherical_cartesian_direction() {
-        let original = Direction::<frames::ICRS>::new(Degrees::new(45.0), Degrees::new(30.0));
+        let original = Direction::<TestFrame>::new(Degrees::new(45.0), Degrees::new(30.0));
         let cartesian = original.to_cartesian();
         let recovered = Direction::from_cartesian(&cartesian);
 
@@ -372,13 +392,13 @@ mod tests {
     #[test]
     fn roundtrip_at_poles() {
         // North pole
-        let north = Direction::<frames::ICRS>::new(Degrees::new(90.0), Degrees::new(0.0));
+        let north = Direction::<TestFrame>::new(Degrees::new(90.0), Degrees::new(0.0));
         let cart_n = north.to_cartesian();
         let recovered_n = Direction::from_cartesian(&cart_n);
         assert!((recovered_n.polar.value() - 90.0).abs() < EPS);
 
         // South pole
-        let south = Direction::<frames::ICRS>::new(Degrees::new(-90.0), Degrees::new(0.0));
+        let south = Direction::<TestFrame>::new(Degrees::new(-90.0), Degrees::new(0.0));
         let cart_s = south.to_cartesian();
         let recovered_s = Direction::from_cartesian(&cart_s);
         assert!((recovered_s.polar.value() - (-90.0)).abs() < EPS);
@@ -387,13 +407,13 @@ mod tests {
     #[test]
     fn roundtrip_at_azimuth_boundaries() {
         // At azimuth = 0
-        let dir0 = Direction::<frames::ICRS>::new(Degrees::new(30.0), Degrees::new(0.0));
+        let dir0 = Direction::<TestFrame>::new(Degrees::new(30.0), Degrees::new(0.0));
         let cart0 = dir0.to_cartesian();
         let rec0 = Direction::from_cartesian(&cart0);
         assert!((rec0.azimuth.value() - 0.0).abs() < EPS);
 
         // Near azimuth = 360 (should wrap to near 0)
-        let dir360 = Direction::<frames::ICRS>::new(Degrees::new(30.0), Degrees::new(359.9));
+        let dir360 = Direction::<TestFrame>::new(Degrees::new(30.0), Degrees::new(359.9));
         let cart360 = dir360.to_cartesian();
         let rec360 = Direction::from_cartesian(&cart360);
         assert!((rec360.azimuth.value() - 359.9).abs() < EPS);

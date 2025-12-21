@@ -327,12 +327,14 @@ pub type Velocity<F, U> = Vector<F, U>;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::frames::Ecliptic;
     use qtty::{AstronomicalUnit, Day, Per};
 
-    type DispAu = Displacement<Ecliptic, AstronomicalUnit>;
+    // Define a test frame using the macro
+    crate::new_frame!(TestFrame);
+
+    type DispAu = Displacement<TestFrame, AstronomicalUnit>;
     type AuPerDay = Per<AstronomicalUnit, Day>;
-    type VelAuDay = Velocity<Ecliptic, AuPerDay>;
+    type VelAuDay = Velocity<TestFrame, AuPerDay>;
 
     #[test]
     fn test_vector_add_sub() {

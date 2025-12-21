@@ -59,12 +59,25 @@
 //!
 //! ```rust
 //! use affn::cartesian::{line_of_sight, Position};
-//! use affn::centers::Heliocentric;
-//! use affn::frames::Ecliptic;
+//! use affn::frames::ReferenceFrame;
+//! use affn::centers::ReferenceCenter;
 //! use qtty::*;
 //!
-//! let observer = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(0.0, 0.0, 0.0);
-//! let target = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(1.0, 1.0, 0.0);
+//! #[derive(Debug, Copy, Clone)]
+//! struct WorldFrame;
+//! impl ReferenceFrame for WorldFrame {
+//!     fn frame_name() -> &'static str { "WorldFrame" }
+//! }
+//!
+//! #[derive(Debug, Copy, Clone)]
+//! struct WorldOrigin;
+//! impl ReferenceCenter for WorldOrigin {
+//!     type Params = ();
+//!     fn center_name() -> &'static str { "WorldOrigin" }
+//! }
+//!
+//! let observer = Position::<WorldOrigin, WorldFrame, Meter>::new(0.0, 0.0, 0.0);
+//! let target = Position::<WorldOrigin, WorldFrame, Meter>::new(1.0, 1.0, 0.0);
 //!
 //! let direction = line_of_sight(&observer, &target);
 //! ```
@@ -125,14 +138,27 @@ use qtty::{LengthUnit, Quantity};
 ///
 /// ```rust
 /// use affn::cartesian::{line_of_sight, Position, Direction};
-/// use affn::centers::Heliocentric;
-/// use affn::frames::Ecliptic;
+/// use affn::frames::ReferenceFrame;
+/// use affn::centers::ReferenceCenter;
 /// use qtty::*;
 ///
-/// let observer = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(0.0, 0.0, 0.0);
-/// let target = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(1.0, 1.0, 0.0);
+/// #[derive(Debug, Copy, Clone)]
+/// struct WorldFrame;
+/// impl ReferenceFrame for WorldFrame {
+///     fn frame_name() -> &'static str { "WorldFrame" }
+/// }
 ///
-/// let los: Direction<Ecliptic> = line_of_sight(&observer, &target);
+/// #[derive(Debug, Copy, Clone)]
+/// struct WorldOrigin;
+/// impl ReferenceCenter for WorldOrigin {
+///     type Params = ();
+///     fn center_name() -> &'static str { "WorldOrigin" }
+/// }
+///
+/// let observer = Position::<WorldOrigin, WorldFrame, Meter>::new(0.0, 0.0, 0.0);
+/// let target = Position::<WorldOrigin, WorldFrame, Meter>::new(1.0, 1.0, 0.0);
+///
+/// let los: Direction<WorldFrame> = line_of_sight(&observer, &target);
 /// ```
 ///
 /// # Panics
@@ -163,12 +189,25 @@ where
 ///
 /// ```rust
 /// use affn::cartesian::{line_of_sight_with_distance, Position};
-/// use affn::centers::Heliocentric;
-/// use affn::frames::Ecliptic;
+/// use affn::frames::ReferenceFrame;
+/// use affn::centers::ReferenceCenter;
 /// use qtty::*;
 ///
-/// let observer = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(0.0, 0.0, 0.0);
-/// let target = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(3.0, 4.0, 0.0);
+/// #[derive(Debug, Copy, Clone)]
+/// struct WorldFrame;
+/// impl ReferenceFrame for WorldFrame {
+///     fn frame_name() -> &'static str { "WorldFrame" }
+/// }
+///
+/// #[derive(Debug, Copy, Clone)]
+/// struct WorldOrigin;
+/// impl ReferenceCenter for WorldOrigin {
+///     type Params = ();
+///     fn center_name() -> &'static str { "WorldOrigin" }
+/// }
+///
+/// let observer = Position::<WorldOrigin, WorldFrame, Meter>::new(0.0, 0.0, 0.0);
+/// let target = Position::<WorldOrigin, WorldFrame, Meter>::new(3.0, 4.0, 0.0);
 ///
 /// let (dir, dist) = line_of_sight_with_distance(&observer, &target);
 /// assert!((dist.value() - 5.0).abs() < 1e-10);
@@ -218,16 +257,18 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::centers::Heliocentric;
-    use crate::frames::Ecliptic;
-    use qtty::AstronomicalUnit;
+    use qtty::Meter;
 
-    type PosAu = Position<Heliocentric, Ecliptic, AstronomicalUnit>;
+    // Define test-specific frame and center
+    crate::new_frame!(TestFrame);
+    crate::new_center!(TestCenter);
+
+    type TestPos = Position<TestCenter, TestFrame, Meter>;
 
     #[test]
     fn test_line_of_sight_basic() {
-        let observer = PosAu::new(0.0, 0.0, 0.0);
-        let target = PosAu::new(3.0, 4.0, 0.0);
+        let observer = TestPos::new(0.0, 0.0, 0.0);
+        let target = TestPos::new(3.0, 4.0, 0.0);
 
         let los = line_of_sight(&observer, &target);
         assert!((los.x() - 0.6).abs() < 1e-12);
@@ -237,8 +278,8 @@ mod tests {
 
     #[test]
     fn test_line_of_sight_with_distance() {
-        let observer = PosAu::new(1.0, 1.0, 1.0);
-        let target = PosAu::new(4.0, 5.0, 1.0);
+        let observer = TestPos::new(1.0, 1.0, 1.0);
+        let target = TestPos::new(4.0, 5.0, 1.0);
 
         let (dir, dist) = line_of_sight_with_distance(&observer, &target);
         assert!((dist.value() - 5.0).abs() < 1e-12);
@@ -248,14 +289,14 @@ mod tests {
 
     #[test]
     fn test_try_line_of_sight_same_position() {
-        let pos = PosAu::new(1.0, 2.0, 3.0);
+        let pos = TestPos::new(1.0, 2.0, 3.0);
         assert!(try_line_of_sight(&pos, &pos).is_none());
     }
 
     #[test]
     fn test_position_displacement_roundtrip() {
-        let a = PosAu::new(1.0, 2.0, 3.0);
-        let b = PosAu::new(5.0, 7.0, 11.0);
+        let a = TestPos::new(1.0, 2.0, 3.0);
+        let b = TestPos::new(5.0, 7.0, 11.0);
 
         // a + (b - a) == b
         let displacement = b - a;
@@ -268,10 +309,8 @@ mod tests {
 
     #[test]
     fn test_direction_scale_to_displacement() {
-        use qtty::AstronomicalUnit;
-        
-        let dir = Direction::<Ecliptic>::new(1.0, 0.0, 0.0);
-        let disp: Displacement<Ecliptic, AstronomicalUnit> = dir * Quantity::new(3.0);
+        let dir = Direction::<TestFrame>::new(1.0, 0.0, 0.0);
+        let disp: Displacement<TestFrame, Meter> = dir * Quantity::new(3.0);
 
         assert!((disp.x().value() - 3.0).abs() < 1e-12);
         assert!(disp.y().value().abs() < 1e-12);
@@ -279,9 +318,7 @@ mod tests {
 
     #[test]
     fn test_displacement_normalize_to_direction() {
-        use qtty::AstronomicalUnit;
-
-        let disp = Displacement::<Ecliptic, AstronomicalUnit>::new(3.0, 4.0, 0.0);
+        let disp = Displacement::<TestFrame, Meter>::new(3.0, 4.0, 0.0);
         let dir = disp.normalize().expect("non-zero displacement");
 
         // Check normalization: 3/5 = 0.6, 4/5 = 0.8

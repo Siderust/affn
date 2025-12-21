@@ -35,17 +35,23 @@
 //!
 //! ```rust
 //! use affn::cartesian::Direction;
-//! use affn::frames::Ecliptic;
+//! use affn::frames::ReferenceFrame;
+//!
+//! #[derive(Debug, Copy, Clone)]
+//! struct WorldFrame;
+//! impl ReferenceFrame for WorldFrame {
+//!     fn frame_name() -> &'static str { "WorldFrame" }
+//! }
 //!
 //! // Create a normalized direction
-//! let dir = Direction::<Ecliptic>::new(1.0, 2.0, 2.0);
+//! let dir = Direction::<WorldFrame>::new(1.0, 2.0, 2.0);
 //! assert!((dir.x() - 1.0/3.0).abs() < 1e-12);
 //! assert!((dir.y() - 2.0/3.0).abs() < 1e-12);
 //! assert!((dir.z() - 2.0/3.0).abs() < 1e-12);
 //!
 //! // Scale to create a Vector
 //! use qtty::*;
-//! let vec = dir.scale(10.0 * AU);
+//! let vec = dir.scale(10.0 * M);
 //! ```
 
 use super::vector::Displacement;
@@ -100,9 +106,15 @@ impl<F: ReferenceFrame> Direction<F> {
     /// # Example
     /// ```rust
     /// use affn::cartesian::Direction;
-    /// use affn::frames::Ecliptic;
+    /// use affn::frames::ReferenceFrame;
     ///
-    /// let dir = Direction::<Ecliptic>::new(3.0, 4.0, 0.0);
+    /// #[derive(Debug, Copy, Clone)]
+    /// struct WorldFrame;
+    /// impl ReferenceFrame for WorldFrame {
+    ///     fn frame_name() -> &'static str { "WorldFrame" }
+    /// }
+    ///
+    /// let dir = Direction::<WorldFrame>::new(3.0, 4.0, 0.0);
     /// assert!((dir.x() - 0.6).abs() < 1e-12);
     /// assert!((dir.y() - 0.8).abs() < 1e-12);
     /// ```
@@ -204,11 +216,17 @@ impl<F: ReferenceFrame> Direction<F> {
     /// # Example
     /// ```rust
     /// use affn::cartesian::Direction;
-    /// use affn::frames::Ecliptic;
+    /// use affn::frames::ReferenceFrame;
     /// use qtty::*;
     ///
-    /// let dir = Direction::<Ecliptic>::new(1.0, 0.0, 0.0);
-    /// let vec = dir.scale(5.0 * AU);
+    /// #[derive(Debug, Copy, Clone)]
+    /// struct WorldFrame;
+    /// impl ReferenceFrame for WorldFrame {
+    ///     fn frame_name() -> &'static str { "WorldFrame" }
+    /// }
+    ///
+    /// let dir = Direction::<WorldFrame>::new(1.0, 0.0, 0.0);
+    /// let vec = dir.scale(5.0 * M);
     /// assert!((vec.x().value() - 5.0).abs() < 1e-12);
     /// ```
     #[inline]
@@ -382,11 +400,14 @@ impl<F: ReferenceFrame> std::fmt::Display for Direction<F> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::frames::Ecliptic;
+    use qtty::Meter;
+
+    // Define test-specific frame
+    crate::new_frame!(TestFrame);
 
     #[test]
     fn test_direction_normalization() {
-        let dir = Direction::<Ecliptic>::new(3.0, 4.0, 0.0);
+        let dir = Direction::<TestFrame>::new(3.0, 4.0, 0.0);
         let norm = (dir.x() * dir.x() + dir.y() * dir.y() + dir.z() * dir.z()).sqrt();
         assert!((norm - 1.0).abs() < 1e-12);
         assert!((dir.x() - 0.6).abs() < 1e-12);
@@ -395,11 +416,8 @@ mod tests {
 
     #[test]
     fn test_direction_scale() {
-        use crate::frames::Ecliptic;
-        use qtty::AstronomicalUnit;
-
-        let dir = Direction::<Ecliptic>::new(1.0, 0.0, 0.0);
-        let vec = dir.scale(Quantity::<AstronomicalUnit>::new(5.0));
+        let dir = Direction::<TestFrame>::new(1.0, 0.0, 0.0);
+        let vec = dir.scale(Quantity::<Meter>::new(5.0));
         assert!((vec.x().value() - 5.0).abs() < 1e-12);
         assert!(vec.y().value().abs() < 1e-12);
         assert!(vec.z().value().abs() < 1e-12);
@@ -407,8 +425,8 @@ mod tests {
 
     #[test]
     fn test_direction_dot_product() {
-        let a = Direction::<Ecliptic>::new(1.0, 0.0, 0.0);
-        let b = Direction::<Ecliptic>::new(0.0, 1.0, 0.0);
+        let a = Direction::<TestFrame>::new(1.0, 0.0, 0.0);
+        let b = Direction::<TestFrame>::new(0.0, 1.0, 0.0);
         // Perpendicular directions have dot product 0
         assert!(a.dot(&b).abs() < 1e-12);
 
@@ -421,8 +439,8 @@ mod tests {
 
     #[test]
     fn test_direction_cross_product() {
-        let x = Direction::<Ecliptic>::new(1.0, 0.0, 0.0);
-        let y = Direction::<Ecliptic>::new(0.0, 1.0, 0.0);
+        let x = Direction::<TestFrame>::new(1.0, 0.0, 0.0);
+        let y = Direction::<TestFrame>::new(0.0, 1.0, 0.0);
         let z = x.cross(&y).expect("perpendicular directions");
         assert!(z.x().abs() < 1e-12);
         assert!(z.y().abs() < 1e-12);
@@ -431,13 +449,13 @@ mod tests {
 
     #[test]
     fn test_direction_try_new_zero() {
-        assert!(Direction::<Ecliptic>::try_new(0.0, 0.0, 0.0).is_none());
+        assert!(Direction::<TestFrame>::try_new(0.0, 0.0, 0.0).is_none());
     }
 
     #[test]
     fn test_direction_angle() {
-        let a = Direction::<Ecliptic>::new(1.0, 0.0, 0.0);
-        let b = Direction::<Ecliptic>::new(0.0, 1.0, 0.0);
+        let a = Direction::<TestFrame>::new(1.0, 0.0, 0.0);
+        let b = Direction::<TestFrame>::new(0.0, 1.0, 0.0);
         let angle = a.angle_to(&b);
         assert!((angle - std::f64::consts::FRAC_PI_2).abs() < 1e-12);
     }
