@@ -580,4 +580,28 @@ mod tests {
         assert!((back.y().value() - pos.y().value()).abs() < 1e-12);
         assert!((back.z().value() - pos.z().value()).abs() < 1e-12);
     }
+
+    #[test]
+    fn test_position_const_vec3_and_display() {
+        let pos =
+            Position::<TestCenter, TestFrame, Meter>::new_const((), 1.0 * M, 2.0 * M, 3.0 * M);
+        let vec3 = pos.as_vec3();
+        assert!((vec3[0].value() - 1.0).abs() < 1e-12);
+        assert!((vec3[1].value() - 2.0).abs() < 1e-12);
+        assert!((vec3[2].value() - 3.0).abs() < 1e-12);
+
+        let text = pos.to_string();
+        assert!(text.contains("Center: TestCenter"));
+        assert!(text.contains("Frame: TestFrame"));
+    }
+
+    #[test]
+    fn test_position_sub_ref_ref() {
+        let a = TestPos::new(1.0, 2.0, 3.0);
+        let b = TestPos::new(4.0, 6.0, 9.0);
+        let displacement: TestDisp = b - a;
+        assert!((displacement.x().value() - 3.0).abs() < 1e-12);
+        assert!((displacement.y().value() - 4.0).abs() < 1e-12);
+        assert!((displacement.z().value() - 6.0).abs() < 1e-12);
+    }
 }
