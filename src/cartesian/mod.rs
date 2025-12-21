@@ -92,8 +92,8 @@
 //! - **No code duplication**: Math is centralized in `XYZ<T>`
 //! - **Type safety**: Invalid operations are compile errors
 
-// Internal shared storage
-mod xyz;
+// Internal shared storage (pub(crate) for use by ops module)
+pub(crate) mod xyz;
 
 // Semantic types
 mod position;   // Position<C, F, U> - Affine point
@@ -103,6 +103,9 @@ mod direction;  // Direction<F> - Unit vector
 // =============================================================================
 // Public Re-exports
 // =============================================================================
+
+// Re-export XYZ for internal crate use
+pub use xyz::XYZ;
 
 pub use position::Position;
 pub use vector::{Vector, Displacement, Velocity};

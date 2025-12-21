@@ -106,9 +106,15 @@ pub mod spherical;
 pub mod centers;
 pub mod frames;
 
+// Affine operators (rotation, translation, isometry)
+pub mod ops;
+
 // Re-export commonly used traits at crate level
 pub use centers::{AffineCenter, NoCenter, ReferenceCenter};
 pub use frames::ReferenceFrame;
+
+// Re-export operators at crate level
+pub use ops::{Isometry3, Rotation3, Translation3};
 
 // Re-export concrete Position/Direction types for standalone usage
 pub use cartesian::{Direction as CartesianDirection, Displacement, Position, Velocity, Vector};

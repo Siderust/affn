@@ -25,18 +25,25 @@
 //!
 //! ```rust
 //! use affn::cartesian::{Vector, Displacement, Velocity};
-//! use affn::frames::Ecliptic;
+//! use affn::frames::ReferenceFrame;
 //! use qtty::*;
 //!
+//! // Define a custom frame (astronomy frames are defined in downstream crates)
+//! #[derive(Debug, Copy, Clone)]
+//! struct MyFrame;
+//! impl ReferenceFrame for MyFrame {
+//!     fn frame_name() -> &'static str { "MyFrame" }
+//! }
+//!
 //! // Displacement with length unit
-//! let displacement = Displacement::<Ecliptic, AstronomicalUnit>::new(1.0, 2.0, 3.0);
+//! let displacement = Displacement::<MyFrame, AstronomicalUnit>::new(1.0, 2.0, 3.0);
 //!
 //! // Velocity with velocity unit
 //! type AuPerDay = Per<AstronomicalUnit, Day>;
-//! let velocity = Velocity::<Ecliptic, AuPerDay>::new(0.01, 0.02, 0.0);
+//! let velocity = Velocity::<MyFrame, AuPerDay>::new(0.01, 0.02, 0.0);
 //!
 //! // Both are just Vector<F, U> with different units
-//! let v: Vector<Ecliptic, AuPerDay> = velocity;
+//! let v: Vector<MyFrame, AuPerDay> = velocity;
 //! ```
 
 use super::xyz::XYZ;
@@ -215,12 +222,18 @@ impl<F: ReferenceFrame, U: LengthUnit> Vector<F, U> {
     /// # Example
     /// ```rust
     /// use affn::cartesian::Displacement;
-    /// use affn::frames::Ecliptic;
+    /// use affn::frames::ReferenceFrame;
     /// use qtty::*;
     ///
-    /// let v = Displacement::<Ecliptic, AstronomicalUnit>::new(3.0, 4.0, 0.0);
+    /// #[derive(Debug, Copy, Clone)]
+    /// struct MyFrame;
+    /// impl ReferenceFrame for MyFrame {
+    ///     fn frame_name() -> &'static str { "MyFrame" }
+    /// }
+    ///
+    /// let v = Displacement::<MyFrame, AstronomicalUnit>::new(3.0, 4.0, 0.0);
     /// let dir = v.normalize().expect("non-zero vector");
-    /// // dir is now a unit Direction<Ecliptic>
+    /// // dir is now a unit Direction<MyFrame>
     /// ```
     #[inline]
     pub fn normalize(&self) -> Option<super::Direction<F>> {
