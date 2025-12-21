@@ -96,9 +96,9 @@
 pub(crate) mod xyz;
 
 // Semantic types
-mod position;   // Position<C, F, U> - Affine point
-mod vector;     // Vector<F, U> - Free vector (base for Displacement, Velocity)
-mod direction;  // Direction<F> - Unit vector
+mod direction;
+mod position; // Position<C, F, U> - Affine point
+mod vector; // Vector<F, U> - Free vector (base for Displacement, Velocity) // Direction<F> - Unit vector
 
 // =============================================================================
 // Public Re-exports
@@ -107,9 +107,9 @@ mod direction;  // Direction<F> - Unit vector
 // Re-export XYZ for internal crate use
 pub use xyz::XYZ;
 
-pub use position::Position;
-pub use vector::{Vector, Displacement, Velocity};
 pub use direction::Direction;
+pub use position::Position;
+pub use vector::{Displacement, Vector, Velocity};
 
 // =============================================================================
 // Line of Sight Functions
@@ -168,7 +168,10 @@ use qtty::{LengthUnit, Quantity};
 ///
 /// Panics if the observer and target positions are identical (zero displacement).
 #[inline]
-pub fn line_of_sight<C, F, U>(observer: &Position<C, F, U>, target: &Position<C, F, U>) -> Direction<F>
+pub fn line_of_sight<C, F, U>(
+    observer: &Position<C, F, U>,
+    target: &Position<C, F, U>,
+) -> Direction<F>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
@@ -176,7 +179,7 @@ where
 {
     // Position - Position -> Displacement
     let displacement: Displacement<F, U> = target.sub(observer);
-    
+
     // normalize(Displacement) -> Direction
     displacement
         .normalize()
@@ -236,7 +239,7 @@ where
     let direction = displacement
         .normalize()
         .expect("line_of_sight requires distinct observer and target positions");
-    
+
     (direction, distance)
 }
 

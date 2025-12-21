@@ -137,12 +137,7 @@ where
         let y = self.distance * azimuth_rad.sin() * polar_rad.cos();
         let z = self.distance * polar_rad.sin();
 
-        crate::cartesian::Position::<C, F, U>::new_with_params(
-            self.center_params.clone(),
-            x,
-            y,
-            z,
-        )
+        crate::cartesian::Position::<C, F, U>::new_with_params(self.center_params.clone(), x, y, z)
     }
 
     /// Constructs from a Cartesian position.
@@ -168,7 +163,12 @@ where
             azimuth = Degrees::new(azimuth.value() + 360.0);
         }
 
-        Self::new_raw_with_params(cart.center_params().clone(), polar, azimuth, cart.distance())
+        Self::new_raw_with_params(
+            cart.center_params().clone(),
+            polar,
+            azimuth,
+            cart.distance(),
+        )
     }
 }
 
@@ -248,7 +248,11 @@ mod tests {
     #[test]
     fn test_spherical_coord_creation() {
         // new_raw(polar, azimuth, distance)
-        let coord = Position::<TestCenter, TestFrame, Meter>::new_raw(Degrees::new(90.0), Degrees::new(45.0), 1.0 * M);
+        let coord = Position::<TestCenter, TestFrame, Meter>::new_raw(
+            Degrees::new(90.0),
+            Degrees::new(45.0),
+            1.0 * M,
+        );
         assert_eq!(coord.polar.value(), 90.0);
         assert_eq!(coord.azimuth.value(), 45.0);
         assert_eq!(coord.distance.value(), 1.0);
@@ -257,7 +261,11 @@ mod tests {
     #[test]
     fn test_spherical_coord_to_string() {
         // new_raw(polar, azimuth, distance)
-        let coord = Position::<TestCenter, TestFrame, Meter>::new_raw(Degrees::new(60.0), Degrees::new(30.0), 1000.0 * M);
+        let coord = Position::<TestCenter, TestFrame, Meter>::new_raw(
+            Degrees::new(60.0),
+            Degrees::new(30.0),
+            1000.0 * M,
+        );
         let coord_string = coord.to_string();
         assert!(coord_string.contains("θ: 60"));
         assert!(coord_string.contains("φ: 30"));
@@ -266,7 +274,8 @@ mod tests {
 
     #[test]
     fn test_spherical_coord_zero_values() {
-        let coord = Position::<TestCenter, TestFrame, Meter>::new_raw(0.0 * DEG, 0.0 * DEG, 0.0 * M);
+        let coord =
+            Position::<TestCenter, TestFrame, Meter>::new_raw(0.0 * DEG, 0.0 * DEG, 0.0 * M);
         assert_eq!(coord.polar.value(), 0.0);
         assert_eq!(coord.azimuth.value(), 0.0);
         assert_eq!(coord.distance.value(), 0.0);
@@ -275,7 +284,11 @@ mod tests {
     #[test]
     fn test_spherical_coord_precision() {
         // new_raw(polar, azimuth, distance)
-        let coord = Position::<TestCenter, TestFrame, Meter>::new_raw(45.123456 * DEG, 90.654321 * DEG, 1234.56789 * M);
+        let coord = Position::<TestCenter, TestFrame, Meter>::new_raw(
+            45.123456 * DEG,
+            90.654321 * DEG,
+            1234.56789 * M,
+        );
         assert!((coord.polar.value() - 45.123456).abs() < 1e-6);
         assert!((coord.azimuth.value() - 90.654321).abs() < 1e-6);
         assert!((coord.distance - 1234.56789 * M).abs() < 1e-6 * M);
@@ -283,14 +296,19 @@ mod tests {
 
     #[test]
     fn direction_returns_unit_vector() {
-        let pos = Position::<TestCenter, TestFrame, Meter>::new_raw(10.0 * DEG, 20.0 * DEG, 2.5 * M);
+        let pos =
+            Position::<TestCenter, TestFrame, Meter>::new_raw(10.0 * DEG, 20.0 * DEG, 2.5 * M);
         let dir = pos.direction();
 
         // Direction has implicit radius 1
         // We verify by converting to cartesian and checking the magnitude
         let cart = dir.to_cartesian();
         let magnitude = (cart.x().powi(2) + cart.y().powi(2) + cart.z().powi(2)).sqrt();
-        assert!((magnitude - 1.0).abs() < EPS, "magnitude should be 1.0, got {}", magnitude);
+        assert!(
+            (magnitude - 1.0).abs() < EPS,
+            "magnitude should be 1.0, got {}",
+            magnitude
+        );
 
         // angular components are preserved
         assert!((dir.polar - 10.0 * DEG).abs() < EPS * DEG);

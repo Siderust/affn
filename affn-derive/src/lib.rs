@@ -256,8 +256,10 @@ fn parse_center_attributes(input: &DeriveInput) -> syn::Result<CenterAttributes>
                         } else if nv.path.is_ident("params") {
                             // Parse as a type path
                             if let Expr::Path(expr_path) = &nv.value {
-                                attrs.params =
-                                    Some(Type::Path(syn::TypePath { qself: None, path: expr_path.path.clone() }));
+                                attrs.params = Some(Type::Path(syn::TypePath {
+                                    qself: None,
+                                    path: expr_path.path.clone(),
+                                }));
                                 continue;
                             }
                             return Err(syn::Error::new_spanned(

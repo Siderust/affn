@@ -81,8 +81,6 @@ pub trait ReferenceCenter: Copy + Clone + std::fmt::Debug {
     fn center_name() -> &'static str;
 }
 
-
-
 // =============================================================================
 // Unit implementation (for generic code)
 // =============================================================================
@@ -152,7 +150,7 @@ pub trait AffineCenter: ReferenceCenter {}
 mod tests {
     use super::*;
     // Import the derives and traits
-    use crate::{DeriveReferenceCenter as ReferenceCenter};
+    use crate::DeriveReferenceCenter as ReferenceCenter;
 
     // Test with a locally defined center
     #[derive(Debug, Copy, Clone, ReferenceCenter)]
@@ -170,9 +168,6 @@ mod tests {
             std::mem::size_of::<<TestCenter as ReferenceCenter>::Params>(),
             0
         );
-        assert_eq!(
-            std::mem::size_of::<<() as ReferenceCenter>::Params>(),
-            0
-        );
+        assert_eq!(std::mem::size_of::<<() as ReferenceCenter>::Params>(), 0);
     }
 }
