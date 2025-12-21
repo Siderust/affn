@@ -342,7 +342,7 @@ mod tests {
     use super::*;
     // Import the derive
     use crate::DeriveReferenceFrame as ReferenceFrame;
-    use qtty::{AstronomicalUnit, Day, Per};
+    use qtty::{AstronomicalUnit, Day, Meter, Per, Quantity};
 
     // Define a test frame using the macro
     #[derive(Debug, Copy, Clone, ReferenceFrame)]
@@ -420,5 +420,53 @@ mod tests {
             Quantity::<AuPerDay>::new(0.0),
         );
         assert!((v.magnitude().value() - 5.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_vector_misc_ops() {
+        let v = DispAu::new(1.0, 2.0, 3.0);
+        let scaled = v.scale(2.0);
+        assert_eq!(scaled, DispAu::new(2.0, 4.0, 6.0));
+
+        let neg = v.negate();
+        assert!((neg.x().value() + 1.0).abs() < 1e-12);
+        assert!((neg.y().value() + 2.0).abs() < 1e-12);
+
+        let dot = v.dot(&DispAu::new(0.0, 1.0, 0.0));
+        assert!((dot - 2.0).abs() < 1e-12);
+
+        let cross = v.cross(&DispAu::new(0.0, 1.0, 0.0));
+        assert!((cross.x().value() + 3.0).abs() < 1e-12);
+        assert!(cross.y().value().abs() < 1e-12);
+        assert!((cross.z().value() - 1.0).abs() < 1e-12);
+
+        let magnitude_sq = v.magnitude_squared();
+        assert!((magnitude_sq - 14.0).abs() < 1e-12);
+
+        let from_vec3 = DispAu::from_vec3(nalgebra::Vector3::new(
+            Quantity::<AstronomicalUnit>::new(1.0),
+            Quantity::<AstronomicalUnit>::new(2.0),
+            Quantity::<AstronomicalUnit>::new(3.0),
+        ));
+        assert_eq!(from_vec3, v);
+
+        let dir = v.normalize_unchecked();
+        let norm = (dir.x() * dir.x() + dir.y() * dir.y() + dir.z() * dir.z()).sqrt();
+        assert!((norm - 1.0).abs() < 1e-12);
+
+        let neg_op = -v;
+        assert_eq!(neg_op, neg);
+    }
+
+    #[test]
+    fn test_vector_display_and_accessors() {
+        let v = Displacement::<TestFrame, Meter>::new(1.0, 2.0, 3.0);
+        let vec3 = v.as_vec3();
+        assert!((vec3[0].value() - 1.0).abs() < 1e-12);
+        assert!((vec3[1].value() - 2.0).abs() < 1e-12);
+        assert!((vec3[2].value() - 3.0).abs() < 1e-12);
+
+        let text = v.to_string();
+        assert!(text.contains("Vector<TestFrame>"));
     }
 }

@@ -243,6 +243,15 @@ mod tests {
     #[derive(Debug, Copy, Clone, ReferenceCenter)]
     struct TestCenter;
 
+    #[derive(Clone, Debug, Default, PartialEq)]
+    struct TestParams {
+        id: i32,
+    }
+
+    #[derive(Debug, Copy, Clone, ReferenceCenter)]
+    #[center(params = TestParams)]
+    struct ParamCenter;
+
     const EPS: f64 = 1e-6;
 
     #[test]
@@ -343,5 +352,46 @@ mod tests {
         let b = Position::<TestCenter, TestFrame, Meter>::new_raw(0.0 * DEG, 90.0 * DEG, 1.0 * M);
         let d = a.distance_to(&b);
         assert!((d.value() - SQRT_2).abs() < EPS);
+    }
+
+    #[test]
+    fn position_with_params_and_center_params() {
+        let params = TestParams { id: 9 };
+        let pos = Position::<ParamCenter, TestFrame, Meter>::new_raw_with_params(
+            params.clone(),
+            5.0 * DEG,
+            10.0 * DEG,
+            2.0 * M,
+        );
+        assert_eq!(pos.center_params(), &params);
+        assert!((pos.distance.value() - 2.0).abs() < EPS);
+    }
+
+    #[test]
+    fn angular_separation_quarter_turn() {
+        let a = Position::<TestCenter, TestFrame, Meter>::new_raw(0.0 * DEG, 0.0 * DEG, 1.0 * M);
+        let b = Position::<TestCenter, TestFrame, Meter>::new_raw(0.0 * DEG, 90.0 * DEG, 1.0 * M);
+        let sep = a.angular_separation(b);
+        assert!((sep.value() - 90.0).abs() < EPS);
+    }
+
+    #[test]
+    fn cartesian_roundtrip_and_zero_radius() {
+        type CartPos = crate::cartesian::Position<TestCenter, TestFrame, Meter>;
+
+        let cart = CartPos::new(1.0, -1.0, 0.0);
+        let sph = Position::from_cartesian(&cart);
+        assert!((sph.polar.value()).abs() < EPS);
+        assert!((sph.azimuth.value() - 315.0).abs() < EPS);
+
+        let back = sph.to_cartesian();
+        assert!((back.x().value() - cart.x().value()).abs() < EPS);
+        assert!((back.y().value() - cart.y().value()).abs() < EPS);
+
+        let origin = CartPos::new(0.0, 0.0, 0.0);
+        let sph_origin = Position::from_cartesian(&origin);
+        assert!((sph_origin.polar.value()).abs() < EPS);
+        assert!((sph_origin.azimuth.value()).abs() < EPS);
+        assert!(sph_origin.distance.value().abs() < EPS);
     }
 }

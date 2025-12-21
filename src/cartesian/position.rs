@@ -449,13 +449,22 @@ mod tests {
     use super::*;
     // Import the derives
     use crate::{DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame};
-    use qtty::Meter;
+    use qtty::*;
 
     // Define test-specific frame and center
     #[derive(Debug, Copy, Clone, ReferenceFrame)]
     struct TestFrame;
     #[derive(Debug, Copy, Clone, ReferenceCenter)]
     struct TestCenter;
+
+    #[derive(Clone, Debug, Default, PartialEq)]
+    struct TestParams {
+        id: i32,
+    }
+
+    #[derive(Debug, Copy, Clone, ReferenceCenter)]
+    #[center(params = TestParams)]
+    struct ParamCenter;
 
     type TestPos = Position<TestCenter, TestFrame, Meter>;
     type TestDisp = Displacement<TestFrame, Meter>;
@@ -509,5 +518,66 @@ mod tests {
         assert!((norm - 1.0).abs() < 1e-12);
         assert!((dir.x() - 0.6).abs() < 1e-12);
         assert!((dir.y() - 0.8).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_position_with_params_and_from_vec3() {
+        let params = TestParams { id: 42 };
+        let pos = Position::<ParamCenter, TestFrame, Meter>::new_with_params(
+            params.clone(),
+            1.0,
+            2.0,
+            3.0,
+        );
+        assert_eq!(pos.center_params(), &params);
+
+        let vec3 = nalgebra::Vector3::new(1.0 * M, 2.0 * M, 3.0 * M);
+        let pos_from_vec =
+            Position::<ParamCenter, TestFrame, Meter>::from_vec3(params.clone(), vec3);
+        assert_eq!(pos_from_vec.center_params(), &params);
+        assert!((pos_from_vec.z().value() - 3.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_position_from_vec3_origin_and_center() {
+        let vec3 = nalgebra::Vector3::new(1.0 * M, 2.0 * M, 3.0 * M);
+        let pos = Position::<TestCenter, TestFrame, Meter>::from_vec3_origin(vec3);
+        assert!((pos.x().value() - 1.0).abs() < 1e-12);
+
+        let origin = Position::<TestCenter, TestFrame, Meter>::CENTER;
+        assert!(origin.distance().value().abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_position_distance_to_and_sub_methods() {
+        let a = TestPos::new(0.0, 0.0, 0.0);
+        let b = TestPos::new(0.0, 3.0, 4.0);
+        let dist = a.distance_to(&b);
+        assert!((dist.value() - 5.0).abs() < 1e-12);
+
+        let disp = Position::<TestCenter, TestFrame, Meter>::sub(&b, &a);
+        assert!((disp.y().value() - 3.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_position_direction_unchecked_and_sub_displacement() {
+        let pos = TestPos::new(0.0, 3.0, 4.0);
+        let dir = pos.direction_unchecked();
+        assert!((dir.y() - 0.6).abs() < 1e-12);
+        assert!((dir.z() - 0.8).abs() < 1e-12);
+
+        let disp = TestDisp::new(1.0, 1.0, 1.0);
+        let moved = pos - disp;
+        assert!((moved.y().value() - 2.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_position_spherical_roundtrip() {
+        let pos = TestPos::new(1.0, 1.0, 1.0);
+        let sph = pos.to_spherical();
+        let back = TestPos::from_spherical(&sph);
+        assert!((back.x().value() - pos.x().value()).abs() < 1e-12);
+        assert!((back.y().value() - pos.y().value()).abs() < 1e-12);
+        assert!((back.z().value() - pos.z().value()).abs() < 1e-12);
     }
 }
