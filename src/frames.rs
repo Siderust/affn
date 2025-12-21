@@ -17,14 +17,7 @@
 //!
 //! ## Creating Custom Frames
 //!
-//! Use the [`new_frame!`] macro to define frame marker types:
-//!
-//! ```rust,ignore
-//! // From external crate:
-//! affn::new_frame!(MyCustomFrame);
-//! ```
-//!
-//! Or implement the trait manually:
+//! Use the derive macro for convenient definitions:
 //!
 //! ```rust
 //! use affn::frames::ReferenceFrame;
@@ -67,27 +60,4 @@ pub trait ReferenceFrame: Copy + Clone + std::fmt::Debug {
     fn frame_name() -> &'static str;
 }
 
-/// Macro to conveniently declare new reference frame types.
-///
-/// This creates a zero-sized struct that implements [`ReferenceFrame`].
-///
-/// # Example
-///
-/// ```rust,ignore
-/// // From external crate:
-/// affn::new_frame!(LocalFrame);
-/// assert_eq!(LocalFrame::frame_name(), "LocalFrame");
-/// ```
-#[macro_export]
-macro_rules! new_frame {
-    ($name:ident) => {
-        #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
-        pub struct $name;
 
-        impl $crate::frames::ReferenceFrame for $name {
-            fn frame_name() -> &'static str {
-                stringify!($name)
-            }
-        }
-    };
-}

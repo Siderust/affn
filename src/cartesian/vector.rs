@@ -340,10 +340,13 @@ pub type Velocity<F, U> = Vector<F, U>;
 #[cfg(test)]
 mod tests {
     use super::*;
+    // Import the derive
+    use crate::DeriveReferenceFrame as ReferenceFrame;
     use qtty::{AstronomicalUnit, Day, Per};
 
     // Define a test frame using the macro
-    crate::new_frame!(TestFrame);
+    #[derive(Debug, Copy, Clone, ReferenceFrame)]
+    struct TestFrame;
 
     type DispAu = Displacement<TestFrame, AstronomicalUnit>;
     type AuPerDay = Per<AstronomicalUnit, Day>;

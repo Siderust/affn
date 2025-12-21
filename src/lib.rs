@@ -29,32 +29,19 @@
 //!
 //! ## Creating Custom Frames and Centers
 //!
-//! Use the provided macros to define domain-specific marker types:
-//!
-//! ```rust,ignore
-//! // From external crate:
-//! affn::new_frame!(MyLocalFrame);
-//! affn::new_center!(MyOrigin);
-//! ```
-//!
-//! Or implement the traits manually:
+//! Use derive macros for convenient definitions:
 //!
 //! ```rust
-//! use affn::frames::ReferenceFrame;
-//! use affn::centers::ReferenceCenter;
+//! use affn::prelude::*;
 //!
-//! #[derive(Debug, Copy, Clone)]
+//! #[derive(Debug, Copy, Clone, ReferenceFrame)]
 //! struct MyFrame;
-//! impl ReferenceFrame for MyFrame {
-//!     fn frame_name() -> &'static str { "MyFrame" }
-//! }
 //!
-//! #[derive(Debug, Copy, Clone)]
-//! struct MyOrigin;
-//! impl ReferenceCenter for MyOrigin {
-//!     type Params = ();
-//!     fn center_name() -> &'static str { "MyOrigin" }
-//! }
+//! #[derive(Debug, Copy, Clone, ReferenceCenter)]
+//! struct MyCenter;
+//!
+//! assert_eq!(MyFrame::frame_name(), "MyFrame");
+//! assert_eq!(MyCenter::center_name(), "MyCenter");
 //! ```
 //!
 //! ## Algebraic Rules
@@ -98,6 +85,9 @@
 //! let displacement: Displacement<WorldFrame, Kilometer> = b - a;
 //! ```
 
+// Allow the crate to refer to itself as `::affn::` for derive macro compatibility
+extern crate self as affn;
+
 // Coordinate type implementations
 pub mod cartesian;
 pub mod spherical;
@@ -109,7 +99,12 @@ pub mod frames;
 // Affine operators (rotation, translation, isometry)
 pub mod ops;
 
-// Re-export commonly used traits at crate level
+// Re-export derive macros from affn-derive  
+// Named with Derive prefix to avoid conflicts with trait names
+pub use affn_derive::{ReferenceCenter as DeriveReferenceCenter, ReferenceFrame as DeriveReferenceFrame};
+
+// Re-export traits at crate level with their original names
+// This is the standard pattern: traits and derives co-exist with same names
 pub use centers::{AffineCenter, NoCenter, ReferenceCenter};
 pub use frames::ReferenceFrame;
 
@@ -119,3 +114,27 @@ pub use ops::{Isometry3, Rotation3, Translation3};
 // Re-export concrete Position/Direction types for standalone usage
 pub use cartesian::{Direction as CartesianDirection, Displacement, Position, Velocity, Vector};
 pub use spherical::{Direction as SphericalDirection, Position as SphericalPosition};
+
+/// Prelude module for convenient imports.
+///
+/// Import everything you need with:
+/// ```rust
+/// use affn::prelude::*;
+/// ```
+pub mod prelude {
+    // Derive macros - aliased to standard names in prelude
+    pub use crate::{DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame};
+
+    // Traits - keep full names to avoid conflicts with derives
+    pub use crate::centers::{AffineCenter, NoCenter, ReferenceCenter as ReferenceCenterTrait};
+    pub use crate::frames::ReferenceFrame as ReferenceFrameTrait;
+
+    // Core coordinate types
+    pub use crate::cartesian::{
+        Direction as CartesianDirection, Displacement, Position, Velocity, Vector,
+    };
+    pub use crate::spherical::{Direction as SphericalDirection, Position as SphericalPosition};
+
+    // Operators
+    pub use crate::ops::{Isometry3, Rotation3, Translation3};
+}

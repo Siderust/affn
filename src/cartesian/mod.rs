@@ -260,11 +260,15 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    // Import the derives
+    use crate::{DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame};
     use qtty::Meter;
 
     // Define test-specific frame and center
-    crate::new_frame!(TestFrame);
-    crate::new_center!(TestCenter);
+    #[derive(Debug, Copy, Clone, ReferenceFrame)]
+    struct TestFrame;
+    #[derive(Debug, Copy, Clone, ReferenceCenter)]
+    struct TestCenter;
 
     type TestPos = Position<TestCenter, TestFrame, Meter>;
 

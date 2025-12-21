@@ -26,15 +26,7 @@
 //!
 //! ## Creating Custom Centers
 //!
-//! Use the [`new_center!`] macro for simple centers with no parameters:
-//!
-//! ```rust,ignore
-//! // From external crate:
-//! affn::new_center!(MyOrigin);
-//! assert_eq!(MyOrigin::center_name(), "MyOrigin");
-//! ```
-//!
-//! Or implement the trait manually:
+//! Use the derive macro for convenient definitions:
 //!
 //! ```rust
 //! use affn::centers::ReferenceCenter;
@@ -89,34 +81,7 @@ pub trait ReferenceCenter: Copy + Clone + std::fmt::Debug {
     fn center_name() -> &'static str;
 }
 
-/// Macro to conveniently declare new reference center types with no parameters.
-///
-/// This creates a zero-sized struct that implements [`ReferenceCenter`] with `Params = ()`.
-///
-/// # Example
-///
-/// ```rust,ignore
-/// // From external crate:
-/// affn::new_center!(WorldOrigin);
-/// assert_eq!(WorldOrigin::center_name(), "WorldOrigin");
-/// ```
-#[macro_export]
-macro_rules! new_center {
-    ($name:ident) => {
-        #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
-        pub struct $name;
 
-        impl $crate::centers::ReferenceCenter for $name {
-            type Params = ();
-
-            fn center_name() -> &'static str {
-                stringify!($name)
-            }
-        }
-
-        impl $crate::centers::AffineCenter for $name {}
-    };
-}
 
 // =============================================================================
 // Unit implementation (for generic code)
@@ -186,9 +151,12 @@ pub trait AffineCenter: ReferenceCenter {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    // Import the derives and traits
+    use crate::{DeriveReferenceCenter as ReferenceCenter};
 
     // Test with a locally defined center
-    new_center!(TestCenter);
+    #[derive(Debug, Copy, Clone, ReferenceCenter)]
+    struct TestCenter;
 
     #[test]
     fn test_center_name() {
