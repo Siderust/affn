@@ -400,10 +400,13 @@ impl<F: ReferenceFrame> std::fmt::Display for Direction<F> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    // Import the derive
+    use crate::DeriveReferenceFrame as ReferenceFrame;
     use qtty::Meter;
 
     // Define test-specific frame
-    crate::new_frame!(TestFrame);
+    #[derive(Debug, Copy, Clone, ReferenceFrame)]
+    struct TestFrame;
 
     #[test]
     fn test_direction_normalization() {

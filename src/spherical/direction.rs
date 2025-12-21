@@ -268,11 +268,15 @@ impl<F: ReferenceFrame> std::fmt::Display for Direction<F> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    // Import the derives and traits
+    use crate::{DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame};
     use qtty::*;
 
     // Define test-specific frame and center
-    crate::new_frame!(TestFrame);
-    crate::new_center!(TestCenter);
+    #[derive(Debug, Copy, Clone, ReferenceFrame)]
+    struct TestFrame;
+    #[derive(Debug, Copy, Clone, ReferenceCenter)]
+    struct TestCenter;
 
     #[test]
     fn creates_valid_spherical_direction() {

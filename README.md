@@ -14,6 +14,37 @@
 - **Type Safety**: Compile-time enforcement of coordinate system compatibility
 - **Zero-Cost Abstractions**: Thin wrappers with no runtime overhead
 - **Mathematical Rigor**: Clear distinction between positions (affine points) and vectors
+- **Derive Macros**: Convenient `#[derive(ReferenceFrame)]` and `#[derive(ReferenceCenter)]` for custom coordinate systems
+
+## Defining Custom Coordinate Systems
+
+Define your own reference frames and centers using derive macros:
+
+```rust
+use affn::prelude::*;
+
+#[derive(Debug, Copy, Clone, ReferenceFrame)]
+struct MyFrame;
+
+#[derive(Debug, Copy, Clone, ReferenceCenter)]
+struct MyCenter;
+```
+
+For parameterized centers (e.g., observer-dependent coordinates):
+
+```rust
+use affn::prelude::*;
+
+#[derive(Clone, Debug, Default, PartialEq)]
+struct ObserverParams {
+    latitude: f64,
+    longitude: f64,
+}
+
+#[derive(Debug, Copy, Clone, ReferenceCenter)]
+#[center(params = ObserverParams)]
+struct Topocentric;
+```
 
 ## Example
 

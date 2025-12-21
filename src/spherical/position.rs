@@ -233,11 +233,15 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    // Import the derives and traits
+    use crate::{DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame};
     use std::f64::consts::SQRT_2;
 
     // Define test-specific frame and center
-    crate::new_frame!(TestFrame);
-    crate::new_center!(TestCenter);
+    #[derive(Debug, Copy, Clone, ReferenceFrame)]
+    struct TestFrame;
+    #[derive(Debug, Copy, Clone, ReferenceCenter)]
+    struct TestCenter;
 
     const EPS: f64 = 1e-6;
 
