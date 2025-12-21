@@ -14,7 +14,7 @@ categories = ["science", "mathematics"]
 name = "affn"
 
 [dependencies]
-affn-derive = { path = "affn-derive" }
+affn-derive = { version = "0.1.0", path = "affn-derive" }
 nalgebra = "0.34.1"
 qtty = "0.2.0"
 

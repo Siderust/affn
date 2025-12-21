@@ -16,18 +16,20 @@
 //! - [`Translation3`]: A translation vector for pure center shifts.
 //! - [`Isometry3`]: Combines rotation and translation for rigid body transforms.
 //!
-//! ## Application Semantics
+//! ## What These Types Do (and Don't Do)
 //!
-//! | Operator       | Applies To      | Result Type             |
-//! |----------------|-----------------|-------------------------|
-//! | `Rotation3`    | `Direction<F>`  | `Direction<F2>`         |
-//! | `Rotation3`    | `Vector<F,U>`   | `Vector<F2,U>`          |
-//! | `Rotation3`    | `Position<C,F,U>` | `Position<C,F2,U>`    |
-//! | `Translation3` | `Position<C,F,U>` | `Position<C2,F,U>`    |
-//! | `Isometry3`    | `Position<C,F,U>` | `Position<C2,F2,U>`   |
+//! These operators are **untyped**: they work on raw `f64` vectors (`[f64; 3]`) and
+//! `XYZ<f64>`. They intentionally do **not**:
 //!
-//! **Note**: Translations do not apply to `Direction` or `Vector` since these are
-//! translation-invariant (free vectors).
+//! - track units (meters vs kilometers),
+//! - pick reference frames/centers, or
+//! - define the domain-specific meaning of a rotation/translation.
+//!
+//! Downstream crates typically wrap these operators with their own semantics and then
+//! apply them to `affn` coordinate types.
+//!
+//! **Note**: translations apply to affine points (positions), not to free vectors
+//! like directions.
 
 use crate::cartesian::xyz::XYZ;
 
