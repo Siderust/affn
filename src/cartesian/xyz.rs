@@ -425,4 +425,60 @@ mod tests {
         let into_vec3 = xyz.into_vec3();
         assert!((into_vec3[1] - 2.0).abs() < f64::EPSILON);
     }
+
+    #[test]
+    fn test_xyz_f64_helpers_and_traits() {
+        let a = XYZ::new(1.0, -2.0, 3.5);
+        let b = XYZ::new(-4.0, 5.0, 6.0);
+
+        let mag_sq = a.magnitude_squared();
+        assert!((mag_sq - (1.0 + 4.0 + 12.25)).abs() < f64::EPSILON);
+
+        let sum = XYZ::<f64>::add(&a, &b);
+        assert!((sum.x() + 3.0).abs() < f64::EPSILON);
+        assert!((sum.y() - 3.0).abs() < f64::EPSILON);
+        assert!((sum.z() - 9.5).abs() < f64::EPSILON);
+
+        let diff = XYZ::<f64>::sub(&a, &b);
+        assert!((diff.x() - 5.0).abs() < f64::EPSILON);
+        assert!((diff.y() + 7.0).abs() < f64::EPSILON);
+        assert!((diff.z() - -2.5).abs() < f64::EPSILON);
+
+        let (x, y, z) = a.components();
+        assert!((x - 1.0).abs() < f64::EPSILON);
+        assert!((y + 2.0).abs() < f64::EPSILON);
+        assert!((z - 3.5).abs() < f64::EPSILON);
+
+        let default_xyz: XYZ<f64> = Default::default();
+        assert!((default_xyz.x()).abs() < f64::EPSILON);
+        assert!((default_xyz.y()).abs() < f64::EPSILON);
+        assert!((default_xyz.z()).abs() < f64::EPSILON);
+
+        let display = a.to_string();
+        assert!(display.contains("(1.000000, -2.000000, 3.500000)"));
+
+        let neg = -a;
+        assert!((neg.x() + 1.0).abs() < f64::EPSILON);
+        assert!((neg.y() - 2.0).abs() < f64::EPSILON);
+        assert!((neg.z() + 3.5).abs() < f64::EPSILON);
+
+        let scaled = a * 2.0;
+        assert!((scaled.x() - 2.0).abs() < f64::EPSILON);
+        let scaled2 = 2.0 * a;
+        assert!((scaled2.y() + 4.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_xyz_quantity_helpers() {
+        let a = XYZ::new(1.0 * M, 2.0 * M, 3.0 * M);
+        let b = XYZ::new(-1.0 * M, 0.5 * M, 4.0 * M);
+
+        let sum = XYZ::<Quantity<Meter>>::add(&a, &b);
+        assert!((sum.x().value()).abs() < f64::EPSILON);
+        assert!((sum.y().value() - 2.5).abs() < f64::EPSILON);
+
+        let diff = XYZ::<Quantity<Meter>>::sub(&a, &b);
+        assert!((diff.x().value() - 2.0).abs() < f64::EPSILON);
+        assert!((diff.z().value() - -1.0).abs() < f64::EPSILON);
+    }
 }
