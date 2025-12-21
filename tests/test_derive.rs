@@ -49,6 +49,7 @@ struct MyParams {
 #[center(params = MyParams)]
 struct ParameterizedCenter;
 
+#[allow(dead_code)]
 #[derive(Debug, Copy, Clone, ReferenceCenter)]
 #[center(affine = false)]
 struct NonAffineCenter;

@@ -254,6 +254,7 @@ impl std::ops::Mul for Rotation3 {
     #[inline]
     fn mul(self, rhs: Self) -> Self::Output {
         let mut m = [[0.0; 3]; 3];
+        #[allow(clippy::needless_range_loop)]
         for i in 0..3 {
             for j in 0..3 {
                 m[i][j] = self.m[i][0] * rhs.m[0][j]

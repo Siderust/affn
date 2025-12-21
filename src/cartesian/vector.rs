@@ -206,7 +206,7 @@ impl<F: ReferenceFrame, U: Unit> Vector<F, U> {
     /// Returns the negation of this vector.
     #[inline]
     pub fn negate(&self) -> Self {
-        Self::from_xyz(-self.storage.xyz.clone())
+        Self::from_xyz(-self.storage.xyz)
     }
 }
 
