@@ -129,6 +129,28 @@ Run the included examples:
 - `cargo run --example parameterized_center`
 - `cargo run --example spherical_roundtrip`
 
+## Serde (optional)
+
+`affn` supports `serde` serialization for its core coordinate types behind an opt-in feature flag.
+
+Enable it in your `Cargo.toml`:
+
+```toml
+[dependencies]
+affn = { version = "0.2", features = ["serde"] }
+qtty = "0.2"
+```
+
+This feature also forwards serialization support to dependencies where needed (e.g. `qtty/serde`, and nalgebra's `serde-serialize`).
+
+To run the serde example:
+
+- `cargo run --example serde_roundtrip --features serde`
+
+Or to run tests including serde round-trips:
+
+- `cargo test --features serde`
+
 ## License
 
 Licensed under `AGPL-3.0-only`. See `LICENSE`.

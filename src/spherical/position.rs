@@ -48,6 +48,9 @@ use qtty::*;
 
 use std::marker::PhantomData;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// A spherical **position** (center + frame + distance).
 ///
 /// This is the fundamental spherical coordinate type.
@@ -64,6 +67,11 @@ use std::marker::PhantomData;
 /// `U` must be a [`LengthUnit`], not just any `Unit`. This ensures that spherical
 /// positions always represent physical locations with a meaningful distance.
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(bound(
+    serialize = "C::Params: Serialize, U: LengthUnit",
+    deserialize = "C::Params: Deserialize<'de>, U: LengthUnit"
+)))]
 pub struct Position<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: LengthUnit> {
     /// Polar angle (θ) - latitude, declination, or altitude, in degrees.
     pub polar: Degrees,
@@ -73,6 +81,7 @@ pub struct Position<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: L
     pub distance: Quantity<U>,
 
     center_params: C::Params,
+    #[cfg_attr(feature = "serde", serde(skip))]
     _frame: PhantomData<F>,
 }
 

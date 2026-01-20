@@ -49,6 +49,9 @@ use qtty::{Degrees, LengthUnit, Quantity};
 
 use std::marker::PhantomData;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 // =============================================================================
 // Angle Canonicalization Helpers
 // =============================================================================
@@ -88,6 +91,8 @@ fn canonicalize_polar(polar: Degrees) -> Degrees {
 /// - `polar` is in `[-90°, +90°]`
 /// - `azimuth` is in `[0°, 360°)`
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(bound(serialize = "F: ReferenceFrame", deserialize = "F: ReferenceFrame")))]
 pub struct Direction<F: ReferenceFrame> {
     /// Polar angle (θ) - latitude, declination, or altitude, in degrees.
     /// Range: `[-90°, +90°]`
@@ -95,6 +100,7 @@ pub struct Direction<F: ReferenceFrame> {
     /// Azimuthal angle (φ) - longitude, right ascension, or azimuth, in degrees.
     /// Range: `[0°, 360°)`
     pub azimuth: Degrees,
+    #[cfg_attr(feature = "serde", serde(skip))]
     _frame: PhantomData<F>,
 }
 

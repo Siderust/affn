@@ -72,6 +72,9 @@ use qtty::{LengthUnit, Quantity};
 use std::marker::PhantomData;
 use std::ops::{Add, Sub};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// An affine point in 3D Cartesian coordinates.
 ///
 /// Positions represent locations in space relative to a reference center (origin).
@@ -87,9 +90,15 @@ use std::ops::{Add, Sub};
 /// Some centers (like `Topocentric`) require runtime parameters stored in `C::Params`.
 /// For most centers, `Params = ()` (zero overhead).
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(bound(
+    serialize = "C::Params: Serialize, U: LengthUnit",
+    deserialize = "C::Params: Deserialize<'de>, U: LengthUnit"
+)))]
 pub struct Position<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> {
     xyz: XYZ<Quantity<U>>,
     center_params: C::Params,
+    #[cfg_attr(feature = "serde", serde(skip))]
     _frame: PhantomData<F>,
 }
 
