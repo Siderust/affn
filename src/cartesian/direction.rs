@@ -63,6 +63,9 @@ use qtty::{LengthUnit, Quantity};
 use std::marker::PhantomData;
 use std::ops::Mul;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// A unit vector representing orientation in 3D space.
 ///
 /// Directions are frame-dependent but center-independent (free vectors).
@@ -81,6 +84,8 @@ use std::ops::Mul;
 /// This type is `#[repr(transparent)]` over `XYZ<f64>`, ensuring no runtime
 /// overhead compared to raw `Vector3<f64>`.
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(bound(serialize = "F: ReferenceFrame", deserialize = "F: ReferenceFrame")))]
 #[repr(transparent)]
 pub struct Direction<F: ReferenceFrame> {
     storage: DirectionStorage<F>,
@@ -88,6 +93,8 @@ pub struct Direction<F: ReferenceFrame> {
 
 /// Internal storage combining XYZ and frame marker.
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(bound(serialize = "F: ReferenceFrame", deserialize = "F: ReferenceFrame")))]
 struct DirectionStorage<F: ReferenceFrame> {
     xyz: XYZ<f64>,
     _frame: PhantomData<F>,

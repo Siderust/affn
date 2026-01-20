@@ -22,6 +22,9 @@
 use nalgebra::Vector3;
 use std::ops::{Add, Mul, Neg, Sub};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// Internal shared storage for 3D Cartesian coordinates.
 ///
 /// This is a thin wrapper around `nalgebra::Vector3<T>` that provides
@@ -30,6 +33,11 @@ use std::ops::{Add, Mul, Neg, Sub};
 /// # Type Parameter
 /// - `T`: The component type (e.g., `f64`, `Quantity<U>`)
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(bound(
+    serialize = "T: Serialize + Clone + PartialEq + std::fmt::Debug + 'static",
+    deserialize = "T: Deserialize<'de> + Clone + PartialEq + std::fmt::Debug + 'static"
+)))]
 #[repr(transparent)]
 pub struct XYZ<T>(pub(crate) Vector3<T>);
 

@@ -53,6 +53,9 @@ use qtty::{LengthUnit, Quantity, Unit};
 use std::marker::PhantomData;
 use std::ops::{Add, Neg, Sub};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// A free vector in 3D Cartesian coordinates.
 ///
 /// Free vectors are frame-dependent but center-independent. They represent
@@ -67,6 +70,8 @@ use std::ops::{Add, Neg, Sub};
 /// This type uses `#[repr(transparent)]` over the internal storage,
 /// ensuring no runtime overhead compared to raw `Vector3<Quantity<U>>`.
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(bound(serialize = "U: Unit", deserialize = "U: Unit")))]
 #[repr(transparent)]
 pub struct Vector<F: ReferenceFrame, U: Unit> {
     storage: VectorStorage<F, U>,
@@ -74,8 +79,11 @@ pub struct Vector<F: ReferenceFrame, U: Unit> {
 
 /// Internal storage for Vector with PhantomData marker.
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(bound(serialize = "U: Unit", deserialize = "U: Unit")))]
 struct VectorStorage<F: ReferenceFrame, U: Unit> {
     xyz: XYZ<Quantity<U>>,
+    #[cfg_attr(feature = "serde", serde(skip))]
     _frame: PhantomData<F>,
 }
 
