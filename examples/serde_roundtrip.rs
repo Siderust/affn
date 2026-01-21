@@ -10,7 +10,7 @@ fn main() {
 fn main() {
     use affn::cartesian::{Direction as CartesianDirection, Position as CartesianPosition, Vector};
     use affn::centers::ReferenceCenter;
-    use affn::frames::ReferenceFrame;
+    use affn::frames::{ReferenceFrame, SphericalNaming};
     use affn::spherical::{Direction as SphericalDirection, Position as SphericalPosition};
     use qtty::*;
 
@@ -19,6 +19,14 @@ fn main() {
     impl ReferenceFrame for World {
         fn frame_name() -> &'static str {
             "World"
+        }
+    }
+    impl SphericalNaming for World {
+        fn polar_name() -> &'static str {
+            "polar"
+        }
+        fn azimuth_name() -> &'static str {
+            "azimuth"
         }
     }
 

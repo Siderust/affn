@@ -7,7 +7,7 @@
 
 use affn::cartesian::{Direction as CartesianDirection, Displacement, Position, Vector};
 use affn::centers::ReferenceCenter;
-use affn::frames::ReferenceFrame;
+use affn::frames::{ReferenceFrame, SphericalNaming};
 use affn::spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 use qtty::*;
 use serde::{Deserialize, Serialize};
@@ -22,6 +22,16 @@ struct TestFrame;
 impl ReferenceFrame for TestFrame {
     fn frame_name() -> &'static str {
         "TestFrame"
+    }
+}
+
+// Use default naming (polar/azimuth) for test frame
+impl SphericalNaming for TestFrame {
+    fn polar_name() -> &'static str {
+        "polar"
+    }
+    fn azimuth_name() -> &'static str {
+        "azimuth"
     }
 }
 

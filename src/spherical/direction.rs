@@ -44,7 +44,7 @@
 //! ```
 
 use crate::centers::ReferenceCenter;
-use crate::frames::ReferenceFrame;
+use crate::frames::{ReferenceFrame, SphericalNaming};
 use qtty::{Degrees, LengthUnit, Quantity};
 
 use std::marker::PhantomData;
@@ -91,8 +91,6 @@ fn canonicalize_polar(polar: Degrees) -> Degrees {
 /// - `polar` is in `[-90°, +90°]`
 /// - `azimuth` is in `[0°, 360°)`
 #[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(bound(serialize = "F: ReferenceFrame", deserialize = "F: ReferenceFrame")))]
 pub struct Direction<F: ReferenceFrame> {
     /// Polar angle (θ) - latitude, declination, or altitude, in degrees.
     /// Range: `[-90°, +90°]`
@@ -100,7 +98,6 @@ pub struct Direction<F: ReferenceFrame> {
     /// Azimuthal angle (φ) - longitude, right ascension, or azimuth, in degrees.
     /// Range: `[0°, 360°)`
     pub azimuth: Degrees,
-    #[cfg_attr(feature = "serde", serde(skip))]
     _frame: PhantomData<F>,
 }
 
@@ -268,6 +265,92 @@ impl<F: ReferenceFrame> std::fmt::Display for Direction<F> {
             self.polar,
             self.azimuth
         )
+    }
+}
+
+// =============================================================================
+// Serde Implementation with Frame-Specific Field Names
+// =============================================================================
+
+#[cfg(feature = "serde")]
+mod serde_impl {
+    use super::*;
+    use serde::de::{self, MapAccess, Visitor};
+    use serde::ser::SerializeStruct;
+    use serde::{Deserializer, Serializer};
+    use std::fmt;
+
+    impl<F: SphericalNaming> Serialize for Direction<F> {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            let polar_name = F::polar_name();
+            let azimuth_name = F::azimuth_name();
+
+            let mut state = serializer.serialize_struct("Direction", 2)?;
+            state.serialize_field(polar_name, &self.polar)?;
+            state.serialize_field(azimuth_name, &self.azimuth)?;
+            state.end()
+        }
+    }
+
+    impl<'de, F: SphericalNaming> Deserialize<'de> for Direction<F> {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            struct DirectionVisitor<F>(PhantomData<F>);
+
+            impl<'de, F: SphericalNaming> Visitor<'de> for DirectionVisitor<F> {
+                type Value = Direction<F>;
+
+                fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                    write!(
+                        formatter,
+                        "a spherical direction with '{}' and '{}' fields",
+                        F::polar_name(),
+                        F::azimuth_name()
+                    )
+                }
+
+                fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
+                where
+                    M: MapAccess<'de>,
+                {
+                    let polar_name = F::polar_name();
+                    let azimuth_name = F::azimuth_name();
+
+                    let mut polar: Option<Degrees> = None;
+                    let mut azimuth: Option<Degrees> = None;
+
+                    while let Some(key) = map.next_key::<String>()? {
+                        if key == polar_name {
+                            if polar.is_some() {
+                                return Err(de::Error::duplicate_field(polar_name));
+                            }
+                            polar = Some(map.next_value()?);
+                        } else if key == azimuth_name {
+                            if azimuth.is_some() {
+                                return Err(de::Error::duplicate_field(azimuth_name));
+                            }
+                            azimuth = Some(map.next_value()?);
+                        } else {
+                            // Skip unknown fields
+                            let _ = map.next_value::<de::IgnoredAny>()?;
+                        }
+                    }
+
+                    let polar = polar.ok_or_else(|| de::Error::missing_field(polar_name))?;
+                    let azimuth =
+                        azimuth.ok_or_else(|| de::Error::missing_field(azimuth_name))?;
+
+                    Ok(Direction::new_raw(polar, azimuth))
+                }
+            }
+
+            deserializer.deserialize_map(DirectionVisitor(PhantomData))
+        }
     }
 }
 
