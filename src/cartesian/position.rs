@@ -75,6 +75,11 @@ use std::ops::{Add, Sub};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "serde")]
+fn is_zero_sized<T>(_: &T) -> bool {
+    std::mem::size_of::<T>() == 0
+}
+
 /// An affine point in 3D Cartesian coordinates.
 ///
 /// Positions represent locations in space relative to a reference center (origin).
@@ -97,6 +102,7 @@ use serde::{Deserialize, Serialize};
 )))]
 pub struct Position<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> {
     xyz: XYZ<Quantity<U>>,
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_zero_sized"))]
     center_params: C::Params,
     #[cfg_attr(feature = "serde", serde(skip))]
     _frame: PhantomData<F>,

@@ -74,6 +74,7 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde", serde(bound(serialize = "U: Unit", deserialize = "U: Unit")))]
 #[repr(transparent)]
 pub struct Vector<F: ReferenceFrame, U: Unit> {
+    #[cfg_attr(feature = "serde", serde(flatten))]
     storage: VectorStorage<F, U>,
 }
 

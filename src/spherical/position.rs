@@ -51,6 +51,11 @@ use std::marker::PhantomData;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "serde")]
+fn is_zero_sized<T>(_: &T) -> bool {
+    std::mem::size_of::<T>() == 0
+}
+
 /// A spherical **position** (center + frame + distance).
 ///
 /// This is the fundamental spherical coordinate type.
@@ -80,6 +85,7 @@ pub struct Position<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: L
     /// Radial distance from the origin.
     pub distance: Quantity<U>,
 
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_zero_sized"))]
     center_params: C::Params,
     #[cfg_attr(feature = "serde", serde(skip))]
     _frame: PhantomData<F>,
