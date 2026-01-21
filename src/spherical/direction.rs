@@ -44,7 +44,7 @@
 //! ```
 
 use crate::centers::ReferenceCenter;
-use crate::frames::{ReferenceFrame, SphericalNaming};
+use crate::frames::ReferenceFrame;
 use qtty::{Degrees, LengthUnit, Quantity};
 
 use std::marker::PhantomData;
@@ -279,6 +279,8 @@ mod serde_impl {
     use serde::ser::SerializeStruct;
     use serde::{Deserializer, Serializer};
     use std::fmt;
+    use crate::frames::SphericalNaming;
+
 
     impl<F: SphericalNaming> Serialize for Direction<F> {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
