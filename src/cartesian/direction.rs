@@ -88,6 +88,7 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde", serde(bound(serialize = "F: ReferenceFrame", deserialize = "F: ReferenceFrame")))]
 #[repr(transparent)]
 pub struct Direction<F: ReferenceFrame> {
+    #[cfg_attr(feature = "serde", serde(flatten))]
     storage: DirectionStorage<F>,
 }
 
@@ -97,6 +98,7 @@ pub struct Direction<F: ReferenceFrame> {
 #[cfg_attr(feature = "serde", serde(bound(serialize = "F: ReferenceFrame", deserialize = "F: ReferenceFrame")))]
 struct DirectionStorage<F: ReferenceFrame> {
     xyz: XYZ<f64>,
+    #[cfg_attr(feature = "serde", serde(skip))]
     _frame: PhantomData<F>,
 }
 
