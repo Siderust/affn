@@ -34,7 +34,7 @@ where
         let field_count = if has_params { 2 } else { 1 };
 
         let mut state = serializer.serialize_struct("Position", field_count)?;
-        state.serialize_field("xyz", self.xyz())?;
+        state.serialize_field("xyz", &self.xyz)?;
 
         // Only serialize center_params if it's not zero-sized
         if has_params {
