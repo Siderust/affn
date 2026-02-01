@@ -72,13 +72,10 @@ use qtty::{LengthUnit, Quantity};
 use std::marker::PhantomData;
 use std::ops::{Add, Sub};
 
+// Serde implementations in separate module
 #[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
-#[cfg(feature = "serde")]
-fn is_zero_sized<T>(_: &T) -> bool {
-    std::mem::size_of::<T>() == 0
-}
+#[path = "position_serde.rs"]
+mod position_serde;
 
 /// An affine point in 3D Cartesian coordinates.
 ///
@@ -95,22 +92,9 @@ fn is_zero_sized<T>(_: &T) -> bool {
 /// Some centers (like `Topocentric`) require runtime parameters stored in `C::Params`.
 /// For most centers, `Params = ()` (zero overhead).
 #[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(
-    feature = "serde",
-    serde(bound(
-        serialize = "C::Params: Serialize, U: LengthUnit",
-        deserialize = "C::Params: Deserialize<'de>, U: LengthUnit"
-    ))
-)]
 pub struct Position<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> {
     xyz: XYZ<Quantity<U>>,
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, skip_serializing_if = "is_zero_sized")
-    )]
     center_params: C::Params,
-    #[cfg_attr(feature = "serde", serde(skip))]
     _frame: PhantomData<F>,
 }
 
