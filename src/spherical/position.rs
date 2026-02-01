@@ -264,13 +264,14 @@ mod serde_impl {
         {
             let polar_name = F::polar_name();
             let azimuth_name = F::azimuth_name();
+            let distance_name = F::distance_name();
             let has_params = !is_zero_sized::<C::Params>();
 
             let field_count = if has_params { 4 } else { 3 };
             let mut state = serializer.serialize_struct("Position", field_count)?;
             state.serialize_field(polar_name, &self.polar)?;
             state.serialize_field(azimuth_name, &self.azimuth)?;
-            state.serialize_field("distance", &self.distance)?;
+            state.serialize_field(distance_name, &self.distance)?;
             if has_params {
                 state.serialize_field("center_params", &self.center_params)?;
             }
@@ -303,9 +304,10 @@ mod serde_impl {
                 fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                     write!(
                         formatter,
-                        "a spherical position with '{}', '{}', and 'distance' fields",
+                        "a spherical position with '{}', '{}', and '{}' fields",
                         F::polar_name(),
-                        F::azimuth_name()
+                        F::azimuth_name(),
+                        F::distance_name()
                     )
                 }
 
@@ -315,6 +317,7 @@ mod serde_impl {
                 {
                     let polar_name = F::polar_name();
                     let azimuth_name = F::azimuth_name();
+                    let distance_name = F::distance_name();
 
                     let mut polar: Option<Degrees> = None;
                     let mut azimuth: Option<Degrees> = None;
@@ -332,9 +335,10 @@ mod serde_impl {
                                 return Err(de::Error::duplicate_field(azimuth_name));
                             }
                             azimuth = Some(map.next_value()?);
-                        } else if key == "distance" {
+                        } else if key == distance_name || key == "distance" {
+                            // Accept both the custom distance name and "distance" for backward compatibility
                             if distance.is_some() {
-                                return Err(de::Error::duplicate_field("distance"));
+                                return Err(de::Error::duplicate_field("distance field"));
                             }
                             distance = Some(map.next_value()?);
                         } else if key == "center_params" {
@@ -352,7 +356,7 @@ mod serde_impl {
                     let azimuth =
                         azimuth.ok_or_else(|| de::Error::missing_field(azimuth_name))?;
                     let distance =
-                        distance.ok_or_else(|| de::Error::missing_field("distance"))?;
+                        distance.ok_or_else(|| de::Error::missing_field(distance_name))?;
 
                     // Use default for center_params if not provided and ZST
                     let center_params = center_params.unwrap_or_default();
