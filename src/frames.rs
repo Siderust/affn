@@ -59,3 +59,82 @@ pub trait ReferenceFrame: Copy + Clone + std::fmt::Debug {
     /// Returns the canonical name of this reference frame.
     fn frame_name() -> &'static str;
 }
+
+// =============================================================================
+// Spherical Coordinate Naming Convention
+// =============================================================================
+
+/// Provides frame-specific names for spherical coordinate components.
+///
+/// This trait is used by serde implementations to serialize/deserialize
+/// spherical coordinates with astronomically-appropriate field names.
+///
+/// # Default Implementation
+///
+/// The default implementation uses generic mathematical names:
+/// - Polar angle: `"polar"`
+/// - Azimuthal angle: `"azimuth"`
+///
+/// # Frame-Specific Names
+///
+/// Implement this trait on your frame types to use domain-specific names:
+///
+/// | Frame         | Polar Name | Azimuth Name |
+/// |---------------|------------|--------------|
+/// | Equatorial    | `"dec"`    | `"ra"`       |
+/// | ICRS          | `"dec"`    | `"ra"`       |
+/// | Ecliptic      | `"lat"`    | `"lon"`      |
+/// | Horizontal    | `"alt"`    | `"az"`       |
+/// | Geographic    | `"lat"`    | `"lon"`      |
+/// | Galactic      | `"b"`      | `"l"`        |
+/// | Supergalactic | `"sgb"`    | `"sgl"`      |
+///
+/// # Example
+///
+/// ```rust
+/// use affn::frames::{ReferenceFrame, SphericalNaming};
+///
+/// #[derive(Debug, Copy, Clone)]
+/// struct Ecliptic;
+///
+/// impl ReferenceFrame for Ecliptic {
+///     fn frame_name() -> &'static str { "Ecliptic" }
+/// }
+///
+/// impl SphericalNaming for Ecliptic {
+///     fn polar_name() -> &'static str { "lat" }
+///     fn azimuth_name() -> &'static str { "lon" }
+/// }
+/// ```
+///
+/// Types that don't implement this trait can use the default names via the
+/// [`DefaultSphericalNaming`] helper.
+pub trait SphericalNaming: ReferenceFrame {
+    /// Returns the name for the polar/elevation angle (e.g., "dec", "lat", "alt", "b").
+    fn polar_name() -> &'static str;
+
+    /// Returns the name for the azimuthal angle (e.g., "ra", "lon", "az", "l").
+    fn azimuth_name() -> &'static str;
+
+    /// Returns the name for the radial distance (e.g., "distance", "altitude", "radius").
+    ///
+    /// Defaults to "distance" if not overridden.
+    fn distance_name() -> &'static str {
+        DefaultSphericalNaming::DISTANCE
+    }
+}
+
+/// Helper type that provides default spherical naming (polar/azimuth).
+///
+/// Use this when you need spherical naming for a frame that doesn't implement
+/// `SphericalNaming` directly.
+pub struct DefaultSphericalNaming;
+
+impl DefaultSphericalNaming {
+    /// Default polar angle name.
+    pub const POLAR: &'static str = "polar";
+    /// Default azimuthal angle name.
+    pub const AZIMUTH: &'static str = "azimuth";
+    /// Default distance name.
+    pub const DISTANCE: &'static str = "distance";
+}

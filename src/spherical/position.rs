@@ -48,6 +48,11 @@ use qtty::*;
 
 use std::marker::PhantomData;
 
+// Serde implementations in separate module
+#[cfg(feature = "serde")]
+#[path = "position_serde.rs"]
+mod position_serde;
+
 /// A spherical **position** (center + frame + distance).
 ///
 /// This is the fundamental spherical coordinate type.
@@ -229,6 +234,10 @@ where
         )
     }
 }
+
+// =============================================================================
+// Serde Implementation with Frame-Specific Field Names
+// =============================================================================
 
 #[cfg(test)]
 mod tests {

@@ -72,6 +72,11 @@ use qtty::{LengthUnit, Quantity};
 use std::marker::PhantomData;
 use std::ops::{Add, Sub};
 
+// Serde implementations in separate module
+#[cfg(feature = "serde")]
+#[path = "position_serde.rs"]
+mod position_serde;
+
 /// An affine point in 3D Cartesian coordinates.
 ///
 /// Positions represent locations in space relative to a reference center (origin).

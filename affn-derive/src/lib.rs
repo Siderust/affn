@@ -22,6 +22,8 @@
 //! ### `#[derive(ReferenceFrame)]`
 //!
 //! - `#[frame(name = "CustomName")]` - Override the frame name (defaults to struct name)
+//! - `#[frame(polar = "dec", azimuth = "ra")]` - Also implement `SphericalNaming` with custom names
+//! - `#[frame(distance = "altitude")]` - Override distance name (defaults to "distance")
 //!
 //! ### `#[derive(ReferenceCenter)]`
 //!
@@ -60,6 +62,29 @@ use syn::{parse_macro_input, DeriveInput, Expr, Lit, Meta, Type};
 ///
 /// assert_eq!(ICRS::frame_name(), "International Celestial Reference System");
 /// ```
+///
+/// ## SphericalNaming
+///
+/// When `polar` and `azimuth` attributes are provided, the macro also implements
+/// [`SphericalNaming`](affn::frames::SphericalNaming):
+///
+/// ```rust,ignore
+/// #[derive(Debug, Copy, Clone, ReferenceFrame)]
+/// #[frame(polar = "dec", azimuth = "ra")]
+/// struct ICRS;
+///
+/// assert_eq!(ICRS::polar_name(), "dec");
+/// assert_eq!(ICRS::azimuth_name(), "ra");
+/// assert_eq!(ICRS::distance_name(), "distance"); // default
+/// ```
+///
+/// With custom distance name:
+///
+/// ```rust,ignore
+/// #[derive(Debug, Copy, Clone, ReferenceFrame)]
+/// #[frame(polar = "lat", azimuth = "lon", distance = "altitude")]
+/// struct ITRF;
+/// ```
 #[proc_macro_derive(ReferenceFrame, attributes(frame))]
 pub fn derive_reference_frame(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -69,18 +94,64 @@ pub fn derive_reference_frame(input: TokenStream) -> TokenStream {
     }
 }
 
+/// Attributes parsed from `#[frame(...)]`.
+#[derive(Default)]
+struct FrameAttributes {
+    /// Custom frame name (defaults to struct name).
+    name: Option<String>,
+    /// Polar angle name for SphericalNaming (e.g., "dec", "lat", "alt").
+    polar: Option<String>,
+    /// Azimuthal angle name for SphericalNaming (e.g., "ra", "lon", "az").
+    azimuth: Option<String>,
+    /// Distance name for SphericalNaming (defaults to "distance").
+    distance: Option<String>,
+}
+
 fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<TokenStream2> {
     let name = &input.ident;
 
-    // Parse #[frame(name = "...")] attribute if present
-    let frame_name = parse_frame_attribute(&input)?;
+    // Parse #[frame(...)] attributes
+    let attrs = parse_frame_attributes(&input)?;
 
-    let name_expr = match frame_name {
+    let name_expr = match &attrs.name {
         Some(custom_name) => quote! { #custom_name },
         None => {
             let name_str = name.to_string();
             quote! { #name_str }
         }
+    };
+
+    // Generate SphericalNaming impl if both polar and azimuth are provided
+    let spherical_impl = match (&attrs.polar, &attrs.azimuth) {
+        (Some(polar), Some(azimuth)) => {
+            let distance = attrs.distance.as_deref().unwrap_or("distance");
+            quote! {
+                impl ::affn::frames::SphericalNaming for #name {
+                    fn polar_name() -> &'static str {
+                        #polar
+                    }
+                    fn azimuth_name() -> &'static str {
+                        #azimuth
+                    }
+                    fn distance_name() -> &'static str {
+                        #distance
+                    }
+                }
+            }
+        }
+        (Some(_), None) => {
+            return Err(syn::Error::new_spanned(
+                &input.ident,
+                "`polar` attribute requires `azimuth` to also be specified",
+            ));
+        }
+        (None, Some(_)) => {
+            return Err(syn::Error::new_spanned(
+                &input.ident,
+                "`azimuth` attribute requires `polar` to also be specified",
+            ));
+        }
+        (None, None) => quote! {},
     };
 
     let expanded = quote! {
@@ -89,12 +160,16 @@ fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<TokenStream2> 
                 #name_expr
             }
         }
+
+        #spherical_impl
     };
 
     Ok(expanded)
 }
 
-fn parse_frame_attribute(input: &DeriveInput) -> syn::Result<Option<String>> {
+fn parse_frame_attributes(input: &DeriveInput) -> syn::Result<FrameAttributes> {
+    let mut attrs = FrameAttributes::default();
+
     for attr in &input.attrs {
         if attr.path().is_ident("frame") {
             let nested = attr.parse_args_with(
@@ -103,22 +178,33 @@ fn parse_frame_attribute(input: &DeriveInput) -> syn::Result<Option<String>> {
 
             for meta in nested {
                 if let Meta::NameValue(nv) = meta {
+                    let value_str = extract_string_literal(&nv.value)?;
+
                     if nv.path.is_ident("name") {
-                        if let Expr::Lit(expr_lit) = &nv.value {
-                            if let Lit::Str(lit_str) = &expr_lit.lit {
-                                return Ok(Some(lit_str.value()));
-                            }
-                        }
-                        return Err(syn::Error::new_spanned(
-                            &nv.value,
-                            "expected string literal for `name`",
-                        ));
+                        attrs.name = Some(value_str);
+                    } else if nv.path.is_ident("polar") {
+                        attrs.polar = Some(value_str);
+                    } else if nv.path.is_ident("azimuth") {
+                        attrs.azimuth = Some(value_str);
+                    } else if nv.path.is_ident("distance") {
+                        attrs.distance = Some(value_str);
                     }
                 }
             }
         }
     }
-    Ok(None)
+
+    Ok(attrs)
+}
+
+/// Extract a string literal from an expression, or return an error.
+fn extract_string_literal(expr: &Expr) -> syn::Result<String> {
+    if let Expr::Lit(expr_lit) = expr {
+        if let Lit::Str(lit_str) = &expr_lit.lit {
+            return Ok(lit_str.value());
+        }
+    }
+    Err(syn::Error::new_spanned(expr, "expected string literal"))
 }
 
 // =============================================================================
