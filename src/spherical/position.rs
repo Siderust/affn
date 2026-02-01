@@ -335,10 +335,9 @@ mod serde_impl {
                                 return Err(de::Error::duplicate_field(azimuth_name));
                             }
                             azimuth = Some(map.next_value()?);
-                        } else if key == distance_name || key == "distance" {
-                            // Accept both the custom distance name and "distance" for backward compatibility
+                        } else if key == distance_name {
                             if distance.is_some() {
-                                return Err(de::Error::duplicate_field("distance field"));
+                                return Err(de::Error::duplicate_field(distance_name));
                             }
                             distance = Some(map.next_value()?);
                         } else if key == "center_params" {
