@@ -71,7 +71,10 @@ use serde::{Deserialize, Serialize};
 /// ensuring no runtime overhead compared to raw `Vector3<Quantity<U>>`.
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(bound(serialize = "U: Unit", deserialize = "U: Unit")))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(serialize = "U: Unit", deserialize = "U: Unit"))
+)]
 #[repr(transparent)]
 pub struct Vector<F: ReferenceFrame, U: Unit> {
     #[cfg_attr(feature = "serde", serde(flatten))]
@@ -81,7 +84,10 @@ pub struct Vector<F: ReferenceFrame, U: Unit> {
 /// Internal storage for Vector with PhantomData marker.
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(bound(serialize = "U: Unit", deserialize = "U: Unit")))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(serialize = "U: Unit", deserialize = "U: Unit"))
+)]
 struct VectorStorage<F: ReferenceFrame, U: Unit> {
     xyz: XYZ<Quantity<U>>,
     #[cfg_attr(feature = "serde", serde(skip))]

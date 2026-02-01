@@ -51,7 +51,8 @@ fn main() {
     // Cartesian vector
     let v = Vector::<World, Kilometer>::new(10.0, 20.0, 30.0);
     let v_json = serde_json::to_string(&v).expect("serialize vector");
-    let v_back: Vector<World, Kilometer> = serde_json::from_str(&v_json).expect("deserialize vector");
+    let v_back: Vector<World, Kilometer> =
+        serde_json::from_str(&v_json).expect("deserialize vector");
     assert_eq!(v.x(), v_back.x());
     assert_eq!(v.y(), v_back.y());
     assert_eq!(v.z(), v_back.z());

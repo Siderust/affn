@@ -275,12 +275,11 @@ impl<F: ReferenceFrame> std::fmt::Display for Direction<F> {
 #[cfg(feature = "serde")]
 mod serde_impl {
     use super::*;
+    use crate::frames::SphericalNaming;
     use serde::de::{self, MapAccess, Visitor};
     use serde::ser::SerializeStruct;
     use serde::{Deserializer, Serializer};
     use std::fmt;
-    use crate::frames::SphericalNaming;
-
 
     impl<F: SphericalNaming> Serialize for Direction<F> {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -344,8 +343,7 @@ mod serde_impl {
                     }
 
                     let polar = polar.ok_or_else(|| de::Error::missing_field(polar_name))?;
-                    let azimuth =
-                        azimuth.ok_or_else(|| de::Error::missing_field(azimuth_name))?;
+                    let azimuth = azimuth.ok_or_else(|| de::Error::missing_field(azimuth_name))?;
 
                     Ok(Direction::new_raw(polar, azimuth))
                 }

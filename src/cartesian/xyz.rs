@@ -34,10 +34,13 @@ use serde::{Deserialize, Serialize};
 /// - `T`: The component type (e.g., `f64`, `Quantity<U>`)
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(bound(
-    serialize = "T: Serialize + Clone + PartialEq + std::fmt::Debug + 'static",
-    deserialize = "T: Deserialize<'de> + Clone + PartialEq + std::fmt::Debug + 'static"
-)))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(
+        serialize = "T: Serialize + Clone + PartialEq + std::fmt::Debug + 'static",
+        deserialize = "T: Deserialize<'de> + Clone + PartialEq + std::fmt::Debug + 'static"
+    ))
+)]
 #[repr(transparent)]
 pub struct XYZ<T>(pub(crate) Vector3<T>);
 

@@ -96,13 +96,19 @@ fn is_zero_sized<T>(_: &T) -> bool {
 /// For most centers, `Params = ()` (zero overhead).
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(bound(
-    serialize = "C::Params: Serialize, U: LengthUnit",
-    deserialize = "C::Params: Deserialize<'de>, U: LengthUnit"
-)))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(
+        serialize = "C::Params: Serialize, U: LengthUnit",
+        deserialize = "C::Params: Deserialize<'de>, U: LengthUnit"
+    ))
+)]
 pub struct Position<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> {
     xyz: XYZ<Quantity<U>>,
-    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_zero_sized"))]
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "is_zero_sized")
+    )]
     center_params: C::Params,
     #[cfg_attr(feature = "serde", serde(skip))]
     _frame: PhantomData<F>,
