@@ -85,7 +85,10 @@ use serde::{Deserialize, Serialize};
 /// overhead compared to raw `Vector3<f64>`.
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(bound(serialize = "F: ReferenceFrame", deserialize = "F: ReferenceFrame")))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(serialize = "F: ReferenceFrame", deserialize = "F: ReferenceFrame"))
+)]
 #[repr(transparent)]
 pub struct Direction<F: ReferenceFrame> {
     #[cfg_attr(feature = "serde", serde(flatten))]
@@ -95,7 +98,10 @@ pub struct Direction<F: ReferenceFrame> {
 /// Internal storage combining XYZ and frame marker.
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(bound(serialize = "F: ReferenceFrame", deserialize = "F: ReferenceFrame")))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(serialize = "F: ReferenceFrame", deserialize = "F: ReferenceFrame"))
+)]
 struct DirectionStorage<F: ReferenceFrame> {
     xyz: XYZ<f64>,
     #[cfg_attr(feature = "serde", serde(skip))]

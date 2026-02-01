@@ -117,7 +117,7 @@ pub trait SphericalNaming: ReferenceFrame {
     fn azimuth_name() -> &'static str;
 
     /// Returns the name for the radial distance (e.g., "distance", "altitude", "radius").
-    /// 
+    ///
     /// Defaults to "distance" if not overridden.
     fn distance_name() -> &'static str {
         DefaultSphericalNaming::DISTANCE

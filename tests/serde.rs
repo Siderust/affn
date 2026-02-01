@@ -270,12 +270,13 @@ fn test_spherical_position_with_params_serde_roundtrip() {
         y: 2.0,
         z: 3.0,
     };
-    let pos = SphericalPosition::<ParameterizedCenter, TestFrame, AstronomicalUnit>::new_raw_with_params(
-        params.clone(),
-        30.0 * DEG,
-        60.0 * DEG,
-        1.5 * AU,
-    );
+    let pos =
+        SphericalPosition::<ParameterizedCenter, TestFrame, AstronomicalUnit>::new_raw_with_params(
+            params.clone(),
+            30.0 * DEG,
+            60.0 * DEG,
+            1.5 * AU,
+        );
 
     let json = serde_json::to_string(&pos).expect("serialize SphericalPosition with params");
     let deserialized: SphericalPosition<ParameterizedCenter, TestFrame, AstronomicalUnit> =

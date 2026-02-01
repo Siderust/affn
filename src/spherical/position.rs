@@ -352,8 +352,7 @@ mod serde_impl {
                     }
 
                     let polar = polar.ok_or_else(|| de::Error::missing_field(polar_name))?;
-                    let azimuth =
-                        azimuth.ok_or_else(|| de::Error::missing_field(azimuth_name))?;
+                    let azimuth = azimuth.ok_or_else(|| de::Error::missing_field(azimuth_name))?;
                     let distance =
                         distance.ok_or_else(|| de::Error::missing_field(distance_name))?;
 
