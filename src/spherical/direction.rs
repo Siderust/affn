@@ -49,6 +49,11 @@ use qtty::{Degrees, LengthUnit, Quantity};
 
 use std::marker::PhantomData;
 
+// Serde implementations in separate module
+#[cfg(feature = "serde")]
+#[path = "direction_serde.rs"]
+mod direction_serde;
+
 // =============================================================================
 // Angle Canonicalization Helpers
 // =============================================================================

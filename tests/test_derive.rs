@@ -127,3 +127,33 @@ fn test_derive_center_multiple_attrs() {
     let _params: <MultiAttrCenter as affn::centers::ReferenceCenter>::Params =
         MyParams { value: 99.0 };
 }
+
+// =============================================================================
+// SphericalNaming derive tests
+// =============================================================================
+
+#[derive(Debug, Copy, Clone, ReferenceFrame)]
+#[frame(polar = "dec", azimuth = "ra")]
+struct EquatorialTestFrame;
+
+#[derive(Debug, Copy, Clone, ReferenceFrame)]
+#[frame(polar = "lat", azimuth = "lon", distance = "altitude")]
+struct GeographicTestFrame;
+
+#[test]
+fn test_derive_spherical_naming() {
+    use affn::frames::SphericalNaming;
+
+    assert_eq!(EquatorialTestFrame::polar_name(), "dec");
+    assert_eq!(EquatorialTestFrame::azimuth_name(), "ra");
+    assert_eq!(EquatorialTestFrame::distance_name(), "distance"); // default
+}
+
+#[test]
+fn test_derive_spherical_naming_custom_distance() {
+    use affn::frames::SphericalNaming;
+
+    assert_eq!(GeographicTestFrame::polar_name(), "lat");
+    assert_eq!(GeographicTestFrame::azimuth_name(), "lon");
+    assert_eq!(GeographicTestFrame::distance_name(), "altitude"); // custom
+}
