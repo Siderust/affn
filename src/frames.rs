@@ -115,6 +115,13 @@ pub trait SphericalNaming: ReferenceFrame {
 
     /// Returns the name for the azimuthal angle (e.g., "ra", "lon", "az", "l").
     fn azimuth_name() -> &'static str;
+
+    /// Returns the name for the radial distance (e.g., "distance", "altitude", "radius").
+    /// 
+    /// Defaults to "distance" if not overridden.
+    fn distance_name() -> &'static str {
+        DefaultSphericalNaming::DISTANCE
+    }
 }
 
 /// Helper type that provides default spherical naming (polar/azimuth).
@@ -128,4 +135,6 @@ impl DefaultSphericalNaming {
     pub const POLAR: &'static str = "polar";
     /// Default azimuthal angle name.
     pub const AZIMUTH: &'static str = "azimuth";
+    /// Default distance name.
+    pub const DISTANCE: &'static str = "distance";
 }
