@@ -536,8 +536,7 @@ mod tests {
         let dist = a.distance_to(&b);
         assert!((dist.value() - 5.0).abs() < 1e-12);
 
-        #[allow(deprecated)]
-        let disp = Position::<TestCenter, TestFrame, Meter>::sub(&b, &a);
+        let disp: TestDisp = b - a;
         assert!((disp.y().value() - 3.0).abs() < 1e-12);
     }
 
