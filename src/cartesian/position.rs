@@ -402,31 +402,6 @@ where
 }
 
 // =============================================================================
-// Legacy API: sub() method for backward compatibility
-// =============================================================================
-
-impl<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> Position<C, F, U> {
-    /// Computes the displacement vector from another position to this one.
-    ///
-    /// This is equivalent to `self - other` and returns a `Displacement<F, U>`.
-    ///
-    /// # Deprecated
-    /// Prefer using the `-` operator: `target - observer`
-    #[deprecated(note = "Use the `-` operator instead: `target - observer`.")]
-    #[inline]
-    pub fn sub(&self, other: &Self) -> Displacement<F, U>
-    where
-        C::Params: PartialEq,
-    {
-        debug_assert!(
-            self.center_params == other.center_params,
-            "Cannot subtract positions with different center parameters"
-        );
-        Displacement::from_xyz(self.xyz - other.xyz)
-    }
-}
-
-// =============================================================================
 // Display
 // =============================================================================
 
@@ -561,8 +536,7 @@ mod tests {
         let dist = a.distance_to(&b);
         assert!((dist.value() - 5.0).abs() < 1e-12);
 
-        #[allow(deprecated)]
-        let disp = Position::<TestCenter, TestFrame, Meter>::sub(&b, &a);
+        let disp: TestDisp = b - a;
         assert!((disp.y().value() - 3.0).abs() < 1e-12);
     }
 
