@@ -32,6 +32,7 @@
 //! like directions.
 
 use crate::cartesian::xyz::XYZ;
+use qtty::{Quantity, Unit};
 
 // =============================================================================
 // Rotation3: 3x3 Rotation Matrix
@@ -268,6 +269,40 @@ impl std::ops::Mul for Rotation3 {
     }
 }
 
+/// Applies a rotation to a raw `[f64; 3]` column vector: `R * v`.
+impl std::ops::Mul<[f64; 3]> for Rotation3 {
+    type Output = [f64; 3];
+
+    #[inline]
+    fn mul(self, rhs: [f64; 3]) -> [f64; 3] {
+        self.apply_array(rhs)
+    }
+}
+
+/// Applies a rotation to a `[Quantity<U>; 3]` column vector: `R * v`.
+///
+/// This eliminates the need to manually unwrap via `.value()` and
+/// rewrap via `Quantity::new()` at every call site.
+impl<U: Unit> std::ops::Mul<[Quantity<U>; 3]> for Rotation3 {
+    type Output = [Quantity<U>; 3];
+
+    #[inline]
+    fn mul(self, rhs: [Quantity<U>; 3]) -> [Quantity<U>; 3] {
+        let [x, y, z] = self.apply_array([rhs[0].value(), rhs[1].value(), rhs[2].value()]);
+        [Quantity::new(x), Quantity::new(y), Quantity::new(z)]
+    }
+}
+
+/// Applies a rotation to an `XYZ<Quantity<U>>` column vector: `R * v`.
+impl<U: Unit> std::ops::Mul<XYZ<Quantity<U>>> for Rotation3 {
+    type Output = XYZ<Quantity<U>>;
+
+    #[inline]
+    fn mul(self, rhs: XYZ<Quantity<U>>) -> XYZ<Quantity<U>> {
+        XYZ::from_raw(self.apply_xyz(rhs.to_raw()))
+    }
+}
+
 // =============================================================================
 // Translation3: Translation Vector
 // =============================================================================
@@ -372,6 +407,40 @@ impl std::ops::Neg for Translation3 {
     #[inline]
     fn neg(self) -> Self::Output {
         self.inverse()
+    }
+}
+
+/// Applies a translation to a raw `[f64; 3]` point: `p + t`.
+impl std::ops::Mul<[f64; 3]> for Translation3 {
+    type Output = [f64; 3];
+
+    #[inline]
+    fn mul(self, rhs: [f64; 3]) -> [f64; 3] {
+        self.apply_array(rhs)
+    }
+}
+
+/// Applies a translation to a `[Quantity<U>; 3]` point: `p + t`.
+///
+/// The translation's raw `f64` components are interpreted in the same unit as
+/// the `Quantity<U>` operand.
+impl<U: Unit> std::ops::Mul<[Quantity<U>; 3]> for Translation3 {
+    type Output = [Quantity<U>; 3];
+
+    #[inline]
+    fn mul(self, rhs: [Quantity<U>; 3]) -> [Quantity<U>; 3] {
+        let [x, y, z] = self.apply_array([rhs[0].value(), rhs[1].value(), rhs[2].value()]);
+        [Quantity::new(x), Quantity::new(y), Quantity::new(z)]
+    }
+}
+
+/// Applies a translation to an `XYZ<Quantity<U>>` point: `p + t`.
+impl<U: Unit> std::ops::Mul<XYZ<Quantity<U>>> for Translation3 {
+    type Output = XYZ<Quantity<U>>;
+
+    #[inline]
+    fn mul(self, rhs: XYZ<Quantity<U>>) -> XYZ<Quantity<U>> {
+        XYZ::from_raw(self.apply_xyz(rhs.to_raw()))
     }
 }
 
@@ -521,6 +590,40 @@ impl std::ops::Mul for Isometry3 {
     #[inline]
     fn mul(self, rhs: Self) -> Self::Output {
         self.compose(&rhs)
+    }
+}
+
+/// Applies an isometry (rotation + translation) to a raw `[f64; 3]` point: `R * p + t`.
+impl std::ops::Mul<[f64; 3]> for Isometry3 {
+    type Output = [f64; 3];
+
+    #[inline]
+    fn mul(self, rhs: [f64; 3]) -> [f64; 3] {
+        self.apply_point(rhs)
+    }
+}
+
+/// Applies an isometry to a `[Quantity<U>; 3]` point: `R * p + t`.
+///
+/// The translation's raw `f64` components are interpreted in the same unit as
+/// the `Quantity<U>` operand.
+impl<U: Unit> std::ops::Mul<[Quantity<U>; 3]> for Isometry3 {
+    type Output = [Quantity<U>; 3];
+
+    #[inline]
+    fn mul(self, rhs: [Quantity<U>; 3]) -> [Quantity<U>; 3] {
+        let [x, y, z] = self.apply_point([rhs[0].value(), rhs[1].value(), rhs[2].value()]);
+        [Quantity::new(x), Quantity::new(y), Quantity::new(z)]
+    }
+}
+
+/// Applies an isometry to an `XYZ<Quantity<U>>` point: `R * p + t`.
+impl<U: Unit> std::ops::Mul<XYZ<Quantity<U>>> for Isometry3 {
+    type Output = XYZ<Quantity<U>>;
+
+    #[inline]
+    fn mul(self, rhs: XYZ<Quantity<U>>) -> XYZ<Quantity<U>> {
+        XYZ::from_raw(self.apply_xyz(rhs.to_raw()))
     }
 }
 
@@ -849,5 +952,133 @@ mod tests {
             [0.0, 1.0, 0.0],
             "apply_vector_xyz",
         );
+    }
+
+    // -------------------------------------------------------------------------
+    // Mul<Quantity> operator tests
+    // -------------------------------------------------------------------------
+
+    fn assert_quantity_array_eq<U: Unit>(a: [Quantity<U>; 3], b: [f64; 3], msg: &str) {
+        assert!(
+            (a[0].value() - b[0]).abs() < EPSILON
+                && (a[1].value() - b[1]).abs() < EPSILON
+                && (a[2].value() - b[2]).abs() < EPSILON,
+            "{}: [{}, {}, {}] != {:?}",
+            msg,
+            a[0].value(),
+            a[1].value(),
+            a[2].value(),
+            b
+        );
+    }
+
+    #[test]
+    fn test_rotation_mul_f64_array() {
+        let r = Rotation3::from_z_rotation(FRAC_PI_2);
+        let result = r * [1.0, 0.0, 0.0];
+        assert_array_eq(result, [0.0, 1.0, 0.0], "Rotation * [f64; 3]");
+    }
+
+    #[test]
+    fn test_rotation_mul_quantity_array() {
+        use qtty::Meter;
+        let r = Rotation3::from_z_rotation(FRAC_PI_2);
+        let v = [
+            Quantity::<Meter>::new(1.0),
+            Quantity::<Meter>::new(0.0),
+            Quantity::<Meter>::new(0.0),
+        ];
+        let result = r * v;
+        assert_quantity_array_eq(result, [0.0, 1.0, 0.0], "Rotation * [Quantity; 3]");
+    }
+
+    #[test]
+    fn test_rotation_mul_xyz_quantity() {
+        use qtty::Meter;
+        let r = Rotation3::from_z_rotation(FRAC_PI_2);
+        let xyz: XYZ<Quantity<Meter>> = XYZ::new(
+            Quantity::<Meter>::new(1.0),
+            Quantity::<Meter>::new(0.0),
+            Quantity::<Meter>::new(0.0),
+        );
+        let result = r * xyz;
+        assert!(
+            (result.x().value()).abs() < EPSILON
+                && (result.y().value() - 1.0).abs() < EPSILON
+                && (result.z().value()).abs() < EPSILON,
+            "Rotation * XYZ<Quantity>"
+        );
+    }
+
+    #[test]
+    fn test_translation_mul_f64_array() {
+        let t = Translation3::new(1.0, 2.0, 3.0);
+        let result = t * [0.0, 0.0, 0.0];
+        assert_array_eq(result, [1.0, 2.0, 3.0], "Translation * [f64; 3]");
+    }
+
+    #[test]
+    fn test_translation_mul_quantity_array() {
+        use qtty::Meter;
+        let t = Translation3::new(1.0, 2.0, 3.0);
+        let v = [
+            Quantity::<Meter>::new(10.0),
+            Quantity::<Meter>::new(20.0),
+            Quantity::<Meter>::new(30.0),
+        ];
+        let result = t * v;
+        assert_quantity_array_eq(result, [11.0, 22.0, 33.0], "Translation * [Quantity; 3]");
+    }
+
+    #[test]
+    fn test_isometry_mul_f64_array() {
+        let rot = Rotation3::from_z_rotation(FRAC_PI_2);
+        let trans = Translation3::new(1.0, 0.0, 0.0);
+        let iso = Isometry3::new(rot, trans);
+        let result = iso * [1.0, 0.0, 0.0];
+        assert_array_eq(result, [1.0, 1.0, 0.0], "Isometry * [f64; 3]");
+    }
+
+    #[test]
+    fn test_isometry_mul_quantity_array() {
+        use qtty::Meter;
+        let rot = Rotation3::from_z_rotation(FRAC_PI_2);
+        let trans = Translation3::new(1.0, 0.0, 0.0);
+        let iso = Isometry3::new(rot, trans);
+        let v = [
+            Quantity::<Meter>::new(1.0),
+            Quantity::<Meter>::new(0.0),
+            Quantity::<Meter>::new(0.0),
+        ];
+        let result = iso * v;
+        assert_quantity_array_eq(result, [1.0, 1.0, 0.0], "Isometry * [Quantity; 3]");
+    }
+
+    #[test]
+    fn test_rotation_mul_quantity_preserves_unit() {
+        use qtty::AstronomicalUnit;
+        let r = Rotation3::from_z_rotation(FRAC_PI_2);
+        let v = [
+            Quantity::<AstronomicalUnit>::new(3.0),
+            Quantity::<AstronomicalUnit>::new(0.0),
+            Quantity::<AstronomicalUnit>::new(0.0),
+        ];
+        let result = r * v;
+        // After 90° around Z: (3, 0, 0) → (0, 3, 0)
+        assert_quantity_array_eq(result, [0.0, 3.0, 0.0], "Rotation preserves AU unit");
+    }
+
+    #[test]
+    fn test_rotation_mul_quantity_roundtrip() {
+        use qtty::Meter;
+        let r = Rotation3::from_z_rotation(0.7);
+        let r_inv = r.inverse();
+        let v = [
+            Quantity::<Meter>::new(1.0),
+            Quantity::<Meter>::new(2.0),
+            Quantity::<Meter>::new(3.0),
+        ];
+        let result = r_inv * (r * v);
+        assert_quantity_array_eq(result, [1.0, 2.0, 3.0], "R⁻¹ * R * v = v for Quantity");
     }
 }
