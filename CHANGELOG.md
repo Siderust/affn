@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `std::ops::Mul` overloads for `Rotation3`, `Translation3`, and `Isometry3` with raw array operands (`[f64; 3]`).
+- Unit-aware `std::ops::Mul` overloads for affine operators using `[Quantity<U>; 3]` and `XYZ<Quantity<U>>`, preserving units through transforms.
+- New operator-focused tests covering `Mul` behavior for raw arrays and `Quantity`-based operands.
 
 ### Changed
 
