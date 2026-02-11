@@ -119,9 +119,9 @@ pub struct Galactic;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::centers::{AffineCenter, ReferenceCenter};
     use crate::frames::{ReferenceFrame, SphericalNaming};
     use crate::spherical::{Direction, Position};
-    use crate::centers::{AffineCenter, ReferenceCenter};
     use qtty::*;
 
     #[test]
@@ -200,7 +200,9 @@ mod tests {
     struct TestCenter;
     impl ReferenceCenter for TestCenter {
         type Params = ();
-        fn center_name() -> &'static str { "TestCenter" }
+        fn center_name() -> &'static str {
+            "TestCenter"
+        }
     }
     impl AffineCenter for TestCenter {}
 
@@ -225,7 +227,9 @@ mod tests {
         struct ParamCenter;
         impl ReferenceCenter for ParamCenter {
             type Params = f64;
-            fn center_name() -> &'static str { "ParamCenter" }
+            fn center_name() -> &'static str {
+                "ParamCenter"
+            }
         }
 
         let p = Position::<ParamCenter, ICRS, Parsec>::new_raw_with_params(

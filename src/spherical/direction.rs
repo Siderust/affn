@@ -182,16 +182,8 @@ impl<F: ReferenceFrame> Direction<F> {
     where
         F: ReferenceFrame,
     {
-        let x = cart.x();
-        let y = cart.y();
-        let z = cart.z();
-
-        // Clamp z to prevent asin domain errors from floating-point imprecision
-        let z_clamped = z.clamp(-1.0, 1.0);
-        let polar = Degrees::new(z_clamped.asin().to_degrees());
-        let azimuth = Degrees::new(y.atan2(x).to_degrees());
-
-        Self::new_raw(polar, azimuth.normalize())
+        let (polar, azimuth) = super::xyz_to_polar_azimuth(cart.x(), cart.y(), cart.z());
+        Self::new_raw(polar, azimuth)
     }
 }
 
@@ -295,7 +287,7 @@ mod tests {
 
     #[test]
     fn canonicalizes_azimuth_to_positive_range() {
-        // Test canonicalize_azimuth directly
+        use crate::spherical::canonicalize_azimuth;
         assert!((canonicalize_azimuth(Degrees::new(-90.0)).value() - 270.0).abs() < EPS);
         assert!((canonicalize_azimuth(Degrees::new(450.0)).value() - 90.0).abs() < EPS);
         assert!(canonicalize_azimuth(Degrees::new(-720.0)).value().abs() < EPS);
@@ -303,10 +295,8 @@ mod tests {
 
     #[test]
     fn folds_polar_to_valid_range() {
-        // Test canonicalize_polar directly
-        // 100° → 80° (folded, not clamped)
+        use crate::spherical::canonicalize_polar;
         assert!((canonicalize_polar(Degrees::new(100.0)).value() - 80.0).abs() < EPS);
-        // -100° → -80°
         assert!((canonicalize_polar(Degrees::new(-100.0)).value() - (-80.0)).abs() < EPS);
     }
 

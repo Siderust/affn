@@ -8,10 +8,7 @@ use qtty::{LengthUnit, Quantity};
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
 
-/// Helper function to determine if a type is zero-sized (for skip_serializing_if)
-fn is_zero_sized<T>(_: &T) -> bool {
-    std::mem::size_of::<T>() == 0
-}
+use crate::serde_utils::is_zero_sized;
 
 // =============================================================================
 // Position Serde Implementation
