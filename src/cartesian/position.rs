@@ -322,10 +322,7 @@ impl<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> Position<C, F, U> {
     ///
     /// For centers with `Params = ()`, this always succeeds.
     #[inline]
-    pub fn try_distance_to(
-        &self,
-        other: &Self,
-    ) -> Result<Quantity<U>, CenterParamsMismatchError>
+    pub fn try_distance_to(&self, other: &Self) -> Result<Quantity<U>, CenterParamsMismatchError>
     where
         C::Params: PartialEq,
     {
@@ -438,10 +435,7 @@ impl<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> Position<C, F, U> {
     /// This is the safe alternative to the `Sub` operator (`pos_a - pos_b`).
     /// For centers with `Params = ()`, this always succeeds.
     #[inline]
-    pub fn checked_sub(
-        &self,
-        other: &Self,
-    ) -> Result<Displacement<F, U>, CenterParamsMismatchError>
+    pub fn checked_sub(&self, other: &Self) -> Result<Displacement<F, U>, CenterParamsMismatchError>
     where
         C::Params: PartialEq,
     {
