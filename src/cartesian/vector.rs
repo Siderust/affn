@@ -151,6 +151,19 @@ impl<F: ReferenceFrame, U: Unit> Vector<F, U> {
     pub fn as_vec3(&self) -> &nalgebra::Vector3<Quantity<U>> {
         self.xyz.as_vec3()
     }
+
+    /// Converts this vector to another unit of the same dimension.
+    ///
+    /// The frame is preserved and each component is converted independently
+    /// via `qtty::Quantity::to`.
+    #[inline]
+    pub fn to_unit<U2: Unit<Dim = U::Dim>>(&self) -> Vector<F, U2> {
+        Vector::<F, U2>::new(
+            self.x().to::<U2>(),
+            self.y().to::<U2>(),
+            self.z().to::<U2>(),
+        )
+    }
 }
 
 // =============================================================================
@@ -329,7 +342,7 @@ mod tests {
     use super::*;
     // Import the derive
     use crate::DeriveReferenceFrame as ReferenceFrame;
-    use qtty::{AstronomicalUnit, Day, Meter, Per, Quantity};
+    use qtty::{AstronomicalUnit, Day, Kilometer, Meter, Per, Quantity};
 
     // Define a test frame using the macro
     #[derive(Debug, Copy, Clone, ReferenceFrame)]
@@ -455,5 +468,33 @@ mod tests {
 
         let text = v.to_string();
         assert!(text.contains("Vector<TestFrame>"));
+    }
+
+    #[test]
+    fn test_vector_to_unit_roundtrip() {
+        let v_au = DispAu::new(1.0, -2.0, 0.5);
+        let v_km: Displacement<TestFrame, Kilometer> = v_au.to_unit();
+        let back: DispAu = v_km.to_unit();
+
+        assert!((back.x().value() - v_au.x().value()).abs() < 1e-12);
+        assert!((back.y().value() - v_au.y().value()).abs() < 1e-12);
+        assert!((back.z().value() - v_au.z().value()).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_velocity_to_unit_roundtrip() {
+        type KmPerDay = Per<Kilometer, Day>;
+
+        let v_au_day = VelAuDay::new(
+            Quantity::<AuPerDay>::new(0.01),
+            Quantity::<AuPerDay>::new(-0.02),
+            Quantity::<AuPerDay>::new(0.03),
+        );
+        let v_km_day: Velocity<TestFrame, KmPerDay> = v_au_day.to_unit();
+        let back: VelAuDay = v_km_day.to_unit();
+
+        assert!((back.x().value() - v_au_day.x().value()).abs() < 1e-12);
+        assert!((back.y().value() - v_au_day.y().value()).abs() < 1e-12);
+        assert!((back.z().value() - v_au_day.z().value()).abs() < 1e-12);
     }
 }
