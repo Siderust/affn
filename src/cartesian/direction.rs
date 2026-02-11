@@ -63,8 +63,10 @@ use qtty::{LengthUnit, Quantity};
 use std::marker::PhantomData;
 use std::ops::Mul;
 
+// Serde implementations in separate module
 #[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+#[path = "direction_serde.rs"]
+mod direction_serde;
 
 /// A unit vector representing orientation in 3D space.
 ///
@@ -84,27 +86,8 @@ use serde::{Deserialize, Serialize};
 /// This type is `#[repr(transparent)]` over `XYZ<f64>`, ensuring no runtime
 /// overhead compared to raw `Vector3<f64>`.
 #[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(
-    feature = "serde",
-    serde(bound(serialize = "F: ReferenceFrame", deserialize = "F: ReferenceFrame"))
-)]
-#[repr(transparent)]
 pub struct Direction<F: ReferenceFrame> {
-    #[cfg_attr(feature = "serde", serde(flatten))]
-    storage: DirectionStorage<F>,
-}
-
-/// Internal storage combining XYZ and frame marker.
-#[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(
-    feature = "serde",
-    serde(bound(serialize = "F: ReferenceFrame", deserialize = "F: ReferenceFrame"))
-)]
-struct DirectionStorage<F: ReferenceFrame> {
     xyz: XYZ<f64>,
-    #[cfg_attr(feature = "serde", serde(skip))]
     _frame: PhantomData<F>,
 }
 
@@ -174,10 +157,8 @@ impl<F: ReferenceFrame> Direction<F> {
     #[inline]
     pub(crate) fn from_xyz_unchecked(xyz: XYZ<f64>) -> Self {
         Self {
-            storage: DirectionStorage {
-                xyz,
-                _frame: PhantomData,
-            },
+            xyz,
+            _frame: PhantomData,
         }
     }
 
@@ -199,25 +180,25 @@ impl<F: ReferenceFrame> Direction<F> {
     /// Returns the x-component.
     #[inline]
     pub fn x(&self) -> f64 {
-        self.storage.xyz.x()
+        self.xyz.x()
     }
 
     /// Returns the y-component.
     #[inline]
     pub fn y(&self) -> f64 {
-        self.storage.xyz.y()
+        self.xyz.y()
     }
 
     /// Returns the z-component.
     #[inline]
     pub fn z(&self) -> f64 {
-        self.storage.xyz.z()
+        self.xyz.z()
     }
 
     /// Returns the underlying nalgebra Vector3.
     #[inline]
     pub fn as_vec3(&self) -> nalgebra::Vector3<f64> {
-        *self.storage.xyz.as_vec3()
+        *self.xyz.as_vec3()
     }
 }
 
@@ -321,7 +302,7 @@ impl<F: ReferenceFrame> Direction<F> {
     /// Returns cosine of the angle between directions (range: -1 to 1).
     #[inline]
     pub fn dot(&self, other: &Self) -> f64 {
-        self.storage.xyz.dot(&other.storage.xyz)
+        self.xyz.dot(&other.xyz)
     }
 
     /// Computes the cross product with another direction.
@@ -329,9 +310,8 @@ impl<F: ReferenceFrame> Direction<F> {
     /// The result is normalized if non-zero (perpendicular directions).
     #[inline]
     pub fn cross(&self, other: &Self) -> Option<Self> {
-        self.storage
-            .xyz
-            .cross(&other.storage.xyz)
+        self.xyz
+            .cross(&other.xyz)
             .try_normalize()
             .map(Self::from_xyz_unchecked)
     }
@@ -339,7 +319,7 @@ impl<F: ReferenceFrame> Direction<F> {
     /// Negates the direction (points in opposite direction).
     #[inline]
     pub fn negate(&self) -> Self {
-        Self::from_xyz_unchecked(self.storage.xyz.neg())
+        Self::from_xyz_unchecked(self.xyz.neg())
     }
 
     /// Returns the angle between this direction and another, in radians.
@@ -362,19 +342,8 @@ impl<F: ReferenceFrame> Direction<F> {
     /// - polar in `[-90°, +90°]`
     /// - azimuth in `[0°, 360°)`
     pub fn to_spherical(&self) -> crate::spherical::Direction<F> {
-        use qtty::Degrees;
-
-        let x = self.x();
-        let y = self.y();
-        let z = self.z();
-
-        // Clamp z to prevent asin domain errors from floating-point imprecision
-        let z_clamped = z.clamp(-1.0, 1.0);
-        let polar = Degrees::new(z_clamped.asin().to_degrees());
-        let azimuth = Degrees::new(y.atan2(x).to_degrees());
-
-        // Normalize azimuth (atan2 returns [-180°, 180°), we need [0°, 360°))
-        crate::spherical::Direction::<F>::new_raw(polar, azimuth.normalize())
+        let (polar, azimuth) = crate::spherical::xyz_to_polar_azimuth(self.x(), self.y(), self.z());
+        crate::spherical::Direction::<F>::new_raw(polar, azimuth)
     }
 }
 

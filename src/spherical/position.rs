@@ -147,17 +147,11 @@ where
         let z = cart.z().value();
         let r = cart.distance().value();
 
-        let polar = if r.abs() < f64::EPSILON {
-            Degrees::new(0.0)
+        let (polar, azimuth) = if r.abs() < f64::EPSILON {
+            (Degrees::new(0.0), Degrees::new(0.0))
         } else {
-            let z_clamped = (z / r).clamp(-1.0, 1.0);
-            Degrees::new(z_clamped.asin().to_degrees())
+            super::xyz_to_polar_azimuth(x / r, y / r, z / r)
         };
-
-        let mut azimuth = Degrees::new(y.atan2(x).to_degrees());
-        if azimuth.value() < 0.0 {
-            azimuth = Degrees::new(azimuth.value() + 360.0);
-        }
 
         Self::new_raw_with_params(
             cart.center_params().clone(),

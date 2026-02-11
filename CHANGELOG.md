@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Optional `astro` cargo feature with built-in astronomical frames in `affn::frames`: `ICRS`, `EquatorialMeanJ2000`, `EquatorialMeanOfDate`, `EquatorialTrueOfDate`, `Horizontal`, `Ecliptic`, `ITRF`, `ECEF`, and `Galactic`.
+- Feature-gated prelude re-exports for astronomical frames under `affn::prelude` (enabled with `astro`).
+- `#[frame(inherent)]` support in `affn-derive` for generating frame-specific inherent constructors/accessors on `spherical::Direction` and `spherical::Position`.
+- Shared spherical angular-separation helper using the numerically stable Vincenty formulation.
+
+### Changed
+- `spherical::Direction` and related call sites now use raw constructors (`new_raw`) in core APIs; canonicalization is handled by frame-specific generated constructors when available.
+- Cartesian-to-spherical direction conversion now performs explicit azimuth normalization before raw construction.
+- `frames` module layout was refactored to `src/frames/mod.rs` with feature-gated astronomical frame exports.
+
+### Removed
+- Generic `spherical::Direction::ra()` and `spherical::Direction::dec()` aliases from the frame-agnostic direction type.
+- Internal angle canonicalization helper functions in `spherical::direction`.
+
 ## [0.2.1 - 2026-02-09]
 
 ### Added

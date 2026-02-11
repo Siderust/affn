@@ -99,6 +99,10 @@ pub mod frames;
 // Affine operators (rotation, translation, isometry)
 pub mod ops;
 
+// Shared serde utilities
+#[cfg(feature = "serde")]
+pub(crate) mod serde_utils;
+
 // Re-export derive macros from affn-derive
 // Named with Derive prefix to avoid conflicts with trait names
 pub use affn_derive::{
@@ -145,7 +149,7 @@ pub mod prelude {
     // Feature-gated astronomical frames
     #[cfg(feature = "astro")]
     pub use crate::frames::{
-        ECEF, Ecliptic, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, Galactic,
-        Horizontal, ICRS, ITRF,
+        Ecliptic, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, Galactic,
+        Horizontal, ECEF, ICRS, ITRF,
     };
 }
