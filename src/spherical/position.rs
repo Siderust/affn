@@ -108,25 +108,16 @@ where
         &self.center_params
     }
 
-    /// Calculates the angular separation between this position and another.
+    /// Calculates the angular separation between this position and another
+    /// using the Vincenty formula (numerically stable).
     pub fn angular_separation(&self, other: Self) -> Degrees {
-        let az1 = self.azimuth.to::<Radian>();
-        let po1 = self.polar.to::<Radian>();
-        let az2 = other.azimuth.to::<Radian>();
-        let po2 = other.polar.to::<Radian>();
-
-        let x = (po1.cos() * po2.sin()) - (po1.sin() * po2.cos() * (az2 - az1).cos());
-        let y = po2.cos() * (az2 - az1).sin();
-        let z = (po1.sin() * po2.sin()) + (po1.cos() * po2.cos() * (az2 - az1).cos());
-
-        let angle_rad = (x * x + y * y).sqrt().atan2(z);
-        Radians::new(angle_rad).to::<Degree>()
+        super::angular_separation_impl(self.polar, self.azimuth, other.polar, other.azimuth)
     }
 
     /// Extracts the corresponding spherical **direction** (frame-only).
     #[must_use]
     pub fn direction(&self) -> super::direction::Direction<F> {
-        super::direction::Direction::new(self.polar, self.azimuth)
+        super::direction::Direction::new_raw(self.polar, self.azimuth)
     }
 
     /// Converts to Cartesian position.

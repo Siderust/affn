@@ -373,8 +373,8 @@ impl<F: ReferenceFrame> Direction<F> {
         let polar = Degrees::new(z_clamped.asin().to_degrees());
         let azimuth = Degrees::new(y.atan2(x).to_degrees());
 
-        // Use new() to canonicalize angles (azimuth from atan2 may be negative)
-        crate::spherical::Direction::<F>::new(polar, azimuth)
+        // Normalize azimuth (atan2 returns [-180°, 180°), we need [0°, 360°))
+        crate::spherical::Direction::<F>::new_raw(polar, azimuth.normalize())
     }
 }
 

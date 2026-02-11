@@ -141,4 +141,11 @@ pub mod prelude {
 
     // Operators
     pub use crate::ops::{Isometry3, Rotation3, Translation3};
+
+    // Feature-gated astronomical frames
+    #[cfg(feature = "astro")]
+    pub use crate::frames::{
+        ECEF, Ecliptic, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, Galactic,
+        Horizontal, ICRS, ITRF,
+    };
 }

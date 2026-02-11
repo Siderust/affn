@@ -24,6 +24,8 @@
 //! - `#[frame(name = "CustomName")]` - Override the frame name (defaults to struct name)
 //! - `#[frame(polar = "dec", azimuth = "ra")]` - Also implement `SphericalNaming` with custom names
 //! - `#[frame(distance = "altitude")]` - Override distance name (defaults to "distance")
+//! - `#[frame(inherent)]` - Generate inherent methods on `Direction<F>` and `Position<C,F,U>`.
+//!   Only valid when the frame is defined in the same crate as `Direction`/`Position`.
 //!
 //! ### `#[derive(ReferenceCenter)]`
 //!
@@ -105,6 +107,9 @@ struct FrameAttributes {
     azimuth: Option<String>,
     /// Distance name for SphericalNaming (defaults to "distance").
     distance: Option<String>,
+    /// Whether to generate inherent impls on Direction<F> and Position<C,F,U>.
+    /// Only valid when the frame is defined in the same crate as Direction/Position.
+    inherent: bool,
 }
 
 fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<TokenStream2> {
@@ -121,11 +126,16 @@ fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<TokenStream2> 
         }
     };
 
-    // Generate SphericalNaming impl if both polar and azimuth are provided
+    // Generate SphericalNaming impl (always) + inherent methods (when `inherent` flag set)
     let spherical_impl = match (&attrs.polar, &attrs.azimuth) {
         (Some(polar), Some(azimuth)) => {
             let distance = attrs.distance.as_deref().unwrap_or("distance");
-            quote! {
+
+            let polar_ident = syn::Ident::new(polar, proc_macro2::Span::call_site());
+            let azimuth_ident = syn::Ident::new(azimuth, proc_macro2::Span::call_site());
+
+            // SphericalNaming is always generated (trait impl, not inherent)
+            let naming_impl = quote! {
                 impl ::affn::frames::SphericalNaming for #name {
                     fn polar_name() -> &'static str {
                         #polar
@@ -137,6 +147,113 @@ fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<TokenStream2> 
                         #distance
                     }
                 }
+            };
+
+            // Inherent impls: only generated when `inherent` flag is set.
+            // These require Direction/Position to be in the same crate as the frame.
+            let inherent_impl = if attrs.inherent {
+                // Determine constructor parameter order:
+                // IAU convention: polar first for alt/az, azimuth first for everything else
+                let polar_first = polar == "alt";
+
+                let (first_param, second_param) = if polar_first {
+                    (&polar_ident, &azimuth_ident)
+                } else {
+                    (&azimuth_ident, &polar_ident)
+                };
+
+                // new_raw always takes (polar, azimuth)
+                let (polar_arg, azimuth_arg) = (&polar_ident, &azimuth_ident);
+
+                let polar_doc = format!("Returns the {} angle in degrees.", polar);
+                let azimuth_doc = format!("Returns the {} angle in degrees.", azimuth);
+                let dir_new_doc = format!(
+                    "Creates a new direction from {} and {} (canonicalized).",
+                    first_param, second_param
+                );
+                let pos_new_doc = format!(
+                    "Creates a new position from {}, {}, and distance (canonicalized).",
+                    first_param, second_param
+                );
+
+                quote! {
+                    // ── Direction<F>: inherent named constructor + getters ──
+
+                    impl ::affn::spherical::Direction<#name> {
+                        #[doc = #dir_new_doc]
+                        #[inline]
+                        pub fn new(
+                            #first_param: ::qtty::Degrees,
+                            #second_param: ::qtty::Degrees,
+                        ) -> Self {
+                            Self::new_raw(
+                                #polar_arg .wrap_quarter_fold(),
+                                #azimuth_arg .normalize(),
+                            )
+                        }
+
+                        #[doc = #polar_doc]
+                        #[inline]
+                        pub fn #polar_ident(&self) -> ::qtty::Degrees {
+                            self.polar
+                        }
+
+                        #[doc = #azimuth_doc]
+                        #[inline]
+                        pub fn #azimuth_ident(&self) -> ::qtty::Degrees {
+                            self.azimuth
+                        }
+                    }
+
+                    // ── Position<C, F, U>: inherent named getters (any center) ──
+
+                    impl<C, U> ::affn::spherical::Position<C, #name, U>
+                    where
+                        C: ::affn::centers::ReferenceCenter,
+                        U: ::qtty::LengthUnit,
+                    {
+                        #[doc = #polar_doc]
+                        #[inline]
+                        pub fn #polar_ident(&self) -> ::qtty::Degrees {
+                            self.polar
+                        }
+
+                        #[doc = #azimuth_doc]
+                        #[inline]
+                        pub fn #azimuth_ident(&self) -> ::qtty::Degrees {
+                            self.azimuth
+                        }
+                    }
+
+                    // ── Position<C, F, U>: named constructor (only Params = ()) ──
+
+                    impl<C, U> ::affn::spherical::Position<C, #name, U>
+                    where
+                        C: ::affn::centers::ReferenceCenter<Params = ()>,
+                        U: ::qtty::LengthUnit,
+                    {
+                        #[doc = #pos_new_doc]
+                        #[inline]
+                        pub fn new<T: Into<::qtty::Quantity<U>>>(
+                            #first_param: ::qtty::Degrees,
+                            #second_param: ::qtty::Degrees,
+                            distance: T,
+                        ) -> Self {
+                            Self::new_raw(
+                                #polar_arg .wrap_quarter_fold(),
+                                #azimuth_arg .normalize(),
+                                distance.into(),
+                            )
+                        }
+                    }
+                }
+            } else {
+                quote! {}
+            };
+
+            quote! {
+                #naming_impl
+                #inherent_impl
             }
         }
         (Some(_), None) => {
@@ -177,18 +294,24 @@ fn parse_frame_attributes(input: &DeriveInput) -> syn::Result<FrameAttributes> {
             )?;
 
             for meta in nested {
-                if let Meta::NameValue(nv) = meta {
-                    let value_str = extract_string_literal(&nv.value)?;
-
-                    if nv.path.is_ident("name") {
-                        attrs.name = Some(value_str);
-                    } else if nv.path.is_ident("polar") {
-                        attrs.polar = Some(value_str);
-                    } else if nv.path.is_ident("azimuth") {
-                        attrs.azimuth = Some(value_str);
-                    } else if nv.path.is_ident("distance") {
-                        attrs.distance = Some(value_str);
+                match &meta {
+                    Meta::Path(path) if path.is_ident("inherent") => {
+                        attrs.inherent = true;
                     }
+                    Meta::NameValue(nv) => {
+                        let value_str = extract_string_literal(&nv.value)?;
+
+                        if nv.path.is_ident("name") {
+                            attrs.name = Some(value_str);
+                        } else if nv.path.is_ident("polar") {
+                            attrs.polar = Some(value_str);
+                        } else if nv.path.is_ident("azimuth") {
+                            attrs.azimuth = Some(value_str);
+                        } else if nv.path.is_ident("distance") {
+                            attrs.distance = Some(value_str);
+                        }
+                    }
+                    _ => {}
                 }
             }
         }
