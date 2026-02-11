@@ -54,28 +54,6 @@ use std::marker::PhantomData;
 #[path = "direction_serde.rs"]
 mod direction_serde;
 
-// =============================================================================
-// Angle Canonicalization Helpers
-// =============================================================================
-
-/// Normalizes an azimuth angle to the range `[0°, 360°)`.
-///
-/// Uses `qtty`'s `normalize()` for robust handling of negative,
-/// large, and special float values.
-#[inline]
-fn canonicalize_azimuth(azimuth: Degrees) -> Degrees {
-    azimuth.normalize()
-}
-
-/// Folds a polar angle into `[-90°, +90°]` using latitude folding.
-///
-/// Unlike simple clamping, this correctly wraps out-of-range values:
-/// e.g., 100° → 80°, 200° → −20°, −100° → −80°.
-#[inline]
-fn canonicalize_polar(polar: Degrees) -> Degrees {
-    polar.wrap_quarter_fold()
-}
-
 /// A spherical direction (unit vector) in a specific reference frame.
 ///
 /// Directions are frame-dependent but center-independent (free vectors).
