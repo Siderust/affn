@@ -77,6 +77,38 @@ use std::ops::{Add, Sub};
 #[path = "position_serde.rs"]
 mod position_serde;
 
+// =============================================================================
+// Error Types
+// =============================================================================
+
+/// Error returned when an operation requires matching center parameters
+/// but the two positions have different ones.
+///
+/// This occurs with **parameterized centers** (e.g., `Topocentric` with `ObserverSite`)
+/// when two positions reference different observer sites.
+///
+/// For centers with `Params = ()` (e.g., `Geocentric`, `Heliocentric`), this error
+/// can never occur because all instances share the same (empty) parameters.
+#[derive(Debug, Clone)]
+pub struct CenterParamsMismatchError {
+    /// The operation that detected the mismatch.
+    pub operation: &'static str,
+}
+
+impl std::fmt::Display for CenterParamsMismatchError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "center parameter mismatch in `{}`: \
+             positions reference different parameterized centers \
+             (e.g., different observer sites)",
+            self.operation
+        )
+    }
+}
+
+impl std::error::Error for CenterParamsMismatchError {}
+
 /// An affine point in 3D Cartesian coordinates.
 ///
 /// Positions represent locations in space relative to a reference center (origin).
@@ -262,16 +294,47 @@ impl<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> Position<C, F, U> {
     }
 
     /// Computes the distance to another position in the same center and frame.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the positions have different center parameters.
+    /// For a non-panicking alternative, use [`try_distance_to`](Self::try_distance_to).
+    ///
+    /// # Note on Parameterized Centers
+    ///
+    /// For centers with `Params = ()` (e.g., `Geocentric`, `Heliocentric`), this check
+    /// is a compile-time guarantee and has zero runtime cost. For parameterized centers
+    /// (e.g., `Topocentric` with `ObserverSite`), the check is performed at runtime.
     #[inline]
     pub fn distance_to(&self, other: &Self) -> Quantity<U>
     where
         C::Params: PartialEq,
     {
-        debug_assert!(
+        assert!(
             self.center_params == other.center_params,
             "Cannot compute distance between positions with different center parameters"
         );
         (self.xyz - other.xyz).magnitude()
+    }
+
+    /// Checked version of [`distance_to`](Self::distance_to) that returns `Err`
+    /// instead of panicking when center parameters don't match.
+    ///
+    /// For centers with `Params = ()`, this always succeeds.
+    #[inline]
+    pub fn try_distance_to(
+        &self,
+        other: &Self,
+    ) -> Result<Quantity<U>, CenterParamsMismatchError>
+    where
+        C::Params: PartialEq,
+    {
+        if self.center_params != other.center_params {
+            return Err(CenterParamsMismatchError {
+                operation: "distance_to",
+            });
+        }
+        Ok((self.xyz - other.xyz).magnitude())
     }
 
     /// Returns the direction (unit vector) from the center to this position.
@@ -331,11 +394,13 @@ where
 
     /// Computes the displacement vector from `other` to `self`.
     ///
-    /// # Panics (debug only)
+    /// # Panics
+    ///
     /// Panics if the positions have different center parameters.
+    /// For a non-panicking alternative, use [`Position::checked_sub`].
     #[inline]
     fn sub(self, other: Self) -> Self::Output {
-        debug_assert!(
+        assert!(
             self.center_params == other.center_params,
             "Cannot subtract positions with different center parameters"
         );
@@ -351,13 +416,41 @@ where
 {
     type Output = Displacement<F, U>;
 
+    /// Computes the displacement vector from `other` to `self`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the positions have different center parameters.
     #[inline]
     fn sub(self, other: &Position<C, F, U>) -> Self::Output {
-        debug_assert!(
+        assert!(
             self.center_params == other.center_params,
             "Cannot subtract positions with different center parameters"
         );
         Displacement::from_xyz(self.xyz - other.xyz)
+    }
+}
+
+impl<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> Position<C, F, U> {
+    /// Checked subtraction that returns `Err` instead of panicking when
+    /// center parameters don't match.
+    ///
+    /// This is the safe alternative to the `Sub` operator (`pos_a - pos_b`).
+    /// For centers with `Params = ()`, this always succeeds.
+    #[inline]
+    pub fn checked_sub(
+        &self,
+        other: &Self,
+    ) -> Result<Displacement<F, U>, CenterParamsMismatchError>
+    where
+        C::Params: PartialEq,
+    {
+        if self.center_params != other.center_params {
+            return Err(CenterParamsMismatchError {
+                operation: "sub (Position - Position)",
+            });
+        }
+        Ok(Displacement::from_xyz(self.xyz - other.xyz))
     }
 }
 
@@ -584,5 +677,100 @@ mod tests {
         assert!((displacement.x().value() - 3.0).abs() < 1e-12);
         assert!((displacement.y().value() - 4.0).abs() < 1e-12);
         assert!((displacement.z().value() - 6.0).abs() < 1e-12);
+    }
+
+    // =========================================================================
+    // Parameterized-center runtime invariant tests
+    // =========================================================================
+
+    type ParamPos = Position<ParamCenter, TestFrame, Meter>;
+
+    #[test]
+    fn test_distance_to_same_params_succeeds() {
+        let params = TestParams { id: 1 };
+        let a = ParamPos::new_with_params(params.clone(), 0.0, 0.0, 0.0);
+        let b = ParamPos::new_with_params(params, 3.0, 4.0, 0.0);
+        assert!((a.distance_to(&b).value() - 5.0).abs() < 1e-12);
+    }
+
+    #[test]
+    #[should_panic(expected = "different center parameters")]
+    fn test_distance_to_mismatched_params_panics() {
+        let a = ParamPos::new_with_params(TestParams { id: 1 }, 0.0, 0.0, 0.0);
+        let b = ParamPos::new_with_params(TestParams { id: 2 }, 3.0, 4.0, 0.0);
+        let _ = a.distance_to(&b);
+    }
+
+    #[test]
+    fn test_try_distance_to_same_params_ok() {
+        let params = TestParams { id: 1 };
+        let a = ParamPos::new_with_params(params.clone(), 0.0, 0.0, 0.0);
+        let b = ParamPos::new_with_params(params, 3.0, 4.0, 0.0);
+        let result = a.try_distance_to(&b);
+        assert!(result.is_ok());
+        assert!((result.unwrap().value() - 5.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_try_distance_to_mismatched_params_err() {
+        let a = ParamPos::new_with_params(TestParams { id: 1 }, 0.0, 0.0, 0.0);
+        let b = ParamPos::new_with_params(TestParams { id: 2 }, 3.0, 4.0, 0.0);
+        let result = a.try_distance_to(&b);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.to_string().contains("center parameter mismatch"));
+    }
+
+    #[test]
+    #[should_panic(expected = "different center parameters")]
+    fn test_sub_mismatched_params_panics() {
+        let a = ParamPos::new_with_params(TestParams { id: 1 }, 1.0, 2.0, 3.0);
+        let b = ParamPos::new_with_params(TestParams { id: 2 }, 4.0, 5.0, 6.0);
+        let _ = a - b;
+    }
+
+    #[test]
+    fn test_checked_sub_same_params_ok() {
+        let params = TestParams { id: 1 };
+        let a = ParamPos::new_with_params(params.clone(), 0.0, 0.0, 0.0);
+        let b = ParamPos::new_with_params(params, 3.0, 4.0, 0.0);
+        let result = b.checked_sub(&a);
+        assert!(result.is_ok());
+        let disp = result.unwrap();
+        assert!((disp.x().value() - 3.0).abs() < 1e-12);
+        assert!((disp.y().value() - 4.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_checked_sub_mismatched_params_err() {
+        let a = ParamPos::new_with_params(TestParams { id: 1 }, 0.0, 0.0, 0.0);
+        let b = ParamPos::new_with_params(TestParams { id: 2 }, 3.0, 4.0, 0.0);
+        let result = b.checked_sub(&a);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.to_string().contains("center parameter mismatch"));
+    }
+
+    #[test]
+    fn test_unit_params_operations_always_succeed() {
+        // For Params = (), operations are trivially valid (compile-time guarantee)
+        let a = TestPos::new(0.0, 0.0, 0.0);
+        let b = TestPos::new(3.0, 4.0, 0.0);
+        assert!((a.distance_to(&b).value() - 5.0).abs() < 1e-12);
+        assert!(a.try_distance_to(&b).is_ok());
+        assert!(b.checked_sub(&a).is_ok());
+    }
+
+    #[test]
+    fn test_center_params_mismatch_error_display() {
+        let err = CenterParamsMismatchError {
+            operation: "test_op",
+        };
+        let msg = err.to_string();
+        assert!(msg.contains("test_op"));
+        assert!(msg.contains("center parameter mismatch"));
+
+        // Verify it implements std::error::Error
+        let _: &dyn std::error::Error = &err;
     }
 }

@@ -118,7 +118,10 @@ pub use frames::ReferenceFrame;
 pub use ops::{Isometry3, Rotation3, Translation3};
 
 // Re-export concrete Position/Direction types for standalone usage
-pub use cartesian::{Direction as CartesianDirection, Displacement, Position, Vector, Velocity};
+pub use cartesian::{
+    CenterParamsMismatchError, Direction as CartesianDirection, Displacement, Position, Vector,
+    Velocity,
+};
 pub use spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 
 /// Prelude module for convenient imports.
