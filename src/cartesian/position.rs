@@ -280,6 +280,23 @@ impl<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> Position<C, F, U> {
     pub fn as_vec3(&self) -> &nalgebra::Vector3<Quantity<U>> {
         self.xyz.as_vec3()
     }
+
+    /// Converts this position to another length unit.
+    ///
+    /// The center and frame are preserved while each Cartesian component is
+    /// converted independently via `qtty::Quantity::to`.
+    #[inline]
+    pub fn to_unit<U2: LengthUnit>(&self) -> Position<C, F, U2>
+    where
+        C::Params: Clone,
+    {
+        Position::<C, F, U2>::new_with_params(
+            self.center_params.clone(),
+            self.x().to::<U2>(),
+            self.y().to::<U2>(),
+            self.z().to::<U2>(),
+        )
+    }
 }
 
 // =============================================================================
@@ -766,5 +783,27 @@ mod tests {
 
         // Verify it implements std::error::Error
         let _: &dyn std::error::Error = &err;
+    }
+
+    #[test]
+    fn test_position_to_unit_roundtrip() {
+        let p_au = Position::<TestCenter, TestFrame, AstronomicalUnit>::new(1.0, -0.5, 2.25);
+        let p_km: Position<TestCenter, TestFrame, Kilometer> = p_au.to_unit();
+        let back: Position<TestCenter, TestFrame, AstronomicalUnit> = p_km.to_unit();
+
+        assert!((back.x().value() - p_au.x().value()).abs() < 1e-12);
+        assert!((back.y().value() - p_au.y().value()).abs() < 1e-12);
+        assert!((back.z().value() - p_au.z().value()).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_position_to_unit_preserves_center_params() {
+        let p_m = ParamPos::new_with_params(TestParams { id: 7 }, 1.0, 2.0, 3.0);
+        let p_km: Position<ParamCenter, TestFrame, Kilometer> = p_m.to_unit();
+
+        assert_eq!(p_km.center_params().id, 7);
+        assert!((p_km.x().value() - 0.001).abs() < 1e-12);
+        assert!((p_km.y().value() - 0.002).abs() < 1e-12);
+        assert!((p_km.z().value() - 0.003).abs() < 1e-12);
     }
 }
