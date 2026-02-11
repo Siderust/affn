@@ -109,7 +109,7 @@ mod vector; // Vector<F, U> - Free vector (base for Displacement, Velocity) // D
 pub use xyz::XYZ;
 
 pub use direction::Direction;
-pub use position::Position;
+pub use position::{CenterParamsMismatchError, Position};
 pub use vector::{Displacement, Vector, Velocity};
 
 pub use line_of_sight::{line_of_sight, line_of_sight_with_distance, try_line_of_sight};
