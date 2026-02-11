@@ -202,7 +202,7 @@ fn test_cartesian_position_origin_serde() {
 
 #[test]
 fn test_spherical_direction_serde_roundtrip() {
-    let dir = SphericalDirection::<TestFrame>::new(45.0 * DEG, 90.0 * DEG);
+    let dir = SphericalDirection::<TestFrame>::new_raw(45.0 * DEG, 90.0 * DEG);
 
     let json = serde_json::to_string(&dir).expect("serialize SphericalDirection");
     let deserialized: SphericalDirection<TestFrame> =
@@ -214,8 +214,8 @@ fn test_spherical_direction_serde_roundtrip() {
 
 #[test]
 fn test_spherical_direction_poles_serde() {
-    let north_pole = SphericalDirection::<TestFrame>::new(90.0 * DEG, 0.0 * DEG);
-    let south_pole = SphericalDirection::<TestFrame>::new(-90.0 * DEG, 0.0 * DEG);
+    let north_pole = SphericalDirection::<TestFrame>::new_raw(90.0 * DEG, 0.0 * DEG);
+    let south_pole = SphericalDirection::<TestFrame>::new_raw(-90.0 * DEG, 0.0 * DEG);
 
     for dir in [north_pole, south_pole] {
         let json = serde_json::to_string(&dir).expect("serialize pole");
@@ -231,7 +231,7 @@ fn test_spherical_direction_poles_serde() {
 fn test_spherical_direction_equator_serde() {
     // Test points on the equator at various azimuths
     for azimuth in [0.0, 90.0, 180.0, 270.0, 359.9] {
-        let dir = SphericalDirection::<TestFrame>::new(0.0 * DEG, azimuth * DEG);
+        let dir = SphericalDirection::<TestFrame>::new_raw(0.0 * DEG, azimuth * DEG);
 
         let json = serde_json::to_string(&dir).expect("serialize equator point");
         let deserialized: SphericalDirection<TestFrame> =
