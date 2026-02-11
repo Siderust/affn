@@ -153,6 +153,6 @@ pub mod prelude {
     #[cfg(feature = "astro")]
     pub use crate::frames::{
         Ecliptic, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, Galactic,
-        Horizontal, ECEF, ICRS, ITRF,
+        Horizontal, ECEF, ICRF, ICRS, ITRF,
     };
 }

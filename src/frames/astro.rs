@@ -27,6 +27,20 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ICRS;
 
+/// International Celestial Reference Frame (ICRF).
+///
+/// The physical realisation of the ICRS via VLBI observations of extragalactic
+/// sources. DE440 ephemeris data is natively expressed in ICRF.
+///
+/// Practically coincident with [`ICRS`] to sub-milliarcsecond accuracy, but
+/// kept as a distinct type so that DE440 internal vectors carry the correct
+/// frame provenance and cannot be accidentally mixed with other equatorial
+/// frames without an explicit conversion step.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "dec", azimuth = "ra")]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct ICRF;
+
 /// Mean equator and equinox of J2000.0 (FK5/J2000 mean).
 ///
 /// Earth-based mean equator/equinox at epoch J2000.0, with nutation removed.
@@ -127,6 +141,7 @@ mod tests {
     #[test]
     fn test_frame_names() {
         assert_eq!(ICRS::frame_name(), "ICRS");
+        assert_eq!(ICRF::frame_name(), "ICRF");
         assert_eq!(Horizontal::frame_name(), "Horizontal");
         assert_eq!(Ecliptic::frame_name(), "Ecliptic");
         assert_eq!(Galactic::frame_name(), "Galactic");
