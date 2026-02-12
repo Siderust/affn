@@ -77,7 +77,7 @@ fn main() {
     assert_eq!(sp.distance, sp_back.distance);
 
     // Spherical direction
-    let sd = SphericalDirection::<World>::new(10.0 * DEG, 350.0 * DEG);
+    let sd = SphericalDirection::<World>::new_raw(10.0 * DEG, 350.0 * DEG);
     let sd_json = serde_json::to_string_pretty(&sd).expect("serialize spherical direction");
     let sd_back: SphericalDirection<World> =
         serde_json::from_str(&sd_json).expect("deserialize spherical direction");

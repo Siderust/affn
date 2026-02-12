@@ -138,3 +138,13 @@ impl DefaultSphericalNaming {
     /// Default distance name.
     pub const DISTANCE: &'static str = "distance";
 }
+
+// =============================================================================
+// Feature-gated astronomical frames
+// =============================================================================
+
+#[cfg(feature = "astro")]
+mod astro;
+
+#[cfg(feature = "astro")]
+pub use astro::*;

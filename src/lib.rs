@@ -99,6 +99,10 @@ pub mod frames;
 // Affine operators (rotation, translation, isometry)
 pub mod ops;
 
+// Shared serde utilities
+#[cfg(feature = "serde")]
+pub(crate) mod serde_utils;
+
 // Re-export derive macros from affn-derive
 // Named with Derive prefix to avoid conflicts with trait names
 pub use affn_derive::{
@@ -114,7 +118,10 @@ pub use frames::ReferenceFrame;
 pub use ops::{Isometry3, Rotation3, Translation3};
 
 // Re-export concrete Position/Direction types for standalone usage
-pub use cartesian::{Direction as CartesianDirection, Displacement, Position, Vector, Velocity};
+pub use cartesian::{
+    CenterParamsMismatchError, Direction as CartesianDirection, Displacement, Position, Vector,
+    Velocity,
+};
 pub use spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 
 /// Prelude module for convenient imports.
@@ -141,4 +148,11 @@ pub mod prelude {
 
     // Operators
     pub use crate::ops::{Isometry3, Rotation3, Translation3};
+
+    // Feature-gated astronomical frames
+    #[cfg(feature = "astro")]
+    pub use crate::frames::{
+        Ecliptic, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, Galactic,
+        Horizontal, ECEF, ICRF, ICRS, ITRF,
+    };
 }
