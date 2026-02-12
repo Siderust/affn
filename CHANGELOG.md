@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0 - 2026-02-12]
+
 ### Added
 - Optional `astro` cargo feature with built-in astronomical frames in `affn::frames`: `ICRS`, `ICRF`, `EquatorialMeanJ2000`, `EquatorialMeanOfDate`, `EquatorialTrueOfDate`, `Horizontal`, `Ecliptic`, `ITRF`, `ECEF`, and `Galactic`.
 - Feature-gated prelude re-exports for astronomical frames under `affn::prelude` (enabled with `astro`).
