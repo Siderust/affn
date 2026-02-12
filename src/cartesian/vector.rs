@@ -53,8 +53,10 @@ use qtty::{LengthUnit, Quantity, Unit};
 use std::marker::PhantomData;
 use std::ops::{Add, Neg, Sub};
 
+// Serde implementations in separate module
 #[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+#[path = "vector_serde.rs"]
+mod vector_serde;
 
 /// A free vector in 3D Cartesian coordinates.
 ///
@@ -70,27 +72,8 @@ use serde::{Deserialize, Serialize};
 /// This type uses `#[repr(transparent)]` over the internal storage,
 /// ensuring no runtime overhead compared to raw `Vector3<Quantity<U>>`.
 #[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(
-    feature = "serde",
-    serde(bound(serialize = "U: Unit", deserialize = "U: Unit"))
-)]
-#[repr(transparent)]
 pub struct Vector<F: ReferenceFrame, U: Unit> {
-    #[cfg_attr(feature = "serde", serde(flatten))]
-    storage: VectorStorage<F, U>,
-}
-
-/// Internal storage for Vector with PhantomData marker.
-#[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(
-    feature = "serde",
-    serde(bound(serialize = "U: Unit", deserialize = "U: Unit"))
-)]
-struct VectorStorage<F: ReferenceFrame, U: Unit> {
     xyz: XYZ<Quantity<U>>,
-    #[cfg_attr(feature = "serde", serde(skip))]
     _frame: PhantomData<F>,
 }
 
@@ -106,10 +89,8 @@ impl<F: ReferenceFrame, U: Unit> Vector<F, U> {
     #[inline]
     pub fn new<T: Into<Quantity<U>>>(x: T, y: T, z: T) -> Self {
         Self {
-            storage: VectorStorage {
-                xyz: XYZ::new(x.into(), y.into(), z.into()),
-                _frame: PhantomData,
-            },
+            xyz: XYZ::new(x.into(), y.into(), z.into()),
+            _frame: PhantomData,
         }
     }
 
@@ -117,10 +98,8 @@ impl<F: ReferenceFrame, U: Unit> Vector<F, U> {
     #[inline]
     pub fn from_vec3(vec3: nalgebra::Vector3<Quantity<U>>) -> Self {
         Self {
-            storage: VectorStorage {
-                xyz: XYZ::from_vec3(vec3),
-                _frame: PhantomData,
-            },
+            xyz: XYZ::from_vec3(vec3),
+            _frame: PhantomData,
         }
     }
 
@@ -128,23 +107,19 @@ impl<F: ReferenceFrame, U: Unit> Vector<F, U> {
     #[inline]
     pub(crate) fn from_xyz(xyz: XYZ<Quantity<U>>) -> Self {
         Self {
-            storage: VectorStorage {
-                xyz,
-                _frame: PhantomData,
-            },
+            xyz,
+            _frame: PhantomData,
         }
     }
 
     /// The zero vector.
     pub const ZERO: Self = Self {
-        storage: VectorStorage {
-            xyz: XYZ::new(
-                Quantity::<U>::new(0.0),
-                Quantity::<U>::new(0.0),
-                Quantity::<U>::new(0.0),
-            ),
-            _frame: PhantomData,
-        },
+        xyz: XYZ::new(
+            Quantity::<U>::new(0.0),
+            Quantity::<U>::new(0.0),
+            Quantity::<U>::new(0.0),
+        ),
+        _frame: PhantomData,
     };
 }
 
@@ -156,25 +131,38 @@ impl<F: ReferenceFrame, U: Unit> Vector<F, U> {
     /// Returns the x-component.
     #[inline]
     pub fn x(&self) -> Quantity<U> {
-        self.storage.xyz.x()
+        self.xyz.x()
     }
 
     /// Returns the y-component.
     #[inline]
     pub fn y(&self) -> Quantity<U> {
-        self.storage.xyz.y()
+        self.xyz.y()
     }
 
     /// Returns the z-component.
     #[inline]
     pub fn z(&self) -> Quantity<U> {
-        self.storage.xyz.z()
+        self.xyz.z()
     }
 
     /// Returns the underlying nalgebra Vector3.
     #[inline]
     pub fn as_vec3(&self) -> &nalgebra::Vector3<Quantity<U>> {
-        self.storage.xyz.as_vec3()
+        self.xyz.as_vec3()
+    }
+
+    /// Converts this vector to another unit of the same dimension.
+    ///
+    /// The frame is preserved and each component is converted independently
+    /// via `qtty::Quantity::to`.
+    #[inline]
+    pub fn to_unit<U2: Unit<Dim = U::Dim>>(&self) -> Vector<F, U2> {
+        Vector::<F, U2>::new(
+            self.x().to::<U2>(),
+            self.y().to::<U2>(),
+            self.z().to::<U2>(),
+        )
     }
 }
 
@@ -186,19 +174,19 @@ impl<F: ReferenceFrame, U: Unit> Vector<F, U> {
     /// Computes the Euclidean magnitude of the vector.
     #[inline]
     pub fn magnitude(&self) -> Quantity<U> {
-        self.storage.xyz.magnitude()
+        self.xyz.magnitude()
     }
 
     /// Computes the squared magnitude (avoids sqrt, useful for comparisons).
     #[inline]
     pub fn magnitude_squared(&self) -> f64 {
-        self.storage.xyz.magnitude_squared()
+        self.xyz.magnitude_squared()
     }
 
     /// Scales the vector by a scalar factor.
     #[inline]
     pub fn scale(&self, factor: f64) -> Self {
-        Self::from_xyz(XYZ::from_raw(self.storage.xyz.to_raw().scale(factor)))
+        Self::from_xyz(XYZ::from_raw(self.xyz.to_raw().scale(factor)))
     }
 
     /// Computes the dot product with another vector (returns dimensionless f64).
@@ -207,21 +195,19 @@ impl<F: ReferenceFrame, U: Unit> Vector<F, U> {
     /// but we return the raw f64 value for convenience.
     #[inline]
     pub fn dot(&self, other: &Self) -> f64 {
-        self.storage.xyz.to_raw().dot(&other.storage.xyz.to_raw())
+        self.xyz.to_raw().dot(&other.xyz.to_raw())
     }
 
     /// Computes the cross product with another vector.
     #[inline]
     pub fn cross(&self, other: &Self) -> Self {
-        Self::from_xyz(XYZ::from_raw(
-            self.storage.xyz.to_raw().cross(&other.storage.xyz.to_raw()),
-        ))
+        Self::from_xyz(XYZ::from_raw(self.xyz.to_raw().cross(&other.xyz.to_raw())))
     }
 
     /// Returns the negation of this vector.
     #[inline]
     pub fn negate(&self) -> Self {
-        Self::from_xyz(-self.storage.xyz)
+        Self::from_xyz(-self.xyz)
     }
 }
 
@@ -252,8 +238,7 @@ impl<F: ReferenceFrame, U: LengthUnit> Vector<F, U> {
     /// ```
     #[inline]
     pub fn normalize(&self) -> Option<super::Direction<F>> {
-        self.storage
-            .xyz
+        self.xyz
             .to_raw()
             .try_normalize()
             .map(super::Direction::from_xyz_unchecked)
@@ -265,7 +250,7 @@ impl<F: ReferenceFrame, U: LengthUnit> Vector<F, U> {
     /// May produce NaN if the vector has zero magnitude.
     #[inline]
     pub fn normalize_unchecked(&self) -> super::Direction<F> {
-        super::Direction::from_xyz_unchecked(self.storage.xyz.to_raw().normalize_unchecked())
+        super::Direction::from_xyz_unchecked(self.xyz.to_raw().normalize_unchecked())
     }
 }
 
@@ -279,7 +264,7 @@ impl<F: ReferenceFrame, U: Unit> Add for Vector<F, U> {
     /// Vector + Vector -> Vector
     #[inline]
     fn add(self, other: Self) -> Self::Output {
-        Self::from_xyz(self.storage.xyz + other.storage.xyz)
+        Self::from_xyz(self.xyz + other.xyz)
     }
 }
 
@@ -289,7 +274,7 @@ impl<F: ReferenceFrame, U: Unit> Sub for Vector<F, U> {
     /// Vector - Vector -> Vector
     #[inline]
     fn sub(self, other: Self) -> Self::Output {
-        Self::from_xyz(self.storage.xyz - other.storage.xyz)
+        Self::from_xyz(self.xyz - other.xyz)
     }
 }
 
@@ -308,7 +293,7 @@ impl<F: ReferenceFrame, U: Unit> Neg for Vector<F, U> {
 
 impl<F: ReferenceFrame, U: Unit> PartialEq for Vector<F, U> {
     fn eq(&self, other: &Self) -> bool {
-        self.storage.xyz == other.storage.xyz
+        self.xyz == other.xyz
     }
 }
 
@@ -357,7 +342,7 @@ mod tests {
     use super::*;
     // Import the derive
     use crate::DeriveReferenceFrame as ReferenceFrame;
-    use qtty::{AstronomicalUnit, Day, Meter, Per, Quantity};
+    use qtty::{AstronomicalUnit, Day, Kilometer, Meter, Per, Quantity};
 
     // Define a test frame using the macro
     #[derive(Debug, Copy, Clone, ReferenceFrame)]
@@ -483,5 +468,33 @@ mod tests {
 
         let text = v.to_string();
         assert!(text.contains("Vector<TestFrame>"));
+    }
+
+    #[test]
+    fn test_vector_to_unit_roundtrip() {
+        let v_au = DispAu::new(1.0, -2.0, 0.5);
+        let v_km: Displacement<TestFrame, Kilometer> = v_au.to_unit();
+        let back: DispAu = v_km.to_unit();
+
+        assert!((back.x().value() - v_au.x().value()).abs() < 1e-12);
+        assert!((back.y().value() - v_au.y().value()).abs() < 1e-12);
+        assert!((back.z().value() - v_au.z().value()).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_velocity_to_unit_roundtrip() {
+        type KmPerDay = Per<Kilometer, Day>;
+
+        let v_au_day = VelAuDay::new(
+            Quantity::<AuPerDay>::new(0.01),
+            Quantity::<AuPerDay>::new(-0.02),
+            Quantity::<AuPerDay>::new(0.03),
+        );
+        let v_km_day: Velocity<TestFrame, KmPerDay> = v_au_day.to_unit();
+        let back: VelAuDay = v_km_day.to_unit();
+
+        assert!((back.x().value() - v_au_day.x().value()).abs() < 1e-12);
+        assert!((back.y().value() - v_au_day.y().value()).abs() < 1e-12);
+        assert!((back.z().value() - v_au_day.z().value()).abs() < 1e-12);
     }
 }

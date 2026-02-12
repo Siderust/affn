@@ -108,25 +108,16 @@ where
         &self.center_params
     }
 
-    /// Calculates the angular separation between this position and another.
+    /// Calculates the angular separation between this position and another
+    /// using the Vincenty formula (numerically stable).
     pub fn angular_separation(&self, other: Self) -> Degrees {
-        let az1 = self.azimuth.to::<Radian>();
-        let po1 = self.polar.to::<Radian>();
-        let az2 = other.azimuth.to::<Radian>();
-        let po2 = other.polar.to::<Radian>();
-
-        let x = (po1.cos() * po2.sin()) - (po1.sin() * po2.cos() * (az2 - az1).cos());
-        let y = po2.cos() * (az2 - az1).sin();
-        let z = (po1.sin() * po2.sin()) + (po1.cos() * po2.cos() * (az2 - az1).cos());
-
-        let angle_rad = (x * x + y * y).sqrt().atan2(z);
-        Radians::new(angle_rad).to::<Degree>()
+        super::angular_separation_impl(self.polar, self.azimuth, other.polar, other.azimuth)
     }
 
     /// Extracts the corresponding spherical **direction** (frame-only).
     #[must_use]
     pub fn direction(&self) -> super::direction::Direction<F> {
-        super::direction::Direction::new(self.polar, self.azimuth)
+        super::direction::Direction::new_raw(self.polar, self.azimuth)
     }
 
     /// Converts to Cartesian position.
@@ -156,17 +147,11 @@ where
         let z = cart.z().value();
         let r = cart.distance().value();
 
-        let polar = if r.abs() < f64::EPSILON {
-            Degrees::new(0.0)
+        let (polar, azimuth) = if r.abs() < f64::EPSILON {
+            (Degrees::new(0.0), Degrees::new(0.0))
         } else {
-            let z_clamped = (z / r).clamp(-1.0, 1.0);
-            Degrees::new(z_clamped.asin().to_degrees())
+            super::xyz_to_polar_azimuth(x / r, y / r, z / r)
         };
-
-        let mut azimuth = Degrees::new(y.atan2(x).to_degrees());
-        if azimuth.value() < 0.0 {
-            azimuth = Degrees::new(azimuth.value() + 360.0);
-        }
 
         Self::new_raw_with_params(
             cart.center_params().clone(),
