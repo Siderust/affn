@@ -1,6 +1,6 @@
 [package]
 name = "affn"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "Affine geometry primitives: strongly-typed coordinate systems, reference frames, and centers for scientific computing."
@@ -19,7 +19,7 @@ serde = ["dep:serde", "qtty/serde", "nalgebra/serde-serialize"]
 astro = []
 
 [dependencies]
-affn-derive = { version = "0.1.1", path = "affn-derive" }
+affn-derive = { version = "0.1.2", path = "affn-derive" }
 nalgebra = "0.34.1"
 qtty = "0.3.0"
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }

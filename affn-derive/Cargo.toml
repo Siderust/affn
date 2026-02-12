@@ -1,6 +1,6 @@
 [package]
 name = "affn-derive"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "Derive macros for affn: ReferenceFrame and ReferenceCenter"
