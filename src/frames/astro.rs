@@ -68,6 +68,60 @@ pub struct EquatorialMeanOfDate;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct EquatorialTrueOfDate;
 
+/// Geocentric Celestial Reference System (GCRS).
+///
+/// The geocentric counterpart of the BCRS (barycentric CRS). Its axes are
+/// kinematically non-rotating with respect to the ICRS, but the origin is
+/// at the Earth's center of mass. In the IAU 2000/2006 framework, directions
+/// expressed in the GCRS are transformed to the terrestrial frame via the
+/// CIO-based procedure: GCRS → (CIP X,Y + CIO s) → CIRS → (ERA) → TIRS →
+/// (polar motion W) → ITRS.
+///
+/// For most astronomical purposes (< 1 mas), GCRS ≈ ICRS for directions.
+///
+/// ## References
+/// * IAU 2000 Resolution B1.3
+/// * IERS Conventions (2010), §5.1
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "dec", azimuth = "ra", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct GCRS;
+
+/// Celestial Intermediate Reference System (CIRS).
+///
+/// An intermediate geocentric equatorial frame whose pole is the **Celestial
+/// Intermediate Pole** (CIP) and whose origin on the CIP equator is the
+/// **Celestial Intermediate Origin** (CIO). CIRS is obtained from GCRS by
+/// applying the CIP (X, Y) coordinates and the CIO locator *s*.
+///
+/// The CIRS is the "bridge" between the celestial (GCRS) and terrestrial
+/// (TIRS) frames in the CIO-based procedure.
+///
+/// ## References
+/// * IAU 2000 Resolution B1.8
+/// * IERS Conventions (2010), §5.4.4
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "dec", azimuth = "ra", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct CIRS;
+
+/// Terrestrial Intermediate Reference System (TIRS).
+///
+/// An intermediate geocentric frame obtained from CIRS by applying the
+/// **Earth Rotation Angle** (ERA). Its pole is the CIP (same as CIRS),
+/// but the prime direction on the CIP equator is the **Terrestrial
+/// Intermediate Origin** (TIO), which tracks the Earth's rotation.
+///
+/// The TIRS is connected to the ITRS by the polar motion matrix **W**.
+///
+/// ## References
+/// * IAU 2000 Resolution B1.8
+/// * IERS Conventions (2010), §5.4.4
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "dec", azimuth = "ra", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct TIRS;
+
 // =============================================================================
 // Horizontal frame (alt/az)
 // =============================================================================
