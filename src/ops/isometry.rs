@@ -165,6 +165,7 @@ impl std::ops::Mul<[f64; 3]> for Isometry3 {
 mod tests {
     use super::*;
     use crate::cartesian::xyz::XYZ;
+    use qtty::Radians;
     use std::f64::consts::FRAC_PI_2;
 
     const EPSILON: f64 = 1e-12;
@@ -194,7 +195,7 @@ mod tests {
 
     #[test]
     fn test_isometry_rotation_only() {
-        let rot = Rotation3::from_z_rotation(FRAC_PI_2);
+        let rot = Rotation3::rz(Radians::new(FRAC_PI_2));
         let iso = Isometry3::from_rotation(rot);
 
         let p = [1.0, 0.0, 0.0];
@@ -214,7 +215,7 @@ mod tests {
 
     #[test]
     fn test_isometry_combined() {
-        let rot = Rotation3::from_z_rotation(FRAC_PI_2);
+        let rot = Rotation3::rz(Radians::new(FRAC_PI_2));
         let trans = Translation3::new(1.0, 0.0, 0.0);
         let iso = Isometry3::new(rot, trans);
 
@@ -225,7 +226,7 @@ mod tests {
 
     #[test]
     fn test_isometry_inverse() {
-        let rot = Rotation3::from_z_rotation(0.5);
+        let rot = Rotation3::rz(Radians::new(0.5));
         let trans = Translation3::new(1.0, 2.0, 3.0);
         let iso = Isometry3::new(rot, trans);
         let iso_inv = iso.inverse();
@@ -239,11 +240,11 @@ mod tests {
     #[test]
     fn test_isometry_composition() {
         let iso1 = Isometry3::new(
-            Rotation3::from_z_rotation(FRAC_PI_2),
+            Rotation3::rz(Radians::new(FRAC_PI_2)),
             Translation3::new(1.0, 0.0, 0.0),
         );
         let iso2 = Isometry3::new(
-            Rotation3::from_x_rotation(FRAC_PI_2),
+            Rotation3::rx(Radians::new(FRAC_PI_2)),
             Translation3::new(0.0, 1.0, 0.0),
         );
 
@@ -256,7 +257,7 @@ mod tests {
 
     #[test]
     fn test_isometry_apply_vector() {
-        let rot = Rotation3::from_z_rotation(FRAC_PI_2);
+        let rot = Rotation3::rz(Radians::new(FRAC_PI_2));
         let trans = Translation3::new(100.0, 200.0, 300.0);
         let iso = Isometry3::new(rot, trans);
 
@@ -271,7 +272,7 @@ mod tests {
         assert_eq!(iso, Isometry3::IDENTITY);
 
         let iso1 = Isometry3::new(
-            Rotation3::from_z_rotation(FRAC_PI_2),
+            Rotation3::rz(Radians::new(FRAC_PI_2)),
             Translation3::new(1.0, 0.0, 0.0),
         );
         let iso2 = Isometry3::from_translation(Translation3::new(0.0, 1.0, 0.0));
@@ -296,7 +297,7 @@ mod tests {
 
     #[test]
     fn test_isometry_mul_f64_array() {
-        let rot = Rotation3::from_z_rotation(FRAC_PI_2);
+        let rot = Rotation3::rz(Radians::new(FRAC_PI_2));
         let trans = Translation3::new(1.0, 0.0, 0.0);
         let iso = Isometry3::new(rot, trans);
         let result = iso * [1.0, 0.0, 0.0];
@@ -306,7 +307,7 @@ mod tests {
     #[test]
     fn test_isometry_mul_quantity_array() {
         use qtty::{Meter, Quantity};
-        let rot = Rotation3::from_z_rotation(FRAC_PI_2);
+        let rot = Rotation3::rz(Radians::new(FRAC_PI_2));
         let trans = Translation3::new(1.0, 0.0, 0.0);
         let iso = Isometry3::new(rot, trans);
         let v = [
