@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- New astronomical frames in `affn::frames::astro`: `GCRS`, `CIRS`, and `TIRS`.
+
+### Changed
+- Rotation constructors now use typed angles (`qtty::Radians`) in public APIs: `Rotation3::from_axis_angle`, `Rotation3::from_euler_xyz`, and `Rotation3::from_euler_zxz`.
+- Added typed-axis helpers `Rotation3::rx`, `Rotation3::ry`, and `Rotation3::rz`; internal scalar axis-rotation builders are no longer public.
+
 ## [0.3.0 - 2026-02-12]
 
 ### Added

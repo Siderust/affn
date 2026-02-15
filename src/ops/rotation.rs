@@ -1,6 +1,7 @@
 //! 3x3 rotation matrix operator.
 
 use crate::cartesian::xyz::XYZ;
+use qtty::Radians;
 
 /// A 3x3 rotation matrix for orientation transforms.
 ///
@@ -18,10 +19,11 @@ use crate::cartesian::xyz::XYZ;
 ///
 /// ```rust
 /// use affn::Rotation3;
+/// use qtty::Radians;
 /// use std::f64::consts::FRAC_PI_2;
 ///
 /// // Rotate 90° around the Z axis
-/// let rot = Rotation3::from_axis_angle([0.0, 0.0, 1.0], FRAC_PI_2);
+/// let rot = Rotation3::rz(Radians::new(FRAC_PI_2));
 /// let x_axis = [1.0, 0.0, 0.0];
 /// let rotated = rot.apply_array(x_axis);
 ///
@@ -62,12 +64,12 @@ impl Rotation3 {
     ///
     /// # Arguments
     /// - `axis`: The rotation axis (will be normalized if not unit length).
-    /// - `angle`: The rotation angle in radians (right-hand rule).
+    /// - `angle`: The rotation angle (right-hand rule).
     ///
     /// # Returns
     /// A rotation matrix representing the given axis-angle rotation.
     #[inline]
-    pub fn from_axis_angle(axis: [f64; 3], angle: f64) -> Self {
+    pub fn from_axis_angle(axis: [f64; 3], angle: Radians) -> Self {
         let [x, y, z] = axis;
         let mag = (x * x + y * y + z * z).sqrt();
         if mag < f64::EPSILON {
@@ -77,7 +79,7 @@ impl Rotation3 {
         // Normalize axis
         let (x, y, z) = (x / mag, y / mag, z / mag);
 
-        let (s, c) = (angle.sin(), angle.cos());
+        let (s, c) = angle.sin_cos();
         let t = 1.0 - c;
 
         Self {
@@ -92,9 +94,9 @@ impl Rotation3 {
     /// Creates a rotation around the X axis.
     ///
     /// # Arguments
-    /// - `angle`: Rotation angle in radians (right-hand rule around +X).
+    /// - `angle`: Rotation angle (right-hand rule around +X).
     #[inline]
-    pub fn from_x_rotation(angle: f64) -> Self {
+    fn from_x_rotation(angle: f64) -> Self {
         let (s, c) = (angle.sin(), angle.cos());
         Self {
             m: [[1.0, 0.0, 0.0], [0.0, c, -s], [0.0, s, c]],
@@ -104,9 +106,9 @@ impl Rotation3 {
     /// Creates a rotation around the Y axis.
     ///
     /// # Arguments
-    /// - `angle`: Rotation angle in radians (right-hand rule around +Y).
+    /// - `angle`: Rotation angle (right-hand rule around +Y).
     #[inline]
-    pub fn from_y_rotation(angle: f64) -> Self {
+    fn from_y_rotation(angle: f64) -> Self {
         let (s, c) = (angle.sin(), angle.cos());
         Self {
             m: [[c, 0.0, s], [0.0, 1.0, 0.0], [-s, 0.0, c]],
@@ -116,9 +118,9 @@ impl Rotation3 {
     /// Creates a rotation around the Z axis.
     ///
     /// # Arguments
-    /// - `angle`: Rotation angle in radians (right-hand rule around +Z).
+    /// - `angle`: Rotation angle (right-hand rule around +Z).
     #[inline]
-    pub fn from_z_rotation(angle: f64) -> Self {
+    fn from_z_rotation(angle: f64) -> Self {
         let (s, c) = (angle.sin(), angle.cos());
         Self {
             m: [[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]],
@@ -130,12 +132,12 @@ impl Rotation3 {
     /// Applies rotations in order: X, then Y, then Z.
     ///
     /// # Arguments
-    /// - `x`: Rotation around X axis in radians.
-    /// - `y`: Rotation around Y axis in radians.
-    /// - `z`: Rotation around Z axis in radians.
+    /// - `x`: Rotation around X axis.
+    /// - `y`: Rotation around Y axis.
+    /// - `z`: Rotation around Z axis.
     #[inline]
-    pub fn from_euler_xyz(x: f64, y: f64, z: f64) -> Self {
-        Self::from_z_rotation(z) * Self::from_y_rotation(y) * Self::from_x_rotation(x)
+    pub fn from_euler_xyz(x: Radians, y: Radians, z: Radians) -> Self {
+        Self::rz(z) * Self::ry(y) * Self::rx(x)
     }
 
     /// Creates a rotation from Euler angles (ZXZ convention).
@@ -144,12 +146,32 @@ impl Rotation3 {
     /// Applies rotations in order: first Z, then X, then Z.
     ///
     /// # Arguments
-    /// - `z1`: First rotation around Z axis in radians.
-    /// - `x`: Rotation around X axis in radians.
-    /// - `z2`: Second rotation around Z axis in radians.
+    /// - `z1`: First rotation around Z axis.
+    /// - `x`: Rotation around X axis.
+    /// - `z2`: Second rotation around Z axis.
     #[inline]
-    pub fn from_euler_zxz(z1: f64, x: f64, z2: f64) -> Self {
-        Self::from_z_rotation(z2) * Self::from_x_rotation(x) * Self::from_z_rotation(z1)
+    pub fn from_euler_zxz(z1: Radians, x: Radians, z2: Radians) -> Self {
+        Self::rz(z2) * Self::rx(x) * Self::rz(z1)
+    }
+
+    // ─── Typed-angle constructors (Radians from qtty) ───
+
+    /// Creates a rotation around the X axis from a typed `Radians` angle.
+    #[inline]
+    pub fn rx(angle: Radians) -> Self {
+        Self::from_x_rotation(angle.value())
+    }
+
+    /// Creates a rotation around the Y axis from a typed `Radians` angle.
+    #[inline]
+    pub fn ry(angle: Radians) -> Self {
+        Self::from_y_rotation(angle.value())
+    }
+
+    /// Creates a rotation around the Z axis from a typed `Radians` angle.
+    #[inline]
+    pub fn rz(angle: Radians) -> Self {
+        Self::from_z_rotation(angle.value())
     }
 
     /// Returns the transpose (inverse) of this rotation.
@@ -250,6 +272,7 @@ impl std::ops::Mul<[f64; 3]> for Rotation3 {
 mod tests {
     use super::*;
     use crate::cartesian::xyz::XYZ;
+    use qtty::Radians;
     use std::f64::consts::{FRAC_PI_2, PI};
 
     const EPSILON: f64 = 1e-12;
@@ -275,7 +298,7 @@ mod tests {
 
     #[test]
     fn test_rotation_z_90() {
-        let r = Rotation3::from_z_rotation(FRAC_PI_2);
+        let r = Rotation3::rz(Radians::new(FRAC_PI_2));
         let x = [1.0, 0.0, 0.0];
         let result = r.apply_array(x);
         assert_array_eq(result, [0.0, 1.0, 0.0], "X-axis should rotate to Y-axis");
@@ -283,7 +306,7 @@ mod tests {
 
     #[test]
     fn test_rotation_x_90() {
-        let r = Rotation3::from_x_rotation(FRAC_PI_2);
+        let r = Rotation3::rx(Radians::new(FRAC_PI_2));
         let y = [0.0, 1.0, 0.0];
         let result = r.apply_array(y);
         assert_array_eq(result, [0.0, 0.0, 1.0], "Y-axis should rotate to Z-axis");
@@ -291,7 +314,7 @@ mod tests {
 
     #[test]
     fn test_rotation_y_90() {
-        let r = Rotation3::from_y_rotation(FRAC_PI_2);
+        let r = Rotation3::ry(Radians::new(FRAC_PI_2));
         let z = [0.0, 0.0, 1.0];
         let result = r.apply_array(z);
         assert_array_eq(result, [1.0, 0.0, 0.0], "Z-axis should rotate to X-axis");
@@ -299,7 +322,7 @@ mod tests {
 
     #[test]
     fn test_rotation_axis_angle() {
-        let r = Rotation3::from_axis_angle([0.0, 0.0, 1.0], PI);
+        let r = Rotation3::from_axis_angle([0.0, 0.0, 1.0], Radians::new(PI));
         let x = [1.0, 0.0, 0.0];
         let result = r.apply_array(x);
         assert_array_eq(result, [-1.0, 0.0, 0.0], "180° around Z should flip X");
@@ -307,7 +330,7 @@ mod tests {
 
     #[test]
     fn test_rotation_inverse() {
-        let r = Rotation3::from_z_rotation(0.7);
+        let r = Rotation3::rz(Radians::new(0.7));
         let r_inv = r.inverse();
         let composed = r.compose(&r_inv);
 
@@ -318,7 +341,7 @@ mod tests {
 
     #[test]
     fn test_rotation_composition() {
-        let r90 = Rotation3::from_z_rotation(FRAC_PI_2);
+        let r90 = Rotation3::rz(Radians::new(FRAC_PI_2));
         let r180 = r90.compose(&r90);
 
         let x = [1.0, 0.0, 0.0];
@@ -328,7 +351,7 @@ mod tests {
 
     #[test]
     fn test_rotation_xyz_type() {
-        let r = Rotation3::from_z_rotation(FRAC_PI_2);
+        let r = Rotation3::rz(Radians::new(FRAC_PI_2));
         let xyz = XYZ::new(1.0, 0.0, 0.0);
         let result = r.apply_xyz(xyz);
         assert!((result.x()).abs() < EPSILON);
@@ -339,16 +362,18 @@ mod tests {
     #[test]
     fn test_rotation_euler_and_matrix_helpers() {
         let v = [1.0, 2.0, 3.0];
-        let r_xyz = Rotation3::from_euler_xyz(0.1, 0.2, 0.3);
-        let manual = Rotation3::from_z_rotation(0.3)
-            * Rotation3::from_y_rotation(0.2)
-            * Rotation3::from_x_rotation(0.1);
+        let r_xyz =
+            Rotation3::from_euler_xyz(Radians::new(0.1), Radians::new(0.2), Radians::new(0.3));
+        let manual = Rotation3::rz(Radians::new(0.3))
+            * Rotation3::ry(Radians::new(0.2))
+            * Rotation3::rx(Radians::new(0.1));
         assert_array_eq(r_xyz.apply_array(v), manual.apply_array(v), "Euler XYZ");
 
-        let r_zxz = Rotation3::from_euler_zxz(0.1, 0.2, 0.3);
-        let manual_zxz = Rotation3::from_z_rotation(0.3)
-            * Rotation3::from_x_rotation(0.2)
-            * Rotation3::from_z_rotation(0.1);
+        let r_zxz =
+            Rotation3::from_euler_zxz(Radians::new(0.1), Radians::new(0.2), Radians::new(0.3));
+        let manual_zxz = Rotation3::rz(Radians::new(0.3))
+            * Rotation3::rx(Radians::new(0.2))
+            * Rotation3::rz(Radians::new(0.1));
         assert_array_eq(r_zxz.apply_array(v), manual_zxz.apply_array(v), "Euler ZXZ");
 
         let identity = Rotation3::default();
@@ -360,7 +385,7 @@ mod tests {
 
     #[test]
     fn test_rotation_mul_f64_array() {
-        let r = Rotation3::from_z_rotation(FRAC_PI_2);
+        let r = Rotation3::rz(Radians::new(FRAC_PI_2));
         let result = r * [1.0, 0.0, 0.0];
         assert_array_eq(result, [0.0, 1.0, 0.0], "Rotation * [f64; 3]");
     }
@@ -369,7 +394,7 @@ mod tests {
     fn test_rotation_mul_quantity_array() {
         use qtty::Meter;
         use qtty::Quantity;
-        let r = Rotation3::from_z_rotation(FRAC_PI_2);
+        let r = Rotation3::rz(Radians::new(FRAC_PI_2));
         let v = [
             Quantity::<Meter>::new(1.0),
             Quantity::<Meter>::new(0.0),
@@ -385,7 +410,7 @@ mod tests {
     fn test_rotation_mul_xyz_quantity() {
         use qtty::Meter;
         use qtty::Quantity;
-        let r = Rotation3::from_z_rotation(FRAC_PI_2);
+        let r = Rotation3::rz(Radians::new(FRAC_PI_2));
         let xyz: XYZ<Quantity<Meter>> = XYZ::new(
             Quantity::<Meter>::new(1.0),
             Quantity::<Meter>::new(0.0),
@@ -400,7 +425,7 @@ mod tests {
     #[test]
     fn test_rotation_mul_quantity_preserves_unit() {
         use qtty::{AstronomicalUnit, Quantity};
-        let r = Rotation3::from_z_rotation(FRAC_PI_2);
+        let r = Rotation3::rz(Radians::new(FRAC_PI_2));
         let v = [
             Quantity::<AstronomicalUnit>::new(3.0),
             Quantity::<AstronomicalUnit>::new(0.0),
@@ -415,7 +440,7 @@ mod tests {
     #[test]
     fn test_rotation_mul_quantity_roundtrip() {
         use qtty::{Meter, Quantity};
-        let r = Rotation3::from_z_rotation(0.7);
+        let r = Rotation3::rz(Radians::new(0.7));
         let r_inv = r.inverse();
         let v = [
             Quantity::<Meter>::new(1.0),
