@@ -362,21 +362,15 @@ mod tests {
     #[test]
     fn test_rotation_euler_and_matrix_helpers() {
         let v = [1.0, 2.0, 3.0];
-        let r_xyz = Rotation3::from_euler_xyz(
-            Radians::new(0.1),
-            Radians::new(0.2),
-            Radians::new(0.3),
-        );
+        let r_xyz =
+            Rotation3::from_euler_xyz(Radians::new(0.1), Radians::new(0.2), Radians::new(0.3));
         let manual = Rotation3::rz(Radians::new(0.3))
             * Rotation3::ry(Radians::new(0.2))
             * Rotation3::rx(Radians::new(0.1));
         assert_array_eq(r_xyz.apply_array(v), manual.apply_array(v), "Euler XYZ");
 
-        let r_zxz = Rotation3::from_euler_zxz(
-            Radians::new(0.1),
-            Radians::new(0.2),
-            Radians::new(0.3),
-        );
+        let r_zxz =
+            Rotation3::from_euler_zxz(Radians::new(0.1), Radians::new(0.2), Radians::new(0.3));
         let manual_zxz = Rotation3::rz(Radians::new(0.3))
             * Rotation3::rx(Radians::new(0.2))
             * Rotation3::rz(Radians::new(0.1));
