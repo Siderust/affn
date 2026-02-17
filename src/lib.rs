@@ -152,7 +152,8 @@ pub mod prelude {
     // Feature-gated astronomical frames
     #[cfg(feature = "astro")]
     pub use crate::frames::{
-        Ecliptic, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, Galactic,
-        Horizontal, ECEF, ICRF, ICRS, ITRF,
+        EclipticMeanJ2000, EclipticMeanOfDate, EclipticOfDate, EclipticTrueOfDate,
+        EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, Galactic, Horizontal,
+        ECEF, ICRF, ICRS, ITRF,
     };
 }

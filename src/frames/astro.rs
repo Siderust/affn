@@ -139,14 +139,38 @@ pub struct Horizontal;
 // Longitude/latitude frames
 // =============================================================================
 
-/// Ecliptic coordinate system.
+/// Mean ecliptic of J2000.0.
 ///
-/// Based on the plane of Earth's orbit around the Sun.
+/// Based on the mean plane of Earth's orbit around the Sun at epoch J2000.0.
 /// Uses ecliptic longitude and latitude.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
 #[frame(polar = "lat", azimuth = "lon", inherent)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Ecliptic;
+pub struct EclipticMeanJ2000;
+
+/// Mean ecliptic of date.
+///
+/// Uses the mean ecliptic plane (obliquity of date) without nutation.
+/// Transformations to/from this frame are time-dependent and require a TT epoch.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "lat", azimuth = "lon", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct EclipticOfDate;
+
+/// Mean ecliptic of date.
+///
+/// Alias for [`EclipticOfDate`], provided for naming parity with
+/// [`EquatorialMeanOfDate`].
+pub type EclipticMeanOfDate = EclipticOfDate;
+
+/// True ecliptic of date.
+///
+/// Uses the true ecliptic plane of date (including nutation effects).
+/// Transformations to/from this frame are time-dependent and require a TT epoch.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "lat", azimuth = "lon", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct EclipticTrueOfDate;
 
 /// International Terrestrial Reference Frame.
 ///
@@ -197,7 +221,10 @@ mod tests {
         assert_eq!(ICRS::frame_name(), "ICRS");
         assert_eq!(ICRF::frame_name(), "ICRF");
         assert_eq!(Horizontal::frame_name(), "Horizontal");
-        assert_eq!(Ecliptic::frame_name(), "Ecliptic");
+        assert_eq!(EclipticMeanJ2000::frame_name(), "EclipticMeanJ2000");
+        assert_eq!(EclipticOfDate::frame_name(), "EclipticOfDate");
+        assert_eq!(EclipticTrueOfDate::frame_name(), "EclipticTrueOfDate");
+        assert_eq!(EclipticMeanOfDate::frame_name(), "EclipticOfDate");
         assert_eq!(Galactic::frame_name(), "Galactic");
         assert_eq!(ITRF::frame_name(), "ITRF");
         assert_eq!(ECEF::frame_name(), "ECEF");
@@ -211,8 +238,12 @@ mod tests {
         assert_eq!(Horizontal::polar_name(), "alt");
         assert_eq!(Horizontal::azimuth_name(), "az");
 
-        assert_eq!(Ecliptic::polar_name(), "lat");
-        assert_eq!(Ecliptic::azimuth_name(), "lon");
+        assert_eq!(EclipticMeanJ2000::polar_name(), "lat");
+        assert_eq!(EclipticMeanJ2000::azimuth_name(), "lon");
+        assert_eq!(EclipticOfDate::polar_name(), "lat");
+        assert_eq!(EclipticOfDate::azimuth_name(), "lon");
+        assert_eq!(EclipticTrueOfDate::polar_name(), "lat");
+        assert_eq!(EclipticTrueOfDate::azimuth_name(), "lon");
 
         assert_eq!(Galactic::polar_name(), "b");
         assert_eq!(Galactic::azimuth_name(), "l");
@@ -239,7 +270,7 @@ mod tests {
 
     #[test]
     fn test_ecliptic_direction_new() {
-        let d = Direction::<Ecliptic>::new(270.0 * DEG, -10.0 * DEG);
+        let d = Direction::<EclipticMeanJ2000>::new(270.0 * DEG, -10.0 * DEG);
         assert_eq!(d.lon(), 270.0 * DEG);
         assert_eq!(d.lat(), -10.0 * DEG);
     }
