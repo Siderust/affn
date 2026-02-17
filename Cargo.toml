@@ -25,4 +25,9 @@ qtty = "0.3.0"
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
 
 [dev-dependencies]
+criterion = "0.8.1"
 serde_json = "1.0"
+
+[[bench]]
+name = "rotation"
+harness = false

@@ -116,7 +116,7 @@ impl std::error::Error for CenterParamsMismatchError {}
 ///
 /// # Type Parameters
 /// - `C`: The reference center (e.g., `Heliocentric`, `Geocentric`, `Topocentric`)
-/// - `F`: The reference frame (e.g., `ICRS`, `Ecliptic`, `Equatorial`)
+/// - `F`: The reference frame (e.g., `ICRS`, `EclipticMeanJ2000`, `Equatorial`)
 /// - `U`: The length unit (e.g., `AstronomicalUnit`, `Kilometer`)
 ///
 /// # Center Parameters

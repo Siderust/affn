@@ -74,7 +74,7 @@ mod direction_serde;
 /// The internal storage is a `Vector3<f64>` with magnitude 1 (dimensionless).
 ///
 /// # Type Parameters
-/// - `F`: The reference frame (e.g., `ICRS`, `Ecliptic`, `Equatorial`)
+/// - `F`: The reference frame (e.g., `ICRS`, `EclipticMeanJ2000`, `Equatorial`)
 ///
 /// # Invariants
 ///
