@@ -165,7 +165,10 @@ pub type EclipticMeanOfDate = EclipticOfDate;
 
 /// True ecliptic of date.
 ///
-/// Uses the true ecliptic plane of date (including nutation effects).
+/// Uses the true ecliptic plane of date with nutation effects applied.
+/// Ecliptic longitude is measured from the **true equinox** (precession +
+/// nutation in longitude), and the obliquity used for the equator-to-ecliptic
+/// tilt is the **true obliquity** (ε_A + Δε).
 /// Transformations to/from this frame are time-dependent and require a TT epoch.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
 #[frame(polar = "lat", azimuth = "lon", inherent)]
