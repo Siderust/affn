@@ -64,7 +64,7 @@ mod vector_serde;
 /// directed magnitudes (displacement, velocity, acceleration, etc.) in space.
 ///
 /// # Type Parameters
-/// - `F`: The reference frame (e.g., `ICRS`, `Ecliptic`, `Equatorial`)
+/// - `F`: The reference frame (e.g., `ICRS`, `EclipticMeanJ2000`, `Equatorial`)
 /// - `U`: The unit (e.g., `AstronomicalUnit`, `Per<Kilometer, Second>`)
 ///
 /// # Zero-Cost Abstraction
