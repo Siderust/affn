@@ -95,13 +95,13 @@ pub trait ReferenceFrame: Copy + Clone + std::fmt::Debug {
 /// use affn::frames::{ReferenceFrame, SphericalNaming};
 ///
 /// #[derive(Debug, Copy, Clone)]
-/// struct Ecliptic;
+/// struct EclipticMeanJ2000;
 ///
-/// impl ReferenceFrame for Ecliptic {
-///     fn frame_name() -> &'static str { "Ecliptic" }
+/// impl ReferenceFrame for EclipticMeanJ2000 {
+///     fn frame_name() -> &'static str { "EclipticMeanJ2000" }
 /// }
 ///
-/// impl SphericalNaming for Ecliptic {
+/// impl SphericalNaming for EclipticMeanJ2000 {
 ///     fn polar_name() -> &'static str { "lat" }
 ///     fn azimuth_name() -> &'static str { "lon" }
 /// }
