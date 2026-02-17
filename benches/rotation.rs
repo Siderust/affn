@@ -40,9 +40,7 @@ fn bench_rotation_ops(c: &mut Criterion) {
         b.iter(|| black_box(rot_a) * black_box(rot_b))
     });
 
-    group.bench_function("transpose", |b| {
-        b.iter(|| black_box(rot_a).transpose())
-    });
+    group.bench_function("transpose", |b| b.iter(|| black_box(rot_a).transpose()));
 
     // ── Axis constructors ──
 
@@ -155,11 +153,7 @@ fn bench_rotation_ops(c: &mut Criterion) {
 
     group.bench_function("fused_rz_ry_rz (Meeus prec)", |b| {
         b.iter(|| {
-            Rotation3::fused_rz_ry_rz(
-                black_box(angle_a),
-                black_box(-angle_b),
-                black_box(angle_c),
-            )
+            Rotation3::fused_rz_ry_rz(black_box(angle_a), black_box(-angle_b), black_box(angle_c))
         })
     });
 
@@ -192,10 +186,10 @@ fn bench_rotation_ops(c: &mut Criterion) {
         b.iter(|| {
             // FW precession-nutation: single fused constructor with nutation folded into angles
             let rot = Rotation3::fused_rx_rz_rx_rz(
-                black_box(angle_a + angle_c),  // epsa + deps
-                black_box(angle_b + angle_c),  // psib + dpsi
-                black_box(-angle_c),           // -phib
-                black_box(-angle_d),           // -gamb
+                black_box(angle_a + angle_c), // epsa + deps
+                black_box(angle_b + angle_c), // psib + dpsi
+                black_box(-angle_c),          // -phib
+                black_box(-angle_d),          // -gamb
             );
             rot.apply_array(black_box(v))
         })

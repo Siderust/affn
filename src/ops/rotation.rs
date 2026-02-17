@@ -335,16 +335,8 @@ impl Rotation3 {
         Self {
             m: [
                 [cb, -sb * cc, sb * sc],
-                [
-                    ca * sb,
-                    ca_cb * cc - sa * sc,
-                    -(ca_cb * sc + sa * cc),
-                ],
-                [
-                    sa * sb,
-                    sa_cb * cc + ca * sc,
-                    -(sa_cb * sc) + ca * cc,
-                ],
+                [ca * sb, ca_cb * cc - sa * sc, -(ca_cb * sc + sa * cc)],
+                [sa * sb, sa_cb * cc + ca * sc, -(sa_cb * sc) + ca * cc],
             ],
         }
     }
@@ -368,16 +360,8 @@ impl Rotation3 {
         let sa_cb = sa * cb;
         Self {
             m: [
-                [
-                    ca_cb * cc - sa * sc,
-                    -(ca_cb * sc + sa * cc),
-                    ca * sb,
-                ],
-                [
-                    sa_cb * cc + ca * sc,
-                    -(sa_cb * sc) + ca * cc,
-                    sa * sb,
-                ],
+                [ca_cb * cc - sa * sc, -(ca_cb * sc + sa * cc), ca * sb],
+                [sa_cb * cc + ca * sc, -(sa_cb * sc) + ca * cc, sa * sb],
                 [-sb * cc, sb * sc, cb],
             ],
         }
@@ -440,11 +424,7 @@ impl Rotation3 {
 
         Self {
             m: [
-                [
-                    p00 * cd + p01 * sd,
-                    -p00 * sd + p01 * cd,
-                    sb_sc,
-                ],
+                [p00 * cd + p01 * sd, -p00 * sd + p01 * cd, sb_sc],
                 [
                     p10 * cd + p11 * sd,
                     -p10 * sd + p11 * cd,
@@ -748,7 +728,8 @@ mod tests {
         let psib = Radians::new(0.001_234_567);
         let phib = Radians::new(-0.409_000_000);
         let gamb = Radians::new(-1.234_567_890);
-        let naive = Rotation3::rx(epsa) * Rotation3::rz(psib) * Rotation3::rx(phib) * Rotation3::rz(gamb);
+        let naive =
+            Rotation3::rx(epsa) * Rotation3::rz(psib) * Rotation3::rx(phib) * Rotation3::rz(gamb);
         let fused = Rotation3::fused_rx_rz_rx_rz(epsa, psib, phib, gamb);
         assert_matrix_eq(&naive, &fused, "fused_rx_rz_rx_rz");
     }
@@ -761,7 +742,8 @@ mod tests {
         let phib = Radians::new(0.409_350_000);
         let psib = Radians::new(0.024_500_000);
         let epsa = Radians::new(0.409_092_804);
-        let naive = Rotation3::rx(epsa) * Rotation3::rz(psib) * Rotation3::rx(-phib) * Rotation3::rz(-gamb);
+        let naive =
+            Rotation3::rx(epsa) * Rotation3::rz(psib) * Rotation3::rx(-phib) * Rotation3::rz(-gamb);
         let fused = Rotation3::fused_rx_rz_rx_rz(epsa, psib, -phib, -gamb);
         assert_matrix_eq(&naive, &fused, "FW precession");
     }
