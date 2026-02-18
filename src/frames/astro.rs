@@ -195,7 +195,7 @@ pub struct EclipticTrueOfDate;
 /// polar-motion correction.  Coordinates labelled `ECEF` may differ from true `ITRF`
 /// by up to tens of metres.  See [`ECEF`] for details.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
-#[frame(polar = "lat", azimuth = "lon", distance = "altitude", inherent)]
+#[frame(polar = "lat", azimuth = "lon", distance = "altitude", inherent, ellipsoid = "Grs80")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ITRF;
 
@@ -220,7 +220,7 @@ pub struct ITRF;
 /// A coordinate in `ECEF` is *implicitly* in a frame that coincides with
 /// ITRF to first order but lacks the polar-motion rotation **W**.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
-#[frame(polar = "lat", azimuth = "lon", distance = "altitude", inherent)]
+#[frame(polar = "lat", azimuth = "lon", distance = "altitude", inherent, ellipsoid = "Wgs84")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ECEF;
 
