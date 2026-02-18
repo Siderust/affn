@@ -159,7 +159,12 @@ where
         height: Quantity<U>,
     ) -> Self {
         let (lon_n, lat_n) = super::normalize_lon_lat(lon.value(), lat.value());
-        Self::new_raw_with_params(center_params, Degrees::new(lon_n), Degrees::new(lat_n), height)
+        Self::new_raw_with_params(
+            center_params,
+            Degrees::new(lon_n),
+            Degrees::new(lat_n),
+            height,
+        )
     }
 
     /// Returns a reference to the center parameters.
@@ -248,9 +253,7 @@ where
     ///     // X ≈ 5 390 km, Y ≈ −1 730 km, Z ≈ 3 050 km (approx. La Palma)
     /// }
     /// ```
-    pub fn to_cartesian<TargetU: LengthUnit>(
-        &self,
-    ) -> crate::cartesian::Position<C, F, TargetU>
+    pub fn to_cartesian<TargetU: LengthUnit>(&self) -> crate::cartesian::Position<C, F, TargetU>
     where
         C::Params: Clone,
     {
@@ -400,7 +403,11 @@ where
 {
     /// Returns the geodetic origin: (0°E, 0°N, 0 m).
     fn default() -> Self {
-        Self::new_raw(Degrees::new(0.0), Degrees::new(0.0), Quantity::<Meter>::new(0.0))
+        Self::new_raw(
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            Quantity::<Meter>::new(0.0),
+        )
     }
 }
 
@@ -517,12 +524,8 @@ mod tests {
 
     #[test]
     fn try_new_is_infallible() {
-        let p = Position::<TestCenter, TestFrame, Meter>::try_new(
-            0.0 * DEG,
-            271.0 * DEG,
-            0.0 * M,
-        )
-        .unwrap();
+        let p = Position::<TestCenter, TestFrame, Meter>::try_new(0.0 * DEG, 271.0 * DEG, 0.0 * M)
+            .unwrap();
         assert_eq!(p.lat, -89.0 * DEG);
     }
 
