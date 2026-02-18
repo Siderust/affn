@@ -110,6 +110,8 @@ struct FrameAttributes {
     /// Whether to generate inherent impls on Direction<F> and Position<C,F,U>.
     /// Only valid when the frame is defined in the same crate as Direction/Position.
     inherent: bool,
+    /// Ellipsoid type name for HasEllipsoid impl (e.g., "Wgs84").
+    ellipsoid: Option<syn::Ident>,
 }
 
 fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<TokenStream2> {
@@ -175,6 +177,50 @@ fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<TokenStream2> 
                     "Creates a new position from {}, {}, and distance (canonicalized).",
                     first_param, second_param
                 );
+
+                // Ellipsoidal getters: only for frames with an associated
+                // ellipsoid.  We do NOT generate a constructor —
+                // `ellipsoidal::Position` already has its own `new()`.
+                let ellipsoidal_getters = if attrs.ellipsoid.is_some() {
+                    let distance_ident = syn::Ident::new(
+                        distance,
+                        proc_macro2::Span::call_site(),
+                    );
+                    let distance_doc = format!(
+                        "Returns the {} (height above the reference ellipsoid).",
+                        distance
+                    );
+
+                    quote! {
+                        // ── EllipsoidalPosition<C, F, U>: inherent named getters ──
+
+                        impl<C, U> ::affn::ellipsoidal::Position<C, #name, U>
+                        where
+                            C: ::affn::centers::ReferenceCenter,
+                            U: ::qtty::LengthUnit,
+                        {
+                            #[doc = #polar_doc]
+                            #[inline]
+                            pub fn #polar_ident(&self) -> ::qtty::Degrees {
+                                self.lat
+                            }
+
+                            #[doc = #azimuth_doc]
+                            #[inline]
+                            pub fn #azimuth_ident(&self) -> ::qtty::Degrees {
+                                self.lon
+                            }
+
+                            #[doc = #distance_doc]
+                            #[inline]
+                            pub fn #distance_ident(&self) -> ::qtty::Quantity<U> {
+                                self.height
+                            }
+                        }
+                    }
+                } else {
+                    quote! {}
+                };
 
                 quote! {
                     // ── Direction<F>: inherent named constructor + getters ──
@@ -246,6 +292,8 @@ fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<TokenStream2> 
                             )
                         }
                     }
+
+                    #ellipsoidal_getters
                 }
             } else {
                 quote! {}
@@ -271,6 +319,16 @@ fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<TokenStream2> 
         (None, None) => quote! {},
     };
 
+    // Generate HasEllipsoid impl when `ellipsoid = "..."` is specified
+    let ellipsoid_impl = match &attrs.ellipsoid {
+        Some(ellipsoid_ident) => quote! {
+            impl ::affn::ellipsoid::HasEllipsoid for #name {
+                type Ellipsoid = ::affn::ellipsoid::#ellipsoid_ident;
+            }
+        },
+        None => quote! {},
+    };
+
     let expanded = quote! {
         impl ::affn::frames::ReferenceFrame for #name {
             fn frame_name() -> &'static str {
@@ -279,6 +337,7 @@ fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<TokenStream2> 
         }
 
         #spherical_impl
+        #ellipsoid_impl
     };
 
     Ok(expanded)
@@ -309,6 +368,11 @@ fn parse_frame_attributes(input: &DeriveInput) -> syn::Result<FrameAttributes> {
                             attrs.azimuth = Some(value_str);
                         } else if nv.path.is_ident("distance") {
                             attrs.distance = Some(value_str);
+                        } else if nv.path.is_ident("ellipsoid") {
+                            attrs.ellipsoid = Some(syn::Ident::new(
+                                &value_str,
+                                proc_macro2::Span::call_site(),
+                            ));
                         }
                     }
                     _ => {}
