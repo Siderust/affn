@@ -8,10 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - New astronomical frames in `affn::frames::astro`: `GCRS`, `CIRS`, and `TIRS`.
-- New geodetic frames
+- New ellipsoid API in `affn::ellipsoid`: `Ellipsoid`, `HasEllipsoid`, and predefined ellipsoids `Wgs84` and `Grs80`.
+- New `affn::ellipsoidal` module with `ellipsoidal::Position<C, F, U>` for geodetic coordinates (`lon`, `lat`, `height`).
+- Ellipsoid-aware geodetic conversions on `ellipsoidal::Position`: `to_cartesian` and `from_cartesian` (available when `F: HasEllipsoid`).
+- Serde support for `ellipsoidal::Position`, preserving `lon`/`lat`/`height` payload compatibility.
+- `#[frame(ellipsoid = "...")]` support in `affn-derive` to auto-implement `HasEllipsoid`.
+- Geodetic frame-ellipsoid associations for built-in terrestrial frames: `ITRF` (`Grs80`) and `ECEF` (`Wgs84`).
+
 ### Changed
 - Rotation constructors now use typed angles (`qtty::Radians`) in public APIs: `Rotation3::from_axis_angle`, `Rotation3::from_euler_xyz`, and `Rotation3::from_euler_zxz`.
 - Added typed-axis helpers `Rotation3::rx`, `Rotation3::ry`, and `Rotation3::rz`; internal scalar axis-rotation builders are no longer public.
+- Public exports and prelude now include ellipsoidal and ellipsoid types: `EllipsoidalPosition`, `Ellipsoid`, `HasEllipsoid`, `Wgs84`, and `Grs80`.
+
+### Removed
+- Removed the `geodesy` cargo feature and the legacy `geodesy::GeodeticCoord` type/module.
 
 ## [0.3.0 - 2026-02-12]
 
