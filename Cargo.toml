@@ -17,6 +17,7 @@ name = "affn"
 default = []
 serde = ["dep:serde", "qtty/serde", "nalgebra/serde-serialize"]
 astro = []
+geodesy = []
 
 [dependencies]
 affn-derive = { version = "0.1.2", path = "affn-derive" }

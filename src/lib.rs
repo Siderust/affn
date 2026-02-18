@@ -96,6 +96,10 @@ pub mod spherical;
 pub mod centers;
 pub mod frames;
 
+// Domain-agnostic geodesy primitives (geodetic coordinate container)
+#[cfg(feature = "geodesy")]
+pub mod geodesy;
+
 // Affine operators (rotation, translation, isometry)
 pub mod ops;
 
@@ -148,6 +152,10 @@ pub mod prelude {
 
     // Operators
     pub use crate::ops::{Isometry3, Rotation3, Translation3};
+
+    // Feature-gated geodesy primitives
+    #[cfg(feature = "geodesy")]
+    pub use crate::geodesy::GeodeticCoord;
 
     // Feature-gated astronomical frames
     #[cfg(feature = "astro")]

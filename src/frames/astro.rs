@@ -175,19 +175,50 @@ pub type EclipticMeanOfDate = EclipticOfDate;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct EclipticTrueOfDate;
 
-/// International Terrestrial Reference Frame.
+/// International Terrestrial Reference Frame — **EOP-realised** Earth-fixed frame.
 ///
-/// A geocentric Earth-fixed frame that co-rotates with the Earth.
-/// Used for geodetic and geophysical applications.
+/// `ITRF` is the *physical* geocentric frame that co-rotates with the solid
+/// Earth.  Its axes are realised through a network of VLBI / SLR / GNSS stations
+/// and are linked to the celestial frame via the full IERS Earth Orientation
+/// Parameters (polar motion **W**, Earth rotation angle **ERA**, and the
+/// precession-nutation matrix **Q**).
+///
+/// # When to use `ITRF`
+/// Use `ITRF` whenever the physical location of a point on the Earth's surface
+/// matters and you intend to apply (or have already applied) the complete IERS
+/// EOP reduction:
+/// - Observatory geocentric coordinates derived from WGS-84 / ITRF2020.
+/// - Polar-motion-corrected topocentric baselines.
+///
+/// # Distinction from `ECEF`
+/// `ECEF` is a *mathematical* placeholder that deliberately ignores the ~10 m
+/// polar-motion correction.  Coordinates labelled `ECEF` may differ from true `ITRF`
+/// by up to tens of metres.  See [`ECEF`] for details.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
 #[frame(polar = "lat", azimuth = "lon", distance = "altitude", inherent)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ITRF;
 
-/// Earth-Centered, Earth-Fixed coordinate system.
+/// Earth-Centred Earth-Fixed — **mathematical** geocentric frame (no EOP).
 ///
-/// A geocentric Cartesian coordinate system that rotates with the Earth.
-/// The X-axis points to the intersection of the prime meridian and equator.
+/// `ECEF` is a *generic* Earth-fixed reference that rotates with the Earth
+/// (using ERA / GMST) but does **not** apply polar motion or the full IERS
+/// EOP chain.  It is suitable for:
+/// - First-order geodetic → topocentric conversions where sub-kilometre
+///   accuracy is sufficient.
+/// - Internal bookkeeping when a labelled "Earth-fixed" frame is needed
+///   but a full EOP-realised solution is not yet available.
+///
+/// # Accuracy note
+/// Omitting polar motion introduces an error of roughly **±10 m** in
+/// geocentric Cartesian coordinates (up to ~30 m at solar maximum).
+/// For observatory positioning at the metre level or better, use [`ITRF`]
+/// coordinates with a full EOP correction.
+///
+/// # Distinction from `ITRF`
+/// [`ITRF`] carries the full EOP realisation; `ECEF` does not.
+/// A coordinate in `ECEF` is *implicitly* in a frame that coincides with
+/// ITRF to first order but lacks the polar-motion rotation **W**.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
 #[frame(polar = "lat", azimuth = "lon", distance = "altitude", inherent)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
