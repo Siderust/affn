@@ -182,10 +182,7 @@ fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<TokenStream2> 
                 // ellipsoid.  We do NOT generate a constructor —
                 // `ellipsoidal::Position` already has its own `new()`.
                 let ellipsoidal_getters = if attrs.ellipsoid.is_some() {
-                    let distance_ident = syn::Ident::new(
-                        distance,
-                        proc_macro2::Span::call_site(),
-                    );
+                    let distance_ident = syn::Ident::new(distance, proc_macro2::Span::call_site());
                     let distance_doc = format!(
                         "Returns the {} (height above the reference ellipsoid).",
                         distance
@@ -369,10 +366,8 @@ fn parse_frame_attributes(input: &DeriveInput) -> syn::Result<FrameAttributes> {
                         } else if nv.path.is_ident("distance") {
                             attrs.distance = Some(value_str);
                         } else if nv.path.is_ident("ellipsoid") {
-                            attrs.ellipsoid = Some(syn::Ident::new(
-                                &value_str,
-                                proc_macro2::Span::call_site(),
-                            ));
+                            attrs.ellipsoid =
+                                Some(syn::Ident::new(&value_str, proc_macro2::Span::call_site()));
                         }
                     }
                     _ => {}
