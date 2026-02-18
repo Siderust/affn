@@ -96,9 +96,11 @@ pub mod spherical;
 pub mod centers;
 pub mod frames;
 
-// Domain-agnostic geodesy primitives (geodetic coordinate container)
-#[cfg(feature = "geodesy")]
-pub mod geodesy;
+// Ellipsoid definitions and frame-ellipsoid association
+pub mod ellipsoid;
+
+// Ellipsoidal coordinate system (lon, lat, height-above-ellipsoid)
+pub mod ellipsoidal;
 
 // Affine operators (rotation, translation, isometry)
 pub mod ops;
@@ -128,6 +130,9 @@ pub use cartesian::{
 };
 pub use spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 
+// Re-export ellipsoidal Position for standalone usage
+pub use ellipsoidal::Position as EllipsoidalPosition;
+
 /// Prelude module for convenient imports.
 ///
 /// Import everything you need with:
@@ -153,9 +158,11 @@ pub mod prelude {
     // Operators
     pub use crate::ops::{Isometry3, Rotation3, Translation3};
 
-    // Feature-gated geodesy primitives
-    #[cfg(feature = "geodesy")]
-    pub use crate::geodesy::GeodeticCoord;
+    // Ellipsoidal coordinate type (always available)
+    pub use crate::ellipsoidal::Position as EllipsoidalPosition;
+
+    // Ellipsoid traits and predefined ellipsoids (always available)
+    pub use crate::ellipsoid::{Ellipsoid, Grs80, HasEllipsoid, Wgs84};
 
     // Feature-gated astronomical frames
     #[cfg(feature = "astro")]
