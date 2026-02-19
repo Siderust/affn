@@ -31,6 +31,10 @@ Implements the `ReferenceFrame` trait with the struct name as the frame name.
 
 **Optional attributes:**
 - `#[frame(name = "CustomName")]` - Override the frame name
+- `#[frame(polar = "dec", azimuth = "ra")]` - Implement `SphericalNaming` with custom axis labels
+- `#[frame(distance = "altitude")]` - Override the spherical distance label
+- `#[frame(inherent)]` - Generate frame-specific inherent constructors/getters on spherical types
+- `#[frame(ellipsoid = "Wgs84")]` - Implement `HasEllipsoid` for ellipsoid-aware geodetic conversions
 
 **Example:**
 ```rust
