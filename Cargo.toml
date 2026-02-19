@@ -1,6 +1,6 @@
 [package]
 name = "affn"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "Affine geometry primitives: strongly-typed coordinate systems, reference frames, and centers for scientific computing."

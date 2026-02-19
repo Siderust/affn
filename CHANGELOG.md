@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1 - 2026-02-19]
+
 ### Added
 - New astronomical frames in `affn::frames::astro`: `GCRS`, `CIRS`, and `TIRS`.
 - New ellipsoid API in `affn::ellipsoid`: `Ellipsoid`, `HasEllipsoid`, and predefined ellipsoids `Wgs84` and `Grs80`.
