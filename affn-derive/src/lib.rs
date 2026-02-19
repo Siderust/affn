@@ -26,6 +26,7 @@
 //! - `#[frame(distance = "altitude")]` - Override distance name (defaults to "distance")
 //! - `#[frame(inherent)]` - Generate inherent methods on `Direction<F>` and `Position<C,F,U>`.
 //!   Only valid when the frame is defined in the same crate as `Direction`/`Position`.
+//! - `#[frame(ellipsoid = "Wgs84")]` - Also implement `HasEllipsoid` for the frame.
 //!
 //! ### `#[derive(ReferenceCenter)]`
 //!
