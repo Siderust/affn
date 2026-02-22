@@ -1,8 +1,9 @@
 //! Serde implementations for Ellipsoidal Position.
 //!
-//! Serialised format: `{"lon": …, "lat": …, "height": …}` (plus optional
-//! `"center_params"` for non-ZST center parameters).  This is identical to
-//! the old `GeodeticCoord` format for backward compatibility.
+//! Serialised format: `{"lon_deg": …, "lat_deg": …, "height": …}` (plus optional
+//! `"center_params"` for non-ZST center parameters).  `lon_deg` and `lat_deg`
+//! carry explicit degree suffixes because the fields are always `Degrees`;
+//! `height` has no unit suffix because the length unit is generic (`Quantity<U>`).
 
 use super::Position;
 use crate::centers::ReferenceCenter;
@@ -33,8 +34,8 @@ where
         let has_params = !is_zero_sized(&self.center_params);
         let field_count = if has_params { 4 } else { 3 };
         let mut state = serializer.serialize_struct("Position", field_count)?;
-        state.serialize_field("lon", &self.lon)?;
-        state.serialize_field("lat", &self.lat)?;
+        state.serialize_field("lon_deg", &self.lon)?;
+        state.serialize_field("lat_deg", &self.lat)?;
         state.serialize_field("height", &self.height)?;
         if has_params {
             state.serialize_field("center_params", self.center_params())?;
@@ -72,7 +73,7 @@ where
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 write!(
                     formatter,
-                    "an ellipsoidal position with 'lon', 'lat', and 'height' fields"
+                    "an ellipsoidal position with 'lon_deg', 'lat_deg', and 'height' fields"
                 )
             }
 
@@ -87,15 +88,15 @@ where
 
                 while let Some(key) = map.next_key::<String>()? {
                     match key.as_str() {
-                        "lon" => {
+                        "lon_deg" => {
                             if lon.is_some() {
-                                return Err(de::Error::duplicate_field("lon"));
+                                return Err(de::Error::duplicate_field("lon_deg"));
                             }
                             lon = Some(map.next_value()?);
                         }
-                        "lat" => {
+                        "lat_deg" => {
                             if lat.is_some() {
-                                return Err(de::Error::duplicate_field("lat"));
+                                return Err(de::Error::duplicate_field("lat_deg"));
                             }
                             lat = Some(map.next_value()?);
                         }
@@ -117,8 +118,8 @@ where
                     }
                 }
 
-                let lon = lon.ok_or_else(|| de::Error::missing_field("lon"))?;
-                let lat = lat.ok_or_else(|| de::Error::missing_field("lat"))?;
+                let lon = lon.ok_or_else(|| de::Error::missing_field("lon_deg"))?;
+                let lat = lat.ok_or_else(|| de::Error::missing_field("lat_deg"))?;
                 let height = height.ok_or_else(|| de::Error::missing_field("height"))?;
                 let center_params = center_params.unwrap_or_default();
 
