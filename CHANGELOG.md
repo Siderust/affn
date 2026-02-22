@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Changed the serialized field names from lon and lat to lon_deg and lat_deg.
+
 ## [0.3.2 - 2026-02-19]
 
 ### Fixed
