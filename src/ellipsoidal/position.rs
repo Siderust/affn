@@ -425,13 +425,59 @@ where
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Center: {}, Frame: {}, lon: {:.6}, lat: {:.6}, h: {}",
+            "Center: {}, Frame: {}, lon: ",
             C::center_name(),
-            F::frame_name(),
-            self.lon,
-            self.lat,
-            self.height,
-        )
+            F::frame_name()
+        )?;
+        std::fmt::Display::fmt(&self.lon, f)?;
+        write!(f, ", lat: ")?;
+        std::fmt::Display::fmt(&self.lat, f)?;
+        write!(f, ", h: ")?;
+        std::fmt::Display::fmt(&self.height, f)
+    }
+}
+
+impl<C, F, U> std::fmt::LowerExp for Position<C, F, U>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+    U: LengthUnit,
+    Quantity<U>: std::fmt::LowerExp,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Center: {}, Frame: {}, lon: ",
+            C::center_name(),
+            F::frame_name()
+        )?;
+        std::fmt::LowerExp::fmt(&self.lon, f)?;
+        write!(f, ", lat: ")?;
+        std::fmt::LowerExp::fmt(&self.lat, f)?;
+        write!(f, ", h: ")?;
+        std::fmt::LowerExp::fmt(&self.height, f)
+    }
+}
+
+impl<C, F, U> std::fmt::UpperExp for Position<C, F, U>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+    U: LengthUnit,
+    Quantity<U>: std::fmt::UpperExp,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Center: {}, Frame: {}, lon: ",
+            C::center_name(),
+            F::frame_name()
+        )?;
+        std::fmt::UpperExp::fmt(&self.lon, f)?;
+        write!(f, ", lat: ")?;
+        std::fmt::UpperExp::fmt(&self.lat, f)?;
+        write!(f, ", h: ")?;
+        std::fmt::UpperExp::fmt(&self.height, f)
     }
 }
 
@@ -535,5 +581,13 @@ mod tests {
         let s = p.to_string();
         assert!(s.contains("TestCenter"));
         assert!(s.contains("TestFrame"));
+
+        let s_prec = format!("{:.2}", p);
+        let expected_h_prec = format!("{:.2}", p.height);
+        assert!(s_prec.contains(&format!("h: {expected_h_prec}")));
+
+        let s_exp = format!("{:.3e}", p);
+        let expected_lon_exp = format!("{:.3e}", p.lon);
+        assert!(s_exp.contains(&format!("lon: {expected_lon_exp}")));
     }
 }

@@ -189,13 +189,28 @@ impl<F: ReferenceFrame> Direction<F> {
 
 impl<F: ReferenceFrame> std::fmt::Display for Direction<F> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Frame: {}, θ: {:.6}, φ: {:.6}",
-            F::frame_name(),
-            self.polar,
-            self.azimuth
-        )
+        write!(f, "Frame: {}, θ: ", F::frame_name())?;
+        std::fmt::Display::fmt(&self.polar, f)?;
+        write!(f, ", φ: ")?;
+        std::fmt::Display::fmt(&self.azimuth, f)
+    }
+}
+
+impl<F: ReferenceFrame> std::fmt::LowerExp for Direction<F> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Frame: {}, θ: ", F::frame_name())?;
+        std::fmt::LowerExp::fmt(&self.polar, f)?;
+        write!(f, ", φ: ")?;
+        std::fmt::LowerExp::fmt(&self.azimuth, f)
+    }
+}
+
+impl<F: ReferenceFrame> std::fmt::UpperExp for Direction<F> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Frame: {}, θ: ", F::frame_name())?;
+        std::fmt::UpperExp::fmt(&self.polar, f)?;
+        write!(f, ", φ: ")?;
+        std::fmt::UpperExp::fmt(&self.azimuth, f)
     }
 }
 
@@ -238,6 +253,19 @@ mod tests {
         let output = coord.to_string();
         assert!(output.contains("θ: 30"), "Missing polar angle");
         assert!(output.contains("φ: 60"), "Missing azimuth");
+    }
+
+    #[test]
+    fn display_respects_format_specifiers() {
+        let coord = Direction::<TestFrame>::new_raw(Degrees::new(30.0), Degrees::new(60.0));
+
+        let output_prec = format!("{:.2}", coord);
+        let expected_polar_prec = format!("{:.2}", coord.polar);
+        assert!(output_prec.contains(&format!("θ: {expected_polar_prec}")));
+
+        let output_exp = format!("{:.3e}", coord);
+        let expected_az_exp = format!("{:.3e}", coord.azimuth);
+        assert!(output_exp.contains(&format!("φ: {expected_az_exp}")));
     }
 
     #[test]
