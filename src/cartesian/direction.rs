@@ -354,26 +354,40 @@ impl<F: ReferenceFrame> Direction<F> {
 impl<F: ReferenceFrame> Direction<F> {
     /// Returns a formatted string representation.
     pub fn display(&self) -> String {
-        format!(
-            "Frame: {}, X: {:.6}, Y: {:.6}, Z: {:.6}",
-            F::frame_name(),
-            self.x(),
-            self.y(),
-            self.z()
-        )
+        format!("{self}")
     }
 }
 
 impl<F: ReferenceFrame> std::fmt::Display for Direction<F> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Frame: {}, X: {:.6}, Y: {:.6}, Z: {:.6}",
-            F::frame_name(),
-            self.x(),
-            self.y(),
-            self.z()
-        )
+        write!(f, "Frame: {}, X: ", F::frame_name())?;
+        std::fmt::Display::fmt(&self.x(), f)?;
+        write!(f, ", Y: ")?;
+        std::fmt::Display::fmt(&self.y(), f)?;
+        write!(f, ", Z: ")?;
+        std::fmt::Display::fmt(&self.z(), f)
+    }
+}
+
+impl<F: ReferenceFrame> std::fmt::LowerExp for Direction<F> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Frame: {}, X: ", F::frame_name())?;
+        std::fmt::LowerExp::fmt(&self.x(), f)?;
+        write!(f, ", Y: ")?;
+        std::fmt::LowerExp::fmt(&self.y(), f)?;
+        write!(f, ", Z: ")?;
+        std::fmt::LowerExp::fmt(&self.z(), f)
+    }
+}
+
+impl<F: ReferenceFrame> std::fmt::UpperExp for Direction<F> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Frame: {}, X: ", F::frame_name())?;
+        std::fmt::UpperExp::fmt(&self.x(), f)?;
+        write!(f, ", Y: ")?;
+        std::fmt::UpperExp::fmt(&self.y(), f)?;
+        write!(f, ", Z: ")?;
+        std::fmt::UpperExp::fmt(&self.z(), f)
     }
 }
 
@@ -506,6 +520,14 @@ mod tests {
         let dir = Direction::<TestFrame>::new(1.0, 0.0, 0.0);
         let text = dir.display();
         assert!(text.contains("Frame: TestFrame"));
-        assert!(text.contains("X: 1.000000"));
+        assert!(text.contains("X: 1"));
+
+        let text_prec = format!("{:.3}", dir);
+        let expected_x = format!("{:.3}", dir.x());
+        assert!(text_prec.contains(&format!("X: {expected_x}")));
+
+        let text_exp = format!("{:.2e}", dir);
+        let expected_y = format!("{:.2e}", dir.y());
+        assert!(text_exp.contains(&format!("Y: {expected_y}")));
     }
 }

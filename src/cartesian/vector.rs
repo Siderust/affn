@@ -306,14 +306,40 @@ where
     Quantity<U>: std::fmt::Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Vector<{}> X: {:.6}, Y: {:.6}, Z: {:.6}",
-            F::frame_name(),
-            self.x(),
-            self.y(),
-            self.z()
-        )
+        write!(f, "Vector<{}> X: ", F::frame_name())?;
+        std::fmt::Display::fmt(&self.x(), f)?;
+        write!(f, ", Y: ")?;
+        std::fmt::Display::fmt(&self.y(), f)?;
+        write!(f, ", Z: ")?;
+        std::fmt::Display::fmt(&self.z(), f)
+    }
+}
+
+impl<F: ReferenceFrame, U: Unit> std::fmt::LowerExp for Vector<F, U>
+where
+    Quantity<U>: std::fmt::LowerExp,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Vector<{}> X: ", F::frame_name())?;
+        std::fmt::LowerExp::fmt(&self.x(), f)?;
+        write!(f, ", Y: ")?;
+        std::fmt::LowerExp::fmt(&self.y(), f)?;
+        write!(f, ", Z: ")?;
+        std::fmt::LowerExp::fmt(&self.z(), f)
+    }
+}
+
+impl<F: ReferenceFrame, U: Unit> std::fmt::UpperExp for Vector<F, U>
+where
+    Quantity<U>: std::fmt::UpperExp,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Vector<{}> X: ", F::frame_name())?;
+        std::fmt::UpperExp::fmt(&self.x(), f)?;
+        write!(f, ", Y: ")?;
+        std::fmt::UpperExp::fmt(&self.y(), f)?;
+        write!(f, ", Z: ")?;
+        std::fmt::UpperExp::fmt(&self.z(), f)
     }
 }
 
@@ -468,6 +494,14 @@ mod tests {
 
         let text = v.to_string();
         assert!(text.contains("Vector<TestFrame>"));
+
+        let text_prec = format!("{:.1}", v);
+        let expected_x_prec = format!("{:.1}", v.x());
+        assert!(text_prec.contains(&format!("X: {expected_x_prec}")));
+
+        let text_exp = format!("{:.2e}", v);
+        let expected_y_exp = format!("{:.2e}", v.y());
+        assert!(text_exp.contains(&format!("Y: {expected_y_exp}")));
     }
 
     #[test]
