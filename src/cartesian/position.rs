@@ -519,13 +519,59 @@ where
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Center: {}, Frame: {}, X: {:.6}, Y: {:.6}, Z: {:.6}",
+            "Center: {}, Frame: {}, X: ",
             C::center_name(),
-            F::frame_name(),
-            self.x(),
-            self.y(),
-            self.z()
-        )
+            F::frame_name()
+        )?;
+        std::fmt::Display::fmt(&self.x(), f)?;
+        write!(f, ", Y: ")?;
+        std::fmt::Display::fmt(&self.y(), f)?;
+        write!(f, ", Z: ")?;
+        std::fmt::Display::fmt(&self.z(), f)
+    }
+}
+
+impl<C, F, U> std::fmt::LowerExp for Position<C, F, U>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+    U: LengthUnit,
+    Quantity<U>: std::fmt::LowerExp,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Center: {}, Frame: {}, X: ",
+            C::center_name(),
+            F::frame_name()
+        )?;
+        std::fmt::LowerExp::fmt(&self.x(), f)?;
+        write!(f, ", Y: ")?;
+        std::fmt::LowerExp::fmt(&self.y(), f)?;
+        write!(f, ", Z: ")?;
+        std::fmt::LowerExp::fmt(&self.z(), f)
+    }
+}
+
+impl<C, F, U> std::fmt::UpperExp for Position<C, F, U>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+    U: LengthUnit,
+    Quantity<U>: std::fmt::UpperExp,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Center: {}, Frame: {}, X: ",
+            C::center_name(),
+            F::frame_name()
+        )?;
+        std::fmt::UpperExp::fmt(&self.x(), f)?;
+        write!(f, ", Y: ")?;
+        std::fmt::UpperExp::fmt(&self.y(), f)?;
+        write!(f, ", Z: ")?;
+        std::fmt::UpperExp::fmt(&self.z(), f)
     }
 }
 
@@ -678,6 +724,19 @@ mod tests {
         let text = pos.to_string();
         assert!(text.contains("Center: TestCenter"));
         assert!(text.contains("Frame: TestFrame"));
+    }
+
+    #[test]
+    fn test_position_display_respects_format_specifiers() {
+        let pos = TestPos::new(1.234_567, -2.0, 3.5);
+
+        let text_prec = format!("{:.2}", pos);
+        let expected_x_prec = format!("{:.2}", pos.x());
+        assert!(text_prec.contains(&format!("X: {expected_x_prec}")));
+
+        let text_exp = format!("{:.3e}", pos);
+        let expected_z_exp = format!("{:.3e}", pos.z());
+        assert!(text_exp.contains(&format!("Z: {expected_z_exp}")));
     }
 
     #[test]

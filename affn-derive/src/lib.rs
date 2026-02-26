@@ -509,46 +509,43 @@ fn parse_center_attributes(input: &DeriveInput) -> syn::Result<CenterAttributes>
             )?;
 
             for meta in nested {
-                match meta {
-                    Meta::NameValue(nv) => {
-                        if nv.path.is_ident("name") {
-                            if let Expr::Lit(expr_lit) = &nv.value {
-                                if let Lit::Str(lit_str) = &expr_lit.lit {
-                                    attrs.name = Some(lit_str.value());
-                                    continue;
-                                }
-                            }
-                            return Err(syn::Error::new_spanned(
-                                &nv.value,
-                                "expected string literal for `name`",
-                            ));
-                        } else if nv.path.is_ident("params") {
-                            // Parse as a type path
-                            if let Expr::Path(expr_path) = &nv.value {
-                                attrs.params = Some(Type::Path(syn::TypePath {
-                                    qself: None,
-                                    path: expr_path.path.clone(),
-                                }));
+                if let Meta::NameValue(nv) = meta {
+                    if nv.path.is_ident("name") {
+                        if let Expr::Lit(expr_lit) = &nv.value {
+                            if let Lit::Str(lit_str) = &expr_lit.lit {
+                                attrs.name = Some(lit_str.value());
                                 continue;
                             }
-                            return Err(syn::Error::new_spanned(
-                                &nv.value,
-                                "expected type for `params`",
-                            ));
-                        } else if nv.path.is_ident("affine") {
-                            if let Expr::Lit(expr_lit) = &nv.value {
-                                if let Lit::Bool(lit_bool) = &expr_lit.lit {
-                                    attrs.affine = lit_bool.value();
-                                    continue;
-                                }
-                            }
-                            return Err(syn::Error::new_spanned(
-                                &nv.value,
-                                "expected boolean for `affine`",
-                            ));
                         }
+                        return Err(syn::Error::new_spanned(
+                            &nv.value,
+                            "expected string literal for `name`",
+                        ));
+                    } else if nv.path.is_ident("params") {
+                        // Parse as a type path
+                        if let Expr::Path(expr_path) = &nv.value {
+                            attrs.params = Some(Type::Path(syn::TypePath {
+                                qself: None,
+                                path: expr_path.path.clone(),
+                            }));
+                            continue;
+                        }
+                        return Err(syn::Error::new_spanned(
+                            &nv.value,
+                            "expected type for `params`",
+                        ));
+                    } else if nv.path.is_ident("affine") {
+                        if let Expr::Lit(expr_lit) = &nv.value {
+                            if let Lit::Bool(lit_bool) = &expr_lit.lit {
+                                attrs.affine = lit_bool.value();
+                                continue;
+                            }
+                        }
+                        return Err(syn::Error::new_spanned(
+                            &nv.value,
+                            "expected boolean for `affine`",
+                        ));
                     }
-                    _ => {}
                 }
             }
         }

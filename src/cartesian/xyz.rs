@@ -332,7 +332,37 @@ impl<T: Default> Default for XYZ<T> {
 
 impl<T: std::fmt::Display + Copy> std::fmt::Display for XYZ<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({:.6}, {:.6}, {:.6})", self.x(), self.y(), self.z())
+        write!(f, "(")?;
+        std::fmt::Display::fmt(&self.x(), f)?;
+        write!(f, ", ")?;
+        std::fmt::Display::fmt(&self.y(), f)?;
+        write!(f, ", ")?;
+        std::fmt::Display::fmt(&self.z(), f)?;
+        write!(f, ")")
+    }
+}
+
+impl<T: std::fmt::LowerExp + Copy> std::fmt::LowerExp for XYZ<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(")?;
+        std::fmt::LowerExp::fmt(&self.x(), f)?;
+        write!(f, ", ")?;
+        std::fmt::LowerExp::fmt(&self.y(), f)?;
+        write!(f, ", ")?;
+        std::fmt::LowerExp::fmt(&self.z(), f)?;
+        write!(f, ")")
+    }
+}
+
+impl<T: std::fmt::UpperExp + Copy> std::fmt::UpperExp for XYZ<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(")?;
+        std::fmt::UpperExp::fmt(&self.x(), f)?;
+        write!(f, ", ")?;
+        std::fmt::UpperExp::fmt(&self.y(), f)?;
+        write!(f, ", ")?;
+        std::fmt::UpperExp::fmt(&self.z(), f)?;
+        write!(f, ")")
     }
 }
 
@@ -466,7 +496,13 @@ mod tests {
         assert!((default_xyz.z()).abs() < f64::EPSILON);
 
         let display = a.to_string();
-        assert!(display.contains("(1.000000, -2.000000, 3.500000)"));
+        assert_eq!(display, "(1, -2, 3.5)");
+
+        let display_prec = format!("{:.2}", a);
+        assert_eq!(display_prec, "(1.00, -2.00, 3.50)");
+
+        let display_exp = format!("{:.2e}", a);
+        assert_eq!(display_exp, "(1.00e0, -2.00e0, 3.50e0)");
 
         let neg = -a;
         assert!((neg.x() + 1.0).abs() < f64::EPSILON);
