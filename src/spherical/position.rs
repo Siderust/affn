@@ -210,13 +210,59 @@ where
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Center: {}, Frame: {}, θ: {:.6}, φ: {:.6}, r: {:.6}",
+            "Center: {}, Frame: {}, θ: ",
             C::center_name(),
-            F::frame_name(),
-            self.polar,
-            self.azimuth,
-            self.distance
-        )
+            F::frame_name()
+        )?;
+        std::fmt::Display::fmt(&self.polar, f)?;
+        write!(f, ", φ: ")?;
+        std::fmt::Display::fmt(&self.azimuth, f)?;
+        write!(f, ", r: ")?;
+        std::fmt::Display::fmt(&self.distance, f)
+    }
+}
+
+impl<C, F, U> std::fmt::LowerExp for Position<C, F, U>
+where
+    C: centers::ReferenceCenter,
+    F: frames::ReferenceFrame,
+    U: LengthUnit,
+    Quantity<U>: std::fmt::LowerExp,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Center: {}, Frame: {}, θ: ",
+            C::center_name(),
+            F::frame_name()
+        )?;
+        std::fmt::LowerExp::fmt(&self.polar, f)?;
+        write!(f, ", φ: ")?;
+        std::fmt::LowerExp::fmt(&self.azimuth, f)?;
+        write!(f, ", r: ")?;
+        std::fmt::LowerExp::fmt(&self.distance, f)
+    }
+}
+
+impl<C, F, U> std::fmt::UpperExp for Position<C, F, U>
+where
+    C: centers::ReferenceCenter,
+    F: frames::ReferenceFrame,
+    U: LengthUnit,
+    Quantity<U>: std::fmt::UpperExp,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Center: {}, Frame: {}, θ: ",
+            C::center_name(),
+            F::frame_name()
+        )?;
+        std::fmt::UpperExp::fmt(&self.polar, f)?;
+        write!(f, ", φ: ")?;
+        std::fmt::UpperExp::fmt(&self.azimuth, f)?;
+        write!(f, ", r: ")?;
+        std::fmt::UpperExp::fmt(&self.distance, f)
     }
 }
 
@@ -273,6 +319,20 @@ mod tests {
         assert!(coord_string.contains("θ: 60"));
         assert!(coord_string.contains("φ: 30"));
         assert!(coord_string.contains("r: 1000"));
+    }
+
+    #[test]
+    fn test_spherical_coord_format_specifiers() {
+        let coord =
+            Position::<TestCenter, TestFrame, Meter>::new_raw(60.0 * DEG, 30.0 * DEG, 1000.0 * M);
+
+        let text_prec = format!("{:.2}", coord);
+        let expected_r_prec = format!("{:.2}", coord.distance);
+        assert!(text_prec.contains(&format!("r: {expected_r_prec}")));
+
+        let text_exp = format!("{:.3e}", coord);
+        let expected_theta_exp = format!("{:.3e}", coord.polar);
+        assert!(text_exp.contains(&format!("θ: {expected_theta_exp}")));
     }
 
     #[test]
