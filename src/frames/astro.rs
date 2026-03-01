@@ -251,6 +251,48 @@ pub struct ECEF;
 pub struct Galactic;
 
 // =============================================================================
+// Historical and operational frames (ra/dec)
+// =============================================================================
+
+/// Mean equator and mean equinox of B1950.0 (FK4 catalog reference).
+///
+/// The Fourth Fundamental Catalogue (FK4) used the mean equator and equinox of
+/// the Besselian epoch B1950.0 as its reference frame. This frame was the
+/// standard before the IAU adopted FK5/J2000 in 1976.
+///
+/// FK4 coordinates include the effects of elliptic terms of aberration (E-terms)
+/// that are embedded in the catalog positions. When converting FK4 → FK5/ICRS,
+/// these E-terms must be removed.
+///
+/// # References
+/// * Standish, E.M. (1982). "Conversion of positions and proper motions from
+///   B1950.0 to the IAU system at J2000.0", A&A, 115, 20-22.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "dec", azimuth = "ra", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct FK4B1950;
+
+/// True Equator, Mean Equinox (TEME) frame.
+///
+/// An Earth-centered inertial frame used operationally for SGP4/SDP4
+/// two-line element (TLE) propagation. The pole is the true celestial pole
+/// (CIP, including nutation), but the origin of right ascension is the
+/// **mean** equinox of date (no nutation in longitude applied to the equinox).
+///
+/// TEME differs from TOD (True of Date) by the equation of the equinoxes:
+/// ```text
+/// TEME → TOD: Rz(equation_of_equinoxes)
+/// ```
+///
+/// # References
+/// * Vallado, D.A. et al. (2006). "Revisiting Spacetrack Report No. 3",
+///   AIAA/AAS Astrodynamics Specialist Conference, AIAA 2006-6753.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "dec", azimuth = "ra", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct TEME;
+
+// =============================================================================
 // Planetary body-fixed frames (lat/lon/radius)
 // =============================================================================
 
@@ -361,6 +403,8 @@ mod tests {
         assert_eq!(Galactic::frame_name(), "Galactic");
         assert_eq!(ITRF::frame_name(), "ITRF");
         assert_eq!(ECEF::frame_name(), "ECEF");
+        assert_eq!(FK4B1950::frame_name(), "FK4B1950");
+        assert_eq!(TEME::frame_name(), "TEME");
 
         // Planetary body-fixed
         assert_eq!(MercuryFixed::frame_name(), "MercuryFixed");
