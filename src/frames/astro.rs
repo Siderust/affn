@@ -50,6 +50,17 @@ pub struct ICRF;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct EquatorialMeanJ2000;
 
+/// Earth Mean Equator and Equinox of J2000.0 (EME2000).
+///
+/// CCSDS Orbit Data Messages and many flight-dynamics tools use `EME2000`
+/// for the same mean-equator/mean-equinox J2000 axes that are commonly
+/// labelled FK5/J2000. siderust keeps it as an explicit marker so exchanged
+/// data can preserve the original frame name in public APIs.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "dec", azimuth = "ra", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct EME2000;
+
 /// Mean equator and equinox of date.
 ///
 /// Earth-based mean equator/equinox at a given epoch (precession applied,
@@ -395,6 +406,7 @@ mod tests {
     fn test_frame_names() {
         assert_eq!(ICRS::frame_name(), "ICRS");
         assert_eq!(ICRF::frame_name(), "ICRF");
+        assert_eq!(EME2000::frame_name(), "EME2000");
         assert_eq!(Horizontal::frame_name(), "Horizontal");
         assert_eq!(EclipticMeanJ2000::frame_name(), "EclipticMeanJ2000");
         assert_eq!(EclipticOfDate::frame_name(), "EclipticOfDate");
@@ -422,6 +434,8 @@ mod tests {
     fn test_spherical_naming() {
         assert_eq!(ICRS::polar_name(), "dec");
         assert_eq!(ICRS::azimuth_name(), "ra");
+        assert_eq!(EME2000::polar_name(), "dec");
+        assert_eq!(EME2000::azimuth_name(), "ra");
 
         assert_eq!(Horizontal::polar_name(), "alt");
         assert_eq!(Horizontal::azimuth_name(), "az");
