@@ -189,7 +189,8 @@ impl<F: ReferenceFrame> Direction<F> {
 
 impl<F: ReferenceFrame> std::fmt::Display for Direction<F> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let (polar_name, azimuth_name, _) = F::spherical_names().unwrap_or(("\u{03b8}", "\u{03c6}", "r"));
+        let (polar_name, azimuth_name, _) =
+            F::spherical_names().unwrap_or(("\u{03b8}", "\u{03c6}", "r"));
         write!(f, "Frame: {}, {}: ", F::frame_name(), polar_name)?;
         std::fmt::Display::fmt(&self.polar, f)?;
         write!(f, ", {}: ", azimuth_name)?;
@@ -199,7 +200,8 @@ impl<F: ReferenceFrame> std::fmt::Display for Direction<F> {
 
 impl<F: ReferenceFrame> std::fmt::LowerExp for Direction<F> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let (polar_name, azimuth_name, _) = F::spherical_names().unwrap_or(("\u{03b8}", "\u{03c6}", "r"));
+        let (polar_name, azimuth_name, _) =
+            F::spherical_names().unwrap_or(("\u{03b8}", "\u{03c6}", "r"));
         write!(f, "Frame: {}, {}: ", F::frame_name(), polar_name)?;
         std::fmt::LowerExp::fmt(&self.polar, f)?;
         write!(f, ", {}: ", azimuth_name)?;
@@ -209,7 +211,8 @@ impl<F: ReferenceFrame> std::fmt::LowerExp for Direction<F> {
 
 impl<F: ReferenceFrame> std::fmt::UpperExp for Direction<F> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let (polar_name, azimuth_name, _) = F::spherical_names().unwrap_or(("\u{03b8}", "\u{03c6}", "r"));
+        let (polar_name, azimuth_name, _) =
+            F::spherical_names().unwrap_or(("\u{03b8}", "\u{03c6}", "r"));
         write!(f, "Frame: {}, {}: ", F::frame_name(), polar_name)?;
         std::fmt::UpperExp::fmt(&self.polar, f)?;
         write!(f, ", {}: ", azimuth_name)?;
