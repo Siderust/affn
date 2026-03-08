@@ -50,6 +50,17 @@ pub struct ICRF;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct EquatorialMeanJ2000;
 
+/// Earth Mean Equator and Equinox of J2000.0 (EME2000).
+///
+/// CCSDS Orbit Data Messages and many flight-dynamics tools use `EME2000`
+/// for the same mean-equator/mean-equinox J2000 axes that are commonly
+/// labelled FK5/J2000. siderust keeps it as an explicit marker so exchanged
+/// data can preserve the original frame name in public APIs.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "dec", azimuth = "ra", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct EME2000;
+
 /// Mean equator and equinox of date.
 ///
 /// Earth-based mean equator/equinox at a given epoch (precession applied,
@@ -251,6 +262,135 @@ pub struct ECEF;
 pub struct Galactic;
 
 // =============================================================================
+// Historical and operational frames (ra/dec)
+// =============================================================================
+
+/// Mean equator and mean equinox of B1950.0 (FK4 catalog reference).
+///
+/// The Fourth Fundamental Catalogue (FK4) used the mean equator and equinox of
+/// the Besselian epoch B1950.0 as its reference frame. This frame was the
+/// standard before the IAU adopted FK5/J2000 in 1976.
+///
+/// FK4 coordinates include the effects of elliptic terms of aberration (E-terms)
+/// that are embedded in the catalog positions. When converting FK4 → FK5/ICRS,
+/// these E-terms must be removed.
+///
+/// # References
+/// * Standish, E.M. (1982). "Conversion of positions and proper motions from
+///   B1950.0 to the IAU system at J2000.0", A&A, 115, 20-22.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "dec", azimuth = "ra", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct FK4B1950;
+
+/// True Equator, Mean Equinox (TEME) frame.
+///
+/// An Earth-centered inertial frame used operationally for SGP4/SDP4
+/// two-line element (TLE) propagation. The pole is the true celestial pole
+/// (CIP, including nutation), but the origin of right ascension is the
+/// **mean** equinox of date (no nutation in longitude applied to the equinox).
+///
+/// TEME differs from TOD (True of Date) by the equation of the equinoxes:
+/// ```text
+/// TEME → TOD: Rz(equation_of_equinoxes)
+/// ```
+///
+/// # References
+/// * Vallado, D.A. et al. (2006). "Revisiting Spacetrack Report No. 3",
+///   AIAA/AAS Astrodynamics Specialist Conference, AIAA 2006-6753.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "dec", azimuth = "ra", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct TEME;
+
+// =============================================================================
+// Planetary body-fixed frames (lat/lon/radius)
+// =============================================================================
+
+/// Mercury IAU body-fixed frame.
+///
+/// Planetocentric frame rotating with Mercury's solid body.
+/// Uses latitude/longitude/radius spherical naming.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "lat", azimuth = "lon", distance = "radius", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct MercuryFixed;
+
+/// Venus IAU body-fixed frame.
+///
+/// Planetocentric frame rotating with Venus (retrograde rotation).
+/// Uses latitude/longitude/radius spherical naming.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "lat", azimuth = "lon", distance = "radius", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct VenusFixed;
+
+/// Mars IAU body-fixed frame.
+///
+/// Planetocentric frame rotating with Mars, the standard cartographic
+/// reference used by NASA/ESA missions.
+/// Uses latitude/longitude/radius spherical naming.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "lat", azimuth = "lon", distance = "radius", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct MarsFixed;
+
+/// Moon principal axes (selenocentric) frame.
+///
+/// A body-fixed frame aligned with the Moon's principal moments of inertia.
+/// Uses latitude/longitude/radius spherical naming.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "lat", azimuth = "lon", distance = "radius", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct MoonPrincipalAxes;
+
+/// Jupiter System III body-fixed frame.
+///
+/// Defined by Jupiter's magnetic field rotation period (9h 55m 29.711s).
+/// Uses latitude/longitude/radius spherical naming.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "lat", azimuth = "lon", distance = "radius", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct JupiterSystemIII;
+
+/// Saturn IAU body-fixed frame.
+///
+/// Planetocentric frame rotating with Saturn's magnetic field (System III).
+/// Uses latitude/longitude/radius spherical naming.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "lat", azimuth = "lon", distance = "radius", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct SaturnFixed;
+
+/// Uranus IAU body-fixed frame.
+///
+/// Planetocentric frame rotating with Uranus (extreme ~97.8° axial tilt,
+/// retrograde rotation in IAU convention).
+/// Uses latitude/longitude/radius spherical naming.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "lat", azimuth = "lon", distance = "radius", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct UranusFixed;
+
+/// Neptune IAU body-fixed frame.
+///
+/// Planetocentric frame rotating with Neptune's magnetic field.
+/// Uses latitude/longitude/radius spherical naming.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "lat", azimuth = "lon", distance = "radius", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct NeptuneFixed;
+
+/// Pluto IAU body-fixed frame.
+///
+/// Planetocentric frame rotating with Pluto (retrograde rotation).
+/// Uses latitude/longitude/radius spherical naming.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "lat", azimuth = "lon", distance = "radius", inherent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct PlutoFixed;
+
+// =============================================================================
 // Tests
 // =============================================================================
 
@@ -266,6 +406,7 @@ mod tests {
     fn test_frame_names() {
         assert_eq!(ICRS::frame_name(), "ICRS");
         assert_eq!(ICRF::frame_name(), "ICRF");
+        assert_eq!(EME2000::frame_name(), "EME2000");
         assert_eq!(Horizontal::frame_name(), "Horizontal");
         assert_eq!(EclipticMeanJ2000::frame_name(), "EclipticMeanJ2000");
         assert_eq!(EclipticOfDate::frame_name(), "EclipticOfDate");
@@ -274,12 +415,27 @@ mod tests {
         assert_eq!(Galactic::frame_name(), "Galactic");
         assert_eq!(ITRF::frame_name(), "ITRF");
         assert_eq!(ECEF::frame_name(), "ECEF");
+        assert_eq!(FK4B1950::frame_name(), "FK4B1950");
+        assert_eq!(TEME::frame_name(), "TEME");
+
+        // Planetary body-fixed
+        assert_eq!(MercuryFixed::frame_name(), "MercuryFixed");
+        assert_eq!(VenusFixed::frame_name(), "VenusFixed");
+        assert_eq!(MarsFixed::frame_name(), "MarsFixed");
+        assert_eq!(MoonPrincipalAxes::frame_name(), "MoonPrincipalAxes");
+        assert_eq!(JupiterSystemIII::frame_name(), "JupiterSystemIII");
+        assert_eq!(SaturnFixed::frame_name(), "SaturnFixed");
+        assert_eq!(UranusFixed::frame_name(), "UranusFixed");
+        assert_eq!(NeptuneFixed::frame_name(), "NeptuneFixed");
+        assert_eq!(PlutoFixed::frame_name(), "PlutoFixed");
     }
 
     #[test]
     fn test_spherical_naming() {
         assert_eq!(ICRS::polar_name(), "dec");
         assert_eq!(ICRS::azimuth_name(), "ra");
+        assert_eq!(EME2000::polar_name(), "dec");
+        assert_eq!(EME2000::azimuth_name(), "ra");
 
         assert_eq!(Horizontal::polar_name(), "alt");
         assert_eq!(Horizontal::azimuth_name(), "az");
@@ -295,6 +451,15 @@ mod tests {
         assert_eq!(Galactic::azimuth_name(), "l");
 
         assert_eq!(ITRF::distance_name(), "altitude");
+
+        // Planetary body-fixed: all use lat/lon/radius
+        assert_eq!(MercuryFixed::polar_name(), "lat");
+        assert_eq!(MercuryFixed::azimuth_name(), "lon");
+        assert_eq!(MercuryFixed::distance_name(), "radius");
+
+        assert_eq!(MarsFixed::polar_name(), "lat");
+        assert_eq!(MarsFixed::azimuth_name(), "lon");
+        assert_eq!(MarsFixed::distance_name(), "radius");
     }
 
     // ── Direction inherent constructors ──

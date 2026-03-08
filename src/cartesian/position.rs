@@ -297,6 +297,31 @@ impl<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> Position<C, F, U> {
             self.z().to::<U2>(),
         )
     }
+
+    /// Reinterprets this position as belonging to a different reference frame.
+    ///
+    /// This is a **zero-cost** operation: the Cartesian components and center
+    /// are preserved unchanged; only the compile-time frame tag `F` is replaced
+    /// by `F2`.
+    ///
+    /// # When to use
+    ///
+    /// After applying a mathematical rotation (`Rotation3 * position`) whose
+    /// result carries the *original* frame tag, call this method to assign the
+    /// correct *target* frame tag.
+    ///
+    /// ```text
+    /// // Rotate from EclipticMeanJ2000 into ICRS coordinates:
+    /// let rotated = rot * pos_ecl;           // still tagged EclipticMeanJ2000
+    /// let pos_icrs = rotated.reinterpret_frame::<ICRS>(); // now tagged ICRS
+    /// ```
+    #[inline]
+    pub fn reinterpret_frame<F2: ReferenceFrame>(self) -> Position<C, F2, U>
+    where
+        C::Params: Clone,
+    {
+        Position::new_with_params(self.center_params.clone(), self.x(), self.y(), self.z())
+    }
 }
 
 // =============================================================================

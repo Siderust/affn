@@ -775,4 +775,137 @@ mod tests {
         let v_fused = fused.apply_array(v);
         assert_array_eq(v_naive, v_fused, "fused FW rotation vector result");
     }
+
+    // =========================================================================
+    // Coordinate-type Mul tests: Position, Vector, Direction
+    // =========================================================================
+
+    mod coordinate_types {
+        use super::*;
+        use crate::{
+            DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame,
+        };
+        use qtty::*;
+
+        #[derive(Debug, Copy, Clone, ReferenceFrame)]
+        struct FrameA;
+        #[derive(Debug, Copy, Clone, ReferenceFrame)]
+        struct FrameB;
+        #[derive(Debug, Copy, Clone, ReferenceCenter)]
+        struct Origin;
+
+        type Pos = crate::cartesian::Position<Origin, FrameA, AstronomicalUnit>;
+        type Vec3 = crate::cartesian::Vector<FrameA, Meter>;
+        type Dir = crate::cartesian::Direction<FrameA>;
+
+        #[test]
+        fn test_rotation_mul_position() {
+            let r = Rotation3::rz(Radians::new(FRAC_PI_2));
+            let pos = Pos::new(3.0, 0.0, 0.0);
+            let result: Pos = r * pos;
+            assert!((result.x().value()).abs() < EPSILON);
+            assert!((result.y().value() - 3.0).abs() < EPSILON);
+            assert!((result.z().value()).abs() < EPSILON);
+        }
+
+        #[test]
+        fn test_rotation_mul_position_roundtrip() {
+            let r = Rotation3::rz(Radians::new(0.7));
+            let r_inv = r.inverse();
+            let pos = Pos::new(1.0, 2.0, 3.0);
+            let result = r_inv * (r * pos);
+            assert!((result.x().value() - 1.0).abs() < EPSILON);
+            assert!((result.y().value() - 2.0).abs() < EPSILON);
+            assert!((result.z().value() - 3.0).abs() < EPSILON);
+        }
+
+        #[test]
+        fn test_rotation_mul_position_reinterpret_frame() {
+            let r = Rotation3::rz(Radians::new(FRAC_PI_2));
+            let pos_a = Pos::new(1.0, 0.0, 0.0);
+            // Rotate and reinterpret to FrameB
+            let pos_b: crate::cartesian::Position<Origin, FrameB, AstronomicalUnit> =
+                (r * pos_a).reinterpret_frame::<FrameB>();
+            assert!((pos_b.x().value()).abs() < EPSILON);
+            assert!((pos_b.y().value() - 1.0).abs() < EPSILON);
+        }
+
+        #[test]
+        fn test_rotation_mul_vector() {
+            let r = Rotation3::rz(Radians::new(FRAC_PI_2));
+            let v = Vec3::new(1.0, 0.0, 0.0);
+            let result: Vec3 = r * v;
+            assert!((result.x().value()).abs() < EPSILON);
+            assert!((result.y().value() - 1.0).abs() < EPSILON);
+            assert!((result.z().value()).abs() < EPSILON);
+        }
+
+        #[test]
+        fn test_rotation_mul_vector_reinterpret_frame() {
+            let r = Rotation3::rx(Radians::new(FRAC_PI_2));
+            let v = Vec3::new(0.0, 1.0, 0.0);
+            let v_b: crate::cartesian::Vector<FrameB, Meter> =
+                (r * v).reinterpret_frame::<FrameB>();
+            assert!((v_b.x().value()).abs() < EPSILON);
+            assert!((v_b.y().value()).abs() < EPSILON);
+            assert!((v_b.z().value() - 1.0).abs() < EPSILON);
+        }
+
+        #[test]
+        fn test_rotation_mul_direction() {
+            let r = Rotation3::rz(Radians::new(FRAC_PI_2));
+            let dir = Dir::new(1.0, 0.0, 0.0);
+            let result: Dir = r * dir;
+            assert!((result.x()).abs() < EPSILON);
+            assert!((result.y() - 1.0).abs() < EPSILON);
+            assert!((result.z()).abs() < EPSILON);
+        }
+
+        #[test]
+        fn test_rotation_mul_direction_preserves_norm() {
+            let r =
+                Rotation3::from_euler_xyz(Radians::new(0.3), Radians::new(0.7), Radians::new(1.1));
+            let dir = Dir::new(1.0, 2.0, 3.0); // will be normalized
+            let rotated = r * dir;
+            let norm = (rotated.x().powi(2) + rotated.y().powi(2) + rotated.z().powi(2)).sqrt();
+            assert!((norm - 1.0).abs() < EPSILON, "rotation must preserve norm");
+        }
+
+        #[test]
+        fn test_rotation_mul_direction_reinterpret_frame() {
+            let r = Rotation3::ry(Radians::new(FRAC_PI_2));
+            let dir = Dir::new(0.0, 0.0, 1.0);
+            let dir_b: crate::cartesian::Direction<FrameB> =
+                (r * dir).reinterpret_frame::<FrameB>();
+            assert!((dir_b.x() - 1.0).abs() < EPSILON);
+            assert!((dir_b.y()).abs() < EPSILON);
+            assert!((dir_b.z()).abs() < EPSILON);
+        }
+
+        #[test]
+        fn test_translation_mul_position() {
+            use crate::ops::Translation3;
+            let t = Translation3::new(1.0, 2.0, 3.0);
+            let pos = Pos::new(10.0, 20.0, 30.0);
+            let result: Pos = t * pos;
+            assert!((result.x().value() - 11.0).abs() < EPSILON);
+            assert!((result.y().value() - 22.0).abs() < EPSILON);
+            assert!((result.z().value() - 33.0).abs() < EPSILON);
+        }
+
+        #[test]
+        fn test_isometry_mul_position() {
+            use crate::ops::{Isometry3, Translation3};
+            let iso = Isometry3::new(
+                Rotation3::rz(Radians::new(FRAC_PI_2)),
+                Translation3::new(10.0, 0.0, 0.0),
+            );
+            let pos = Pos::new(1.0, 0.0, 0.0);
+            let result: Pos = iso * pos;
+            // Rotate (1,0,0) → (0,1,0), then translate by (10,0,0): (10,1,0)
+            assert!((result.x().value() - 10.0).abs() < EPSILON);
+            assert!((result.y().value() - 1.0).abs() < EPSILON);
+            assert!((result.z().value()).abs() < EPSILON);
+        }
+    }
 }
