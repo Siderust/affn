@@ -1,6 +1,7 @@
 //! Translation vector operator.
 
 use crate::cartesian::xyz::XYZ;
+use qtty::{Quantity, Unit};
 
 /// A translation vector in 3D space.
 ///
@@ -11,6 +12,13 @@ use crate::cartesian::xyz::XYZ;
 ///
 /// Translations apply only to positions (affine points), not to directions
 /// or vectors (which are translation-invariant).
+///
+/// # Typed Constructors
+///
+/// In addition to the raw `f64` constructors, translations can be created
+/// from [`qtty::Quantity`] values via [`from_quantities`](Self::from_quantities),
+/// and the stored values can be retrieved as typed quantities via
+/// [`as_quantities`](Self::as_quantities).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Translation3 {
     /// The translation vector components.
@@ -37,6 +45,25 @@ impl Translation3 {
     #[inline]
     pub fn from_xyz(xyz: XYZ<f64>) -> Self {
         Self::new(xyz.x(), xyz.y(), xyz.z())
+    }
+
+    /// Creates a translation from typed [`Quantity`] values.
+    ///
+    /// The raw `f64` magnitudes are extracted and stored. The caller is
+    /// responsible for ensuring consistent units when applying the
+    /// translation to coordinates.
+    ///
+    /// # Example
+    /// ```
+    /// use affn::ops::Translation3;
+    /// use qtty::*;
+    ///
+    /// let t = Translation3::from_quantities([1.0 * AU, 0.5 * AU, -0.3 * AU]);
+    /// assert!((t.v[0] - 1.0).abs() < 1e-12);
+    /// ```
+    #[inline]
+    pub fn from_quantities<U: Unit>(v: [Quantity<U>; 3]) -> Self {
+        Self::new(v[0].value(), v[1].value(), v[2].value())
     }
 
     /// Returns the inverse translation.
@@ -72,6 +99,19 @@ impl Translation3 {
     #[inline]
     pub const fn as_array(&self) -> &[f64; 3] {
         &self.v
+    }
+
+    /// Returns the translation components as typed [`Quantity`] values.
+    ///
+    /// The caller chooses the unit type `U`; the raw `f64` values are
+    /// wrapped without conversion.
+    #[inline]
+    pub fn as_quantities<U: Unit>(&self) -> [Quantity<U>; 3] {
+        [
+            Quantity::new(self.v[0]),
+            Quantity::new(self.v[1]),
+            Quantity::new(self.v[2]),
+        ]
     }
 
     /// Returns the translation as an `XYZ<f64>`.
@@ -231,5 +271,44 @@ mod tests {
         assert!((result[0].value() - 11.0).abs() < EPSILON);
         assert!((result[1].value() - 22.0).abs() < EPSILON);
         assert!((result[2].value() - 33.0).abs() < EPSILON);
+    }
+
+    #[test]
+    fn test_translation_from_quantities() {
+        use qtty::{AstronomicalUnit, Quantity};
+        let q = [
+            Quantity::<AstronomicalUnit>::new(1.0),
+            Quantity::<AstronomicalUnit>::new(0.5),
+            Quantity::<AstronomicalUnit>::new(-0.3),
+        ];
+        let t = Translation3::from_quantities(q);
+        assert!((t.v[0] - 1.0).abs() < EPSILON);
+        assert!((t.v[1] - 0.5).abs() < EPSILON);
+        assert!((t.v[2] - (-0.3)).abs() < EPSILON);
+    }
+
+    #[test]
+    fn test_translation_as_quantities() {
+        use qtty::{Kilometer, Quantity};
+        let t = Translation3::new(100.0, 200.0, 300.0);
+        let q: [Quantity<Kilometer>; 3] = t.as_quantities();
+        assert!((q[0].value() - 100.0).abs() < EPSILON);
+        assert!((q[1].value() - 200.0).abs() < EPSILON);
+        assert!((q[2].value() - 300.0).abs() < EPSILON);
+    }
+
+    #[test]
+    fn test_translation_from_as_quantities_roundtrip() {
+        use qtty::{Meter, Quantity};
+        let original = [
+            Quantity::<Meter>::new(1.5),
+            Quantity::<Meter>::new(-2.3),
+            Quantity::<Meter>::new(4.7),
+        ];
+        let t = Translation3::from_quantities(original);
+        let back: [Quantity<Meter>; 3] = t.as_quantities();
+        assert!((back[0].value() - original[0].value()).abs() < EPSILON);
+        assert!((back[1].value() - original[1].value()).abs() < EPSILON);
+        assert!((back[2].value() - original[2].value()).abs() < EPSILON);
     }
 }

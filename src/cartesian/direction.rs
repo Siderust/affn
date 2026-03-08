@@ -200,6 +200,18 @@ impl<F: ReferenceFrame> Direction<F> {
     pub fn as_vec3(&self) -> nalgebra::Vector3<f64> {
         *self.xyz.as_vec3()
     }
+
+    /// Reinterprets this direction as belonging to a different reference frame.
+    ///
+    /// This is a **zero-cost** operation: the unit-vector components are
+    /// preserved unchanged; only the compile-time frame tag is replaced.
+    ///
+    /// Use after applying a mathematical rotation whose result still carries
+    /// the original frame tag.
+    #[inline]
+    pub fn reinterpret_frame<F2: ReferenceFrame>(self) -> Direction<F2> {
+        Direction::new_unchecked(self.x(), self.y(), self.z())
+    }
 }
 
 // =============================================================================

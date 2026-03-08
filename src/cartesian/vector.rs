@@ -164,6 +164,18 @@ impl<F: ReferenceFrame, U: Unit> Vector<F, U> {
             self.z().to::<U2>(),
         )
     }
+
+    /// Reinterprets this vector as belonging to a different reference frame.
+    ///
+    /// This is a **zero-cost** operation: the components are preserved
+    /// unchanged; only the compile-time frame tag `F` is replaced by `F2`.
+    ///
+    /// Use after applying a mathematical rotation whose result still carries
+    /// the original frame tag.
+    #[inline]
+    pub fn reinterpret_frame<F2: ReferenceFrame>(self) -> Vector<F2, U> {
+        Vector::new(self.x(), self.y(), self.z())
+    }
 }
 
 // =============================================================================
