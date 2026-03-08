@@ -327,11 +327,27 @@ fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<TokenStream2> 
         None => quote! {},
     };
 
+    // When SphericalNaming names are available, also override ReferenceFrame::spherical_names()
+    // so that Display impls on spherical types can use domain names without requiring
+    // a SphericalNaming bound.
+    let spherical_names_method = match (&attrs.polar, &attrs.azimuth) {
+        (Some(polar), Some(azimuth)) => {
+            let distance = attrs.distance.as_deref().unwrap_or("distance");
+            quote! {
+                fn spherical_names() -> ::core::option::Option<(&'static str, &'static str, &'static str)> {
+                    ::core::option::Option::Some((#polar, #azimuth, #distance))
+                }
+            }
+        }
+        _ => quote! {},
+    };
+
     let expanded = quote! {
         impl ::affn::frames::ReferenceFrame for #name {
             fn frame_name() -> &'static str {
                 #name_expr
             }
+            #spherical_names_method
         }
 
         #spherical_impl

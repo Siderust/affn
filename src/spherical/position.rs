@@ -208,16 +208,19 @@ where
     Quantity<U>: std::fmt::Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let (polar_name, azimuth_name, distance_name) =
+            F::spherical_names().unwrap_or(("\u{03b8}", "\u{03c6}", "r"));
         write!(
             f,
-            "Center: {}, Frame: {}, θ: ",
+            "Center: {}, Frame: {}, {}: ",
             C::center_name(),
-            F::frame_name()
+            F::frame_name(),
+            polar_name
         )?;
         std::fmt::Display::fmt(&self.polar, f)?;
-        write!(f, ", φ: ")?;
+        write!(f, ", {}: ", azimuth_name)?;
         std::fmt::Display::fmt(&self.azimuth, f)?;
-        write!(f, ", r: ")?;
+        write!(f, ", {}: ", distance_name)?;
         std::fmt::Display::fmt(&self.distance, f)
     }
 }
@@ -230,16 +233,19 @@ where
     Quantity<U>: std::fmt::LowerExp,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let (polar_name, azimuth_name, distance_name) =
+            F::spherical_names().unwrap_or(("\u{03b8}", "\u{03c6}", "r"));
         write!(
             f,
-            "Center: {}, Frame: {}, θ: ",
+            "Center: {}, Frame: {}, {}: ",
             C::center_name(),
-            F::frame_name()
+            F::frame_name(),
+            polar_name
         )?;
         std::fmt::LowerExp::fmt(&self.polar, f)?;
-        write!(f, ", φ: ")?;
+        write!(f, ", {}: ", azimuth_name)?;
         std::fmt::LowerExp::fmt(&self.azimuth, f)?;
-        write!(f, ", r: ")?;
+        write!(f, ", {}: ", distance_name)?;
         std::fmt::LowerExp::fmt(&self.distance, f)
     }
 }
@@ -252,16 +258,19 @@ where
     Quantity<U>: std::fmt::UpperExp,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let (polar_name, azimuth_name, distance_name) =
+            F::spherical_names().unwrap_or(("\u{03b8}", "\u{03c6}", "r"));
         write!(
             f,
-            "Center: {}, Frame: {}, θ: ",
+            "Center: {}, Frame: {}, {}: ",
             C::center_name(),
-            F::frame_name()
+            F::frame_name(),
+            polar_name
         )?;
         std::fmt::UpperExp::fmt(&self.polar, f)?;
-        write!(f, ", φ: ")?;
+        write!(f, ", {}: ", azimuth_name)?;
         std::fmt::UpperExp::fmt(&self.azimuth, f)?;
-        write!(f, ", r: ")?;
+        write!(f, ", {}: ", distance_name)?;
         std::fmt::UpperExp::fmt(&self.distance, f)
     }
 }
