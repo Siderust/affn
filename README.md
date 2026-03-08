@@ -23,7 +23,7 @@ Add the dependency:
 
 ```toml
 [dependencies]
-affn = "0.3"
+affn = "0.4"
 qtty = "0.4"
 ```
 
@@ -202,7 +202,7 @@ Enable the `astro` feature to use the built-in astronomy and geodesy marker fram
 
 ```toml
 [dependencies]
-affn = { version = "0.3", features = ["astro"] }
+affn = { version = "0.4", features = ["astro"] }
 qtty = "0.4"
 ```
 
@@ -230,7 +230,7 @@ Enable it in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-affn = { version = "0.3", features = ["serde"] }
+affn = { version = "0.4", features = ["serde"] }
 qtty = "0.4"
 ```
 
