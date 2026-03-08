@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "affn"
-version = "0.3.3"
+version = "0.4.1"
 dependencies = [
  "affn-derive",
  "criterion",
@@ -552,9 +552,9 @@ dependencies = [
 
 [[package]]
 name = "qtty"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bea89a195c12cff1a98730ebdbf28ac603d75a5eaba14e0b0d0704535f67a811"
+checksum = "9dc60ed0161fc68ec0b0faf090e4feec70dd179447c6ca14e5cc052b4eb2a789"
 dependencies = [
  "qtty-core",
  "qtty-derive",
@@ -562,9 +562,9 @@ dependencies = [
 
 [[package]]
 name = "qtty-core"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eec18c85c65728c91aeec04456140bece6d71cb703307f786303523957759718"
+checksum = "ab488371c17ea2db038caa2a3d0044a85a433c4c2172467978d05ee39d22b6fb"
 dependencies = [
  "libm",
  "qtty-derive",
@@ -574,9 +574,9 @@ dependencies = [
 
 [[package]]
 name = "qtty-derive"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5c4ed7c0500072e756d76102cf8fceebe6ae9199e6e16ca018948eb80c78625"
+checksum = "3ab6c550316cbdd43e4eca2c94c14c1cf4e67b253278a94ccc4a5eca2ce5db6e"
 dependencies = [
  "proc-macro2",
  "quote",
