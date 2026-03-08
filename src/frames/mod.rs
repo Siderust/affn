@@ -58,6 +58,19 @@
 pub trait ReferenceFrame: Copy + Clone + std::fmt::Debug {
     /// Returns the canonical name of this reference frame.
     fn frame_name() -> &'static str;
+
+    /// Returns frame-specific names for spherical coordinate components.
+    ///
+    /// When a frame implements [`SphericalNaming`], this returns
+    /// `Some((polar_name, azimuth_name, distance_name))` so that Display
+    /// impls on [`spherical::Direction`] and [`spherical::Position`] can use
+    /// domain-appropriate axis names (e.g. `"dec"`/`"ra"` for ICRS,
+    /// `"alt"`/`"az"` for Horizontal) rather than generic Greek letters.
+    ///
+    /// Returns `None` for frames that do not implement `SphericalNaming`.
+    fn spherical_names() -> Option<(&'static str, &'static str, &'static str)> {
+        None
+    }
 }
 
 // =============================================================================
