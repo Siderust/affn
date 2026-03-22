@@ -26,6 +26,8 @@
 //! - **Position**: An affine point in space (center + frame + distance)
 //! - **Direction**: A unit vector representing orientation (frame only)
 //! - **Displacement/Velocity**: Free vectors (frame + magnitude)
+//! - **Conic geometry**: Reusable conic-family classification plus shape and
+//!   orientation containers without time or propagation semantics
 //!
 //! ## Creating Custom Frames and Centers
 //!
@@ -90,6 +92,7 @@ extern crate self as affn;
 
 // Coordinate type implementations
 pub mod cartesian;
+pub mod conic;
 pub mod spherical;
 
 // Core traits and marker types
@@ -128,6 +131,10 @@ pub use cartesian::{
     CenterParamsMismatchError, Direction as CartesianDirection, Displacement, Position, Vector,
     Velocity,
 };
+pub use conic::{
+    ConicKind, ConicOrientation, ConicValidationError, OrientedPeriapsisConic,
+    OrientedSemiMajorAxisConic, PeriapsisConic, SemiMajorAxisConic,
+};
 pub use spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 
 // Re-export ellipsoidal Position for standalone usage
@@ -152,6 +159,10 @@ pub mod prelude {
     // Core coordinate types
     pub use crate::cartesian::{
         Direction as CartesianDirection, Displacement, Position, Vector, Velocity,
+    };
+    pub use crate::conic::{
+        ConicKind, ConicOrientation, ConicValidationError, OrientedPeriapsisConic,
+        OrientedSemiMajorAxisConic, PeriapsisConic, SemiMajorAxisConic,
     };
     pub use crate::spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 

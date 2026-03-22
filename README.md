@@ -12,6 +12,7 @@ Affine geometry primitives for strongly-typed coordinate systems.
 - **Reference centers** (`C`): the origin of a coordinate system (optionally parameterized via `C::Params`)
 - **Reference frames** (`F`): the orientation of axes
 - **Typed coordinates**: Cartesian, spherical, and ellipsoidal positions plus directions/vectors
+- **Conic geometry**: domain-agnostic conic-family classification plus shape/orientation containers
 - **Affine operators**: `Rotation3`, `Translation3`, and `Isometry3`
 - **Units**: distances/lengths are carried via `qtty` units at the type level
 
@@ -66,6 +67,8 @@ assert!((c.y().value() - 4.0).abs() < 1e-12);
 - `Direction<F>`: a unit vector (frame-only, translation-invariant)
 - `Vector<F, U>` / `Displacement<F, U>` / `Velocity<F, U>`: free vectors (frame-only)
 - `EllipsoidalPosition<C, F, U>`: geodetic longitude/latitude/height on an ellipsoid-aware frame
+- `PeriapsisConic<U>` / `SemiMajorAxisConic<U>`: conic shapes classified by eccentricity
+- `OrientedPeriapsisConic<U>` / `OrientedSemiMajorAxisConic<U>`: conic shapes plus 3D orientation
 
 The type system enforces the usual affine rules:
 

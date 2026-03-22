@@ -7,6 +7,10 @@
 
 use affn::cartesian::{Direction as CartesianDirection, Displacement, Position, Vector};
 use affn::centers::ReferenceCenter;
+use affn::conic::{
+    ConicOrientation, OrientedPeriapsisConic, OrientedSemiMajorAxisConic, PeriapsisConic,
+    SemiMajorAxisConic,
+};
 use affn::frames::{ReferenceFrame, SphericalNaming};
 use affn::spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 use qtty::*;
@@ -357,4 +361,49 @@ fn test_negative_values_serde() {
     assert_eq!(neg.x(), deserialized.x());
     assert_eq!(neg.y(), deserialized.y());
     assert_eq!(neg.z(), deserialized.z());
+}
+
+// =============================================================================
+// Conic Geometry Tests
+// =============================================================================
+
+#[test]
+fn test_periapsis_conic_serde_roundtrip() {
+    let conic = PeriapsisConic::new(1.25 * AU, 0.42);
+
+    let json = serde_json::to_string(&conic).expect("serialize PeriapsisConic");
+    let deserialized: PeriapsisConic<AstronomicalUnit> =
+        serde_json::from_str(&json).expect("deserialize PeriapsisConic");
+
+    assert_eq!(conic, deserialized);
+}
+
+#[test]
+fn test_semi_major_axis_conic_serde_roundtrip() {
+    let conic = SemiMajorAxisConic::new(2.5 * KM, 0.2);
+
+    let json = serde_json::to_string(&conic).expect("serialize SemiMajorAxisConic");
+    let deserialized: SemiMajorAxisConic<Kilometer> =
+        serde_json::from_str(&json).expect("deserialize SemiMajorAxisConic");
+
+    assert_eq!(conic, deserialized);
+}
+
+#[test]
+fn test_oriented_conic_serde_roundtrip() {
+    let orientation = ConicOrientation::new(12.0 * DEG, 34.0 * DEG, 56.0 * DEG);
+    let periapsis = OrientedPeriapsisConic::new(0.5 * AU, 1.4, orientation);
+    let semi_major = OrientedSemiMajorAxisConic::new(5.0 * M, 0.1, orientation);
+
+    let periapsis_json =
+        serde_json::to_string(&periapsis).expect("serialize OrientedPeriapsisConic");
+    let periapsis_deserialized: OrientedPeriapsisConic<AstronomicalUnit> =
+        serde_json::from_str(&periapsis_json).expect("deserialize OrientedPeriapsisConic");
+    assert_eq!(periapsis, periapsis_deserialized);
+
+    let semi_major_json =
+        serde_json::to_string(&semi_major).expect("serialize OrientedSemiMajorAxisConic");
+    let semi_major_deserialized: OrientedSemiMajorAxisConic<Meter> =
+        serde_json::from_str(&semi_major_json).expect("deserialize OrientedSemiMajorAxisConic");
+    assert_eq!(semi_major, semi_major_deserialized);
 }
