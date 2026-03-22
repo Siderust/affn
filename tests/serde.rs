@@ -8,9 +8,11 @@
 use affn::cartesian::{Direction as CartesianDirection, Displacement, Position, Vector};
 use affn::centers::ReferenceCenter;
 use affn::conic::{
-    ConicOrientation, OrientedPeriapsisConic, OrientedSemiMajorAxisConic, PeriapsisConic,
-    SemiMajorAxisConic,
+    ConicOrientation, OrientedConic, OrientedPeriapsisConic, OrientedSemiMajorAxisConic,
+    PeriapsisConic, PeriapsisParam, SemiMajorAxisConic, SemiMajorAxisParam,
 };
+#[cfg(feature = "astro")]
+use affn::frames::EclipticMeanJ2000;
 use affn::frames::{ReferenceFrame, SphericalNaming};
 use affn::spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 use qtty::*;
@@ -390,10 +392,14 @@ fn test_semi_major_axis_conic_serde_roundtrip() {
 }
 
 #[test]
+#[cfg(feature = "astro")]
 fn test_oriented_conic_serde_roundtrip() {
-    let orientation = ConicOrientation::new(12.0 * DEG, 34.0 * DEG, 56.0 * DEG);
-    let periapsis = OrientedPeriapsisConic::new(0.5 * AU, 1.4, orientation);
-    let semi_major = OrientedSemiMajorAxisConic::new(5.0 * M, 0.1, orientation);
+    let orientation =
+        ConicOrientation::<EclipticMeanJ2000>::new(12.0 * DEG, 34.0 * DEG, 56.0 * DEG);
+    let periapsis: OrientedPeriapsisConic<AstronomicalUnit> =
+        OrientedConic::new(PeriapsisParam::new(0.5 * AU, 1.4), orientation);
+    let semi_major: OrientedSemiMajorAxisConic<Meter> =
+        OrientedConic::new(SemiMajorAxisParam::new(5.0 * M, 0.1), orientation);
 
     let periapsis_json =
         serde_json::to_string(&periapsis).expect("serialize OrientedPeriapsisConic");
