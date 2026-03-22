@@ -67,8 +67,8 @@ assert!((c.y().value() - 4.0).abs() < 1e-12);
 - `Direction<F>`: a unit vector (frame-only, translation-invariant)
 - `Vector<F, U>` / `Displacement<F, U>` / `Velocity<F, U>`: free vectors (frame-only)
 - `EllipsoidalPosition<C, F, U>`: geodetic longitude/latitude/height on an ellipsoid-aware frame
-- `PeriapsisConic<U>` / `SemiMajorAxisConic<U>`: conic shapes classified by eccentricity
-- `OrientedPeriapsisConic<U>` / `OrientedSemiMajorAxisConic<U>`: conic shapes plus 3D orientation
+- `PeriapsisParam<U>` / `SemiMajorAxisParam<U>`: conic shapes classified by eccentricity
+- `OrientedConic<S, F>`: oriented conic section generic over shape and reference frame
 
 The type system enforces the usual affine rules:
 
