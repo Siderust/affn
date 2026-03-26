@@ -141,8 +141,19 @@ impl<U: LengthUnit, K: NonParabolicKindMarker> TypedSemiMajorAxisParam<U, K> {
         }
     }
 
+    /// Wraps `inner` without checking that its eccentricity matches kind `K`.
+    ///
+    /// Intended for `const` contexts where the eccentricity is a known-correct
+    /// compile-time constant. For all other cases prefer [`new`](Self::new).
+    pub const fn new_unchecked(inner: SemiMajorAxisParam<U>) -> Self {
+        Self {
+            inner,
+            _kind: PhantomData,
+        }
+    }
+
     /// Returns `Some` if `inner`'s eccentricity matches kind `K`, `None` otherwise.
-    pub fn try_new(inner: SemiMajorAxisParam<U>) -> Option<Self> {
+    pub fn new(inner: SemiMajorAxisParam<U>) -> Option<Self> {
         if inner.kind() == K::conic_kind() {
             Some(Self {
                 inner,
