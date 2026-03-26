@@ -132,8 +132,10 @@ pub use cartesian::{
     Velocity,
 };
 pub use conic::{
-    ConicKind, ConicOrientation, ConicShape, ConicValidationError, OrientedConic, PeriapsisParam,
-    SemiMajorAxisParam,
+    ClassifiedPeriapsisParam, ClassifiedSemiMajorAxisParam, ConicKind, ConicOrientation,
+    ConicShape, ConicValidationError, Elliptic, Hyperbolic, KindMarker, NonParabolicKindMarker,
+    OrientedConic, Parabolic, PeriapsisParam, SemiMajorAxisParam, TypedPeriapsisParam,
+    TypedSemiMajorAxisParam,
 };
 pub use spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 
@@ -161,8 +163,10 @@ pub mod prelude {
         Direction as CartesianDirection, Displacement, Position, Vector, Velocity,
     };
     pub use crate::conic::{
-        ConicKind, ConicOrientation, ConicShape, ConicValidationError, OrientedConic,
-        PeriapsisParam, SemiMajorAxisParam,
+        ClassifiedPeriapsisParam, ClassifiedSemiMajorAxisParam, ConicKind, ConicOrientation,
+        ConicShape, ConicValidationError, Elliptic, Hyperbolic, KindMarker, NonParabolicKindMarker,
+        OrientedConic, Parabolic, PeriapsisParam, SemiMajorAxisParam, TypedPeriapsisParam,
+        TypedSemiMajorAxisParam,
     };
     pub use crate::spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 
