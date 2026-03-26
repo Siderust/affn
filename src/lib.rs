@@ -135,11 +135,6 @@ pub use conic::{
     ConicKind, ConicOrientation, ConicShape, ConicValidationError, OrientedConic, PeriapsisParam,
     SemiMajorAxisParam,
 };
-#[cfg(feature = "astro")]
-#[allow(deprecated)]
-pub use conic::{OrientedPeriapsisConic, OrientedSemiMajorAxisConic};
-#[allow(deprecated)]
-pub use conic::{PeriapsisConic, SemiMajorAxisConic};
 pub use spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 
 // Re-export ellipsoidal Position for standalone usage
@@ -169,11 +164,6 @@ pub mod prelude {
         ConicKind, ConicOrientation, ConicShape, ConicValidationError, OrientedConic,
         PeriapsisParam, SemiMajorAxisParam,
     };
-    #[cfg(feature = "astro")]
-    #[allow(deprecated)]
-    pub use crate::conic::{OrientedPeriapsisConic, OrientedSemiMajorAxisConic};
-    #[allow(deprecated)]
-    pub use crate::conic::{PeriapsisConic, SemiMajorAxisConic};
     pub use crate::spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 
     // Operators
