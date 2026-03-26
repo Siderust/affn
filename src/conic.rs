@@ -114,7 +114,6 @@ pub trait ConicShape: sealed::ConicShapeSealed + Copy + Clone + fmt::Debug {
 /// Conic geometry expressed using periapsis distance.
 ///
 /// Valid for all conic kinds (elliptic, parabolic, hyperbolic).
-/// Replaces the old `PeriapsisConic<U>` (identical field layout).
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize), serde(bound = ""))]
 pub struct PeriapsisParam<U: LengthUnit = Meter> {
@@ -247,24 +246,6 @@ impl<U: LengthUnit> SemiMajorAxisParam<U> {
 }
 
 // =============================================================================
-// Deprecated type aliases for old flat struct names
-// =============================================================================
-
-/// Conic geometry expressed using periapsis distance.
-///
-/// # Deprecated
-/// Use [`PeriapsisParam`] instead.
-#[deprecated(since = "0.5.0", note = "Use PeriapsisParam instead")]
-pub type PeriapsisConic<U = Meter> = PeriapsisParam<U>;
-
-/// Conic geometry expressed using semi-major axis.
-///
-/// # Deprecated
-/// Use [`SemiMajorAxisParam`] instead.
-#[deprecated(since = "0.5.0", note = "Use SemiMajorAxisParam instead")]
-pub type SemiMajorAxisConic<U = Meter> = SemiMajorAxisParam<U>;
-
-// =============================================================================
 // ConicOrientation<F>
 // =============================================================================
 
@@ -332,8 +313,7 @@ impl<F: ReferenceFrame> ConicOrientation<F> {
 /// - `F: ReferenceFrame` — the reference frame in which the orientation angles
 ///   are expressed (e.g. `EclipticMeanJ2000`).
 ///
-/// Replaces the old `OrientedPeriapsisConic<U>` and `OrientedSemiMajorAxisConic<U>`
-/// with a single unified generic.
+/// A single unified generic over shape and frame.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(
@@ -393,34 +373,6 @@ impl<U: LengthUnit, F: ReferenceFrame> OrientedConic<SemiMajorAxisParam<U>, F> {
         }
     }
 }
-
-// =============================================================================
-// Deprecated oriented type aliases (gated on astro feature)
-// =============================================================================
-
-/// Periapsis-based conic geometry plus 3D orientation in `EclipticMeanJ2000`.
-///
-/// # Deprecated
-/// Use `OrientedConic<PeriapsisParam<U>, F>` instead.
-#[cfg(feature = "astro")]
-#[deprecated(
-    since = "0.5.0",
-    note = "Use OrientedConic<PeriapsisParam<U>, F> instead"
-)]
-pub type OrientedPeriapsisConic<U = Meter> =
-    OrientedConic<PeriapsisParam<U>, crate::frames::EclipticMeanJ2000>;
-
-/// Semi-major-axis-based conic geometry plus 3D orientation in `EclipticMeanJ2000`.
-///
-/// # Deprecated
-/// Use `OrientedConic<SemiMajorAxisParam<U>, F>` instead.
-#[cfg(feature = "astro")]
-#[deprecated(
-    since = "0.5.0",
-    note = "Use OrientedConic<SemiMajorAxisParam<U>, F> instead"
-)]
-pub type OrientedSemiMajorAxisConic<U = Meter> =
-    OrientedConic<SemiMajorAxisParam<U>, crate::frames::EclipticMeanJ2000>;
 
 // =============================================================================
 // Private helpers
