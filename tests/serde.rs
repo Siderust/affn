@@ -368,7 +368,7 @@ fn test_negative_values_serde() {
 
 #[test]
 fn test_periapsis_param_serde_roundtrip() {
-    let conic = PeriapsisParam::new(1.25 * AU, 0.42);
+    let conic = PeriapsisParam::try_new(1.25 * AU, 0.42).unwrap();
 
     let json = serde_json::to_string(&conic).expect("serialize PeriapsisParam");
     let deserialized: PeriapsisParam<AstronomicalUnit> =
@@ -379,7 +379,7 @@ fn test_periapsis_param_serde_roundtrip() {
 
 #[test]
 fn test_semi_major_axis_param_serde_roundtrip() {
-    let conic = SemiMajorAxisParam::new(2.5 * KM, 0.2);
+    let conic = SemiMajorAxisParam::try_new(2.5 * KM, 0.2).unwrap();
 
     let json = serde_json::to_string(&conic).expect("serialize SemiMajorAxisParam");
     let deserialized: SemiMajorAxisParam<Kilometer> =
@@ -392,11 +392,14 @@ fn test_semi_major_axis_param_serde_roundtrip() {
 #[cfg(feature = "astro")]
 fn test_oriented_conic_serde_roundtrip() {
     let orientation =
-        ConicOrientation::<EclipticMeanJ2000>::new(12.0 * DEG, 34.0 * DEG, 56.0 * DEG);
+        ConicOrientation::<EclipticMeanJ2000>::try_new(12.0 * DEG, 34.0 * DEG, 56.0 * DEG).unwrap();
     let periapsis: OrientedConic<PeriapsisParam<AstronomicalUnit>, EclipticMeanJ2000> =
-        OrientedConic::new(PeriapsisParam::new(0.5 * AU, 1.4), orientation);
+        OrientedConic::new(PeriapsisParam::try_new(0.5 * AU, 1.4).unwrap(), orientation);
     let semi_major: OrientedConic<SemiMajorAxisParam<Meter>, EclipticMeanJ2000> =
-        OrientedConic::new(SemiMajorAxisParam::new(5.0 * M, 0.1), orientation);
+        OrientedConic::new(
+            SemiMajorAxisParam::try_new(5.0 * M, 0.1).unwrap(),
+            orientation,
+        );
 
     let periapsis_json =
         serde_json::to_string(&periapsis).expect("serialize OrientedConic<PeriapsisParam, _>");

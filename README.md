@@ -221,6 +221,9 @@ Available built-ins include:
 Run the included examples:
 
 - `cargo run --example basic_cartesian`
+- `cargo run --example conic_classification`
+- `cargo run --example conic_independent_kinds`
+- `cargo run --example oriented_conic`
 - `cargo run --example parameterized_center`
 - `cargo run --example spherical_roundtrip`
 - `cargo run --example serde_roundtrip --features serde`
