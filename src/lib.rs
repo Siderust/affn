@@ -133,9 +133,10 @@ pub use cartesian::{
 };
 pub use conic::{
     ClassifiedPeriapsisParam, ClassifiedSemiMajorAxisParam, ConicKind, ConicOrientation,
-    ConicShape, ConicValidationError, Elliptic, Hyperbolic, KindMarker, NonParabolicKindMarker,
-    OrientedConic, Parabolic, PeriapsisParam, SemiMajorAxisParam, TypedPeriapsisParam,
-    TypedSemiMajorAxisParam,
+    ConicShape, ConicValidationError, Elliptic, EllipticPeriapsis, EllipticSemiMajorAxis,
+    Hyperbolic, HyperbolicPeriapsis, HyperbolicSemiMajorAxis, KindMarker, NonParabolicKindMarker,
+    OrientedConic, Parabolic, ParabolicPeriapsis, PeriapsisParam, SemiMajorAxisParam,
+    TypedPeriapsisParam, TypedSemiMajorAxisParam,
 };
 pub use spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 
@@ -164,9 +165,10 @@ pub mod prelude {
     };
     pub use crate::conic::{
         ClassifiedPeriapsisParam, ClassifiedSemiMajorAxisParam, ConicKind, ConicOrientation,
-        ConicShape, ConicValidationError, Elliptic, Hyperbolic, KindMarker, NonParabolicKindMarker,
-        OrientedConic, Parabolic, PeriapsisParam, SemiMajorAxisParam, TypedPeriapsisParam,
-        TypedSemiMajorAxisParam,
+        ConicShape, ConicValidationError, Elliptic, EllipticPeriapsis, EllipticSemiMajorAxis,
+        Hyperbolic, HyperbolicPeriapsis, HyperbolicSemiMajorAxis, KindMarker,
+        NonParabolicKindMarker, OrientedConic, Parabolic, ParabolicPeriapsis, PeriapsisParam,
+        SemiMajorAxisParam, TypedPeriapsisParam, TypedSemiMajorAxisParam,
     };
     pub use crate::spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 

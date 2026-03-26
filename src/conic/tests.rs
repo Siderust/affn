@@ -256,3 +256,27 @@ fn typed_sma_try_new_rejects_wrong_kind() {
     let inner = SemiMajorAxisParam::try_new(1.0 * M, 1.5).unwrap();
     assert!(TypedSemiMajorAxisParam::<_, Elliptic>::try_new(inner).is_none());
 }
+
+#[test]
+fn elliptic_periapsis_alias_is_usable() {
+    let shape = PeriapsisParam::try_new(1.0 * M, 0.5).unwrap();
+    let ClassifiedPeriapsisParam::Elliptic(typed) = shape.classify() else {
+        panic!()
+    };
+    let conic: EllipticPeriapsis<_, TestFrame> = OrientedConic::new(typed, orientation());
+
+    assert_eq!(conic.kind(), ConicKind::Elliptic);
+    assert_eq!(conic.shape().eccentricity(), 0.5);
+}
+
+#[test]
+fn elliptic_sma_alias_is_usable() {
+    let shape = SemiMajorAxisParam::try_new(2.0 * M, 0.25).unwrap();
+    let ClassifiedSemiMajorAxisParam::Elliptic(typed) = shape.classify() else {
+        panic!()
+    };
+    let conic: EllipticSemiMajorAxis<_, TestFrame> = OrientedConic::new(typed, orientation());
+
+    assert_eq!(conic.kind(), ConicKind::Elliptic);
+    assert_eq!(conic.shape().semi_major_axis(), 2.0 * M);
+}

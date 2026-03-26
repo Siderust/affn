@@ -20,6 +20,8 @@
 //! - [`TypedPeriapsisParam<U, K>`] - periapsis parameterisation branded with a kind marker.
 //! - [`TypedSemiMajorAxisParam<U, K>`] - semi-major-axis parameterisation branded with a
 //!   non-parabolic kind marker.
+//! - Kind-specific aliases such as [`EllipticPeriapsis<U, F>`] and
+//!   [`EllipticSemiMajorAxis<U, F>`] for the most common typed oriented forms.
 //! - [`ClassifiedPeriapsisParam<U>`] / [`ClassifiedSemiMajorAxisParam<U>`] - runtime
 //!   classification results returned by `classify()`.
 //!
@@ -61,6 +63,21 @@ pub use periapsis::{ClassifiedPeriapsisParam, PeriapsisParam, TypedPeriapsisPara
 pub use semi_major_axis::{
     ClassifiedSemiMajorAxisParam, SemiMajorAxisParam, TypedSemiMajorAxisParam,
 };
+
+/// Shorthand for an elliptic oriented conic expressed with periapsis distance.
+pub type EllipticPeriapsis<U, F> = OrientedConic<TypedPeriapsisParam<U, Elliptic>, F>;
+
+/// Shorthand for a parabolic oriented conic expressed with periapsis distance.
+pub type ParabolicPeriapsis<U, F> = OrientedConic<TypedPeriapsisParam<U, Parabolic>, F>;
+
+/// Shorthand for a hyperbolic oriented conic expressed with periapsis distance.
+pub type HyperbolicPeriapsis<U, F> = OrientedConic<TypedPeriapsisParam<U, Hyperbolic>, F>;
+
+/// Shorthand for an elliptic oriented conic expressed with semi-major axis.
+pub type EllipticSemiMajorAxis<U, F> = OrientedConic<TypedSemiMajorAxisParam<U, Elliptic>, F>;
+
+/// Shorthand for a hyperbolic oriented conic expressed with semi-major axis.
+pub type HyperbolicSemiMajorAxis<U, F> = OrientedConic<TypedSemiMajorAxisParam<U, Hyperbolic>, F>;
 
 #[cfg(test)]
 mod tests;
