@@ -252,9 +252,9 @@ fn sma_overflow_to_periapsis_returns_none() {
 }
 
 #[test]
-fn typed_sma_try_new_rejects_wrong_kind() {
+fn typed_sma_new_rejects_wrong_kind() {
     let inner = SemiMajorAxisParam::try_new(1.0 * M, 1.5).unwrap();
-    assert!(TypedSemiMajorAxisParam::<_, Elliptic>::try_new(inner).is_none());
+    assert!(TypedSemiMajorAxisParam::<_, Elliptic>::new(inner).is_none());
 }
 
 #[test]
