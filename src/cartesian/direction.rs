@@ -63,11 +63,6 @@ use qtty::{LengthUnit, Quantity};
 use std::marker::PhantomData;
 use std::ops::Mul;
 
-// Serde implementations in separate module
-#[cfg(feature = "serde")]
-#[path = "direction_serde.rs"]
-mod direction_serde;
-
 /// A unit vector representing orientation in 3D space.
 ///
 /// Directions are frame-dependent but center-independent (free vectors).
@@ -87,7 +82,7 @@ mod direction_serde;
 /// overhead compared to raw `Vector3<f64>`.
 #[derive(Debug, Clone, Copy)]
 pub struct Direction<F: ReferenceFrame> {
-    xyz: XYZ<f64>,
+    pub(in crate::cartesian) xyz: XYZ<f64>,
     _frame: PhantomData<F>,
 }
 
@@ -99,7 +94,8 @@ impl<F: ReferenceFrame> Direction<F> {
     /// Creates a direction from components, normalizing to unit length.
     ///
     /// # Panics
-    /// Panics if the input vector is zero (cannot normalize).
+    /// Panics if the input vector has zero magnitude (cannot normalize a zero vector).
+    /// Use [`Direction::try_new`] for fallible construction when the input may be zero.
     ///
     /// # Example
     /// ```rust
@@ -117,12 +113,14 @@ impl<F: ReferenceFrame> Direction<F> {
     /// assert!((dir.y() - 0.8).abs() < 1e-12);
     /// ```
     #[inline]
+    #[must_use]
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         Self::try_new(x, y, z).expect("Cannot create Direction from zero vector")
     }
 
     /// Attempts to create a direction, returning `None` if the input is zero.
     #[inline]
+    #[must_use]
     pub fn try_new(x: f64, y: f64, z: f64) -> Option<Self> {
         XYZ::new(x, y, z)
             .try_normalize()

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `#[must_use]` on all constructors and pure transforms in `Rotation3`, `Translation3`, `Isometry3`, `Direction`.
+
+### Changed
+- `affn-derive` source split into `frame.rs` and `center.rs` submodules; `lib.rs` is now a thin entry-point (no user-visible API change).
+- `cartesian/vector_serde.rs` and `cartesian/direction_serde.rs` merged into `cartesian/serde.rs` (no user-visible API change).
+- `Rotation3` matrix multiply now uses `array::from_fn` instead of an indexed loop; removes the `#[allow(clippy::needless_range_loop)]` suppression.
+
+### Fixed
+- `Direction::new` doc clarified: `# Panics` section now references `try_new` as the fallible alternative.
+- `Rotation3::from_matrix` doc updated with an explicit `# Preconditions` block describing the mathematical contract.
+- `XYZ::magnitude_squared` doc explains why the return type is `f64` rather than `Quantity<U²>`.
+- `classify_eccentricity_unchecked` doc explains the exact `e == 1.0` IEEE 754 boundary and its implications.
+- `Direction` serde deserialization comment clarifies why `XYZ<f64>` is correct (directions are dimensionless).
 - New `affn::conic` module for domain-agnostic conic geometry, including `ConicKind`, `ConicValidationError`, `ConicShape`, and kind markers `Elliptic`, `Parabolic`, and `Hyperbolic`.
 - New validated conic parameterizations: erased forms `PeriapsisParam` and `SemiMajorAxisParam`, classification enums `ClassifiedPeriapsisParam` and `ClassifiedSemiMajorAxisParam`, typed wrappers `TypedPeriapsisParam` and `TypedSemiMajorAxisParam`, frame-tagged `ConicOrientation<F>`, and `OrientedConic<S, F>` aliases for common elliptic, parabolic, and hyperbolic combinations.
 - Conversions between periapsis-distance and semi-major-axis conic forms, preserving eccentricity and preserving frame-tagged orientation on `OrientedConic`.
