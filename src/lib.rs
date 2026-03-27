@@ -9,6 +9,7 @@
 //! `affn` is a **pure geometry kernel** that contains no domain-specific vocabulary.
 //! Concrete frame and center types (e.g., astronomical frames, robotic frames)
 //! should be defined in downstream crates that depend on `affn`.
+//! See [`conic`] for the dedicated guide to the conic geometry layer.
 //!
 //! ## Core Concepts
 //!
@@ -26,6 +27,8 @@
 //! - **Position**: An affine point in space (center + frame + distance)
 //! - **Direction**: A unit vector representing orientation (frame only)
 //! - **Displacement/Velocity**: Free vectors (frame + magnitude)
+//! - **Conic geometry**: Reusable conic-family classification plus shape and
+//!   orientation containers without time or propagation semantics
 //!
 //! ## Creating Custom Frames and Centers
 //!
@@ -90,6 +93,7 @@ extern crate self as affn;
 
 // Coordinate type implementations
 pub mod cartesian;
+pub mod conic;
 pub mod spherical;
 
 // Core traits and marker types
@@ -128,6 +132,13 @@ pub use cartesian::{
     CenterParamsMismatchError, Direction as CartesianDirection, Displacement, Position, Vector,
     Velocity,
 };
+pub use conic::{
+    ClassifiedPeriapsisParam, ClassifiedSemiMajorAxisParam, ConicKind, ConicOrientation,
+    ConicShape, ConicValidationError, Elliptic, EllipticPeriapsis, EllipticSemiMajorAxis,
+    Hyperbolic, HyperbolicPeriapsis, HyperbolicSemiMajorAxis, KindMarker, NonParabolicKindMarker,
+    OrientedConic, Parabolic, ParabolicPeriapsis, PeriapsisParam, SemiMajorAxisParam,
+    TypedPeriapsisParam, TypedSemiMajorAxisParam,
+};
 pub use spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 
 // Re-export ellipsoidal Position for standalone usage
@@ -152,6 +163,13 @@ pub mod prelude {
     // Core coordinate types
     pub use crate::cartesian::{
         Direction as CartesianDirection, Displacement, Position, Vector, Velocity,
+    };
+    pub use crate::conic::{
+        ClassifiedPeriapsisParam, ClassifiedSemiMajorAxisParam, ConicKind, ConicOrientation,
+        ConicShape, ConicValidationError, Elliptic, EllipticPeriapsis, EllipticSemiMajorAxis,
+        Hyperbolic, HyperbolicPeriapsis, HyperbolicSemiMajorAxis, KindMarker,
+        NonParabolicKindMarker, OrientedConic, Parabolic, ParabolicPeriapsis, PeriapsisParam,
+        SemiMajorAxisParam, TypedPeriapsisParam, TypedSemiMajorAxisParam,
     };
     pub use crate::spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 

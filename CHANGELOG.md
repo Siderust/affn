@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- New `affn::conic` module for domain-agnostic conic geometry, including `ConicKind`, `ConicValidationError`, `ConicShape`, and kind markers `Elliptic`, `Parabolic`, and `Hyperbolic`.
+- New validated conic parameterizations: erased forms `PeriapsisParam` and `SemiMajorAxisParam`, classification enums `ClassifiedPeriapsisParam` and `ClassifiedSemiMajorAxisParam`, typed wrappers `TypedPeriapsisParam` and `TypedSemiMajorAxisParam`, frame-tagged `ConicOrientation<F>`, and `OrientedConic<S, F>` aliases for common elliptic, parabolic, and hyperbolic combinations.
+- Conversions between periapsis-distance and semi-major-axis conic forms, preserving eccentricity and preserving frame-tagged orientation on `OrientedConic`.
+- `serde` support for conic shapes, orientations, and oriented conics under the existing `serde` feature, with round-trip coverage in the test suite.
+- New `conic_showcase` example and expanded README guidance for the conic geometry layer.
+
+### Changed
+- Crate-level exports and `affn::prelude` now re-export the public conic geometry types.
+
 ## [0.4.1 - 2026-03-08]
 
 ### Added
