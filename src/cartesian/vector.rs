@@ -53,11 +53,6 @@ use qtty::{LengthUnit, Quantity, Unit};
 use std::marker::PhantomData;
 use std::ops::{Add, Neg, Sub};
 
-// Serde implementations in separate module
-#[cfg(feature = "serde")]
-#[path = "vector_serde.rs"]
-mod vector_serde;
-
 /// A free vector in 3D Cartesian coordinates.
 ///
 /// Free vectors are frame-dependent but center-independent. They represent
@@ -73,7 +68,7 @@ mod vector_serde;
 /// ensuring no runtime overhead compared to raw `Vector3<Quantity<U>>`.
 #[derive(Debug, Clone, Copy)]
 pub struct Vector<F: ReferenceFrame, U: Unit> {
-    xyz: XYZ<Quantity<U>>,
+    pub(in crate::cartesian) xyz: XYZ<Quantity<U>>,
     _frame: PhantomData<F>,
 }
 

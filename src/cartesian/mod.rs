@@ -101,6 +101,10 @@ mod line_of_sight;
 mod position; // Position<C, F, U> - Affine point
 mod vector; // Vector<F, U> - Free vector (base for Displacement, Velocity) // Direction<F> - Unit vector
 
+// Serde impls for Vector and Direction (Position serde is inlined in position.rs)
+#[cfg(feature = "serde")]
+mod serde;
+
 // =============================================================================
 // Public Re-exports
 // =============================================================================

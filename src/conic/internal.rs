@@ -7,7 +7,15 @@ use super::{ConicKind, ConicValidationError};
 /// Classifies an already-validated eccentricity into its conic family.
 ///
 /// Callers must ensure `eccentricity` is finite and non-negative before
-/// invoking this helper.
+/// invoking this helper (see [`validate_eccentricity`]).
+///
+/// # Floating-point boundary at e = 1.0
+///
+/// The comparisons use exact IEEE 754 equality (`< 1.0` / `> 1.0`), so a
+/// value of exactly `1.0f64` falls into the `Parabolic` branch. Callers
+/// constructing parabolic conics must pass `1.0` literally — a computed
+/// value like `1.0 - f64::EPSILON` will be classified as `Elliptic`.
+/// NaN and Inf are rejected by [`validate_eccentricity`] before reaching here.
 #[inline]
 pub(super) fn classify_eccentricity_unchecked(eccentricity: f64) -> ConicKind {
     if eccentricity < 1.0 {
