@@ -12,6 +12,7 @@ Affine geometry primitives for strongly-typed coordinate systems.
 - **Reference centers** (`C`): the origin of a coordinate system (optionally parameterized via `C::Params`)
 - **Reference frames** (`F`): the orientation of axes
 - **Typed coordinates**: Cartesian, spherical, and ellipsoidal positions plus directions/vectors
+- **Conic geometry**: domain-agnostic conic-family classification plus shape/orientation containers
 - **Affine operators**: `Rotation3`, `Translation3`, and `Isometry3`
 - **Units**: distances/lengths are carried via `qtty` units at the type level
 
@@ -66,12 +67,62 @@ assert!((c.y().value() - 4.0).abs() < 1e-12);
 - `Direction<F>`: a unit vector (frame-only, translation-invariant)
 - `Vector<F, U>` / `Displacement<F, U>` / `Velocity<F, U>`: free vectors (frame-only)
 - `EllipsoidalPosition<C, F, U>`: geodetic longitude/latitude/height on an ellipsoid-aware frame
+- `PeriapsisParam<U>` / `SemiMajorAxisParam<U>`: conic shapes classified by eccentricity
+- `OrientedConic<S, F>`: oriented conic section generic over shape and reference frame
 
 The type system enforces the usual affine rules:
 
 - ✅ `Position - Position -> Displacement`
 - ✅ `Position + Displacement -> Position`
 - ❌ `Position + Position` (does not compile)
+
+## Conic Geometry
+
+`affn::conic` is the geometry-only conic layer. It models shape and orientation
+without introducing body, epoch, or propagation semantics.
+
+- `PeriapsisParam<U>` is the erased shape form that works for elliptic,
+  parabolic, and hyperbolic conics.
+- `SemiMajorAxisParam<U>` is the erased non-parabolic form, so `e == 1` is
+  rejected at construction.
+- `classify()` turns erased shapes into typed wrappers such as
+  `TypedPeriapsisParam<U, Elliptic>`.
+- `ConicOrientation<F>` and `OrientedConic<S, F>` keep the orientation tagged
+  with the reference frame.
+
+```rust
+use affn::conic::{
+    ClassifiedPeriapsisParam, ConicKind, ConicOrientation, ConicShape, OrientedConic,
+    PeriapsisParam,
+};
+use affn::frames::ReferenceFrame;
+use qtty::*;
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+struct Inertial;
+
+impl ReferenceFrame for Inertial {
+    fn frame_name() -> &'static str { "Inertial" }
+}
+
+let shape = PeriapsisParam::try_new(7000.0 * M, 0.42).expect("valid elliptic periapsis shape");
+assert_eq!(shape.kind(), ConicKind::Elliptic);
+
+let ClassifiedPeriapsisParam::Elliptic(typed) = shape.classify() else {
+    unreachable!("0.42 is elliptic")
+};
+let orientation = ConicOrientation::<Inertial>::try_new(28.5 * DEG, 40.0 * DEG, 15.0 * DEG)
+    .expect("valid conic orientation");
+let conic = OrientedConic::new(typed, orientation);
+let sma = conic.to_semi_major_axis().expect("elliptic conics convert to SMA");
+
+assert_eq!(sma.kind(), ConicKind::Elliptic);
+assert_eq!(sma.orientation(), conic.orientation());
+```
+
+For a fuller walkthrough, see the `conic_showcase` example:
+
+- `cargo run --example conic_showcase`
 
 ## Affine Operators
 
@@ -218,6 +269,7 @@ Available built-ins include:
 Run the included examples:
 
 - `cargo run --example basic_cartesian`
+- `cargo run --example conic_showcase`
 - `cargo run --example parameterized_center`
 - `cargo run --example spherical_roundtrip`
 - `cargo run --example serde_roundtrip --features serde`
