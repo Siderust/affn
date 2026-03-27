@@ -1,3 +1,5 @@
+//! Validation errors produced by conic constructors and conversions.
+
 use std::fmt;
 
 #[cfg(feature = "serde")]

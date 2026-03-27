@@ -9,6 +9,7 @@
 //! `affn` is a **pure geometry kernel** that contains no domain-specific vocabulary.
 //! Concrete frame and center types (e.g., astronomical frames, robotic frames)
 //! should be defined in downstream crates that depend on `affn`.
+//! See [`conic`] for the dedicated guide to the conic geometry layer.
 //!
 //! ## Core Concepts
 //!

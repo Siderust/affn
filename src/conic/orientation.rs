@@ -1,3 +1,5 @@
+//! Frame-tagged orientation values for conic sections.
+
 use std::marker::PhantomData;
 
 use qtty::Degrees;
@@ -17,6 +19,9 @@ pub struct ConicOrientation<F: ReferenceFrame> {
 
 impl<F: ReferenceFrame> ConicOrientation<F> {
     /// Constructs a validated orientation in frame `F`.
+    ///
+    /// All three angles must be finite. The values are stored exactly as given;
+    /// this constructor does not normalize or wrap them.
     pub fn try_new(
         inclination: Degrees,
         longitude_of_ascending_node: Degrees,
@@ -37,6 +42,9 @@ impl<F: ReferenceFrame> ConicOrientation<F> {
     }
 
     /// Constructs an orientation without validation.
+    ///
+    /// Intended for trusted or compile-time data where finiteness has already
+    /// been established by the caller.
     pub const fn new(
         inclination: Degrees,
         longitude_of_ascending_node: Degrees,
@@ -50,19 +58,19 @@ impl<F: ReferenceFrame> ConicOrientation<F> {
         }
     }
 
-    /// Inclination of the conic plane.
+    /// Returns the stored inclination of the conic plane.
     #[inline]
     pub const fn inclination(&self) -> Degrees {
         self.inclination
     }
 
-    /// Longitude of the ascending node.
+    /// Returns the stored longitude of the ascending node.
     #[inline]
     pub const fn longitude_of_ascending_node(&self) -> Degrees {
         self.longitude_of_ascending_node
     }
 
-    /// Argument of periapsis.
+    /// Returns the stored argument of periapsis.
     #[inline]
     pub const fn argument_of_periapsis(&self) -> Degrees {
         self.argument_of_periapsis

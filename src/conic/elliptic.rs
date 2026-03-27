@@ -1,3 +1,5 @@
+//! Kind marker for elliptic conics.
+
 use super::{sealed, ConicKind, KindMarker, NonParabolicKindMarker};
 
 #[cfg(feature = "serde")]

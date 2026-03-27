@@ -1,3 +1,5 @@
+//! Kind marker for hyperbolic conics.
+
 use super::{sealed, ConicKind, KindMarker, NonParabolicKindMarker};
 
 #[cfg(feature = "serde")]
