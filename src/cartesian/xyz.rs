@@ -251,7 +251,13 @@ impl<U: Unit> XYZ<Quantity<U>> {
         Quantity::new(mag)
     }
 
-    /// Computes the squared magnitude.
+    /// Computes the squared magnitude as a raw `f64`.
+    ///
+    /// Returns the dimensionless squared magnitude `|v|²` by extracting raw
+    /// component values before squaring. This intentionally returns `f64`
+    /// rather than `Quantity<U²>` to avoid requiring a squared-unit type
+    /// in the dependency tree. Use [`magnitude`](Self::magnitude) if you
+    /// need the result with a unit.
     #[inline]
     pub fn magnitude_squared(&self) -> f64 {
         let x = self.0[0].value();
