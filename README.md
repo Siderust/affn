@@ -76,6 +76,54 @@ The type system enforces the usual affine rules:
 - ✅ `Position + Displacement -> Position`
 - ❌ `Position + Position` (does not compile)
 
+## Conic Geometry
+
+`affn::conic` is the geometry-only conic layer. It models shape and orientation
+without introducing body, epoch, or propagation semantics.
+
+- `PeriapsisParam<U>` is the erased shape form that works for elliptic,
+  parabolic, and hyperbolic conics.
+- `SemiMajorAxisParam<U>` is the erased non-parabolic form, so `e == 1` is
+  rejected at construction.
+- `classify()` turns erased shapes into typed wrappers such as
+  `TypedPeriapsisParam<U, Elliptic>`.
+- `ConicOrientation<F>` and `OrientedConic<S, F>` keep the orientation tagged
+  with the reference frame.
+
+```rust
+use affn::conic::{
+    ClassifiedPeriapsisParam, ConicKind, ConicOrientation, ConicShape, OrientedConic,
+    PeriapsisParam,
+};
+use affn::frames::ReferenceFrame;
+use qtty::*;
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+struct Inertial;
+
+impl ReferenceFrame for Inertial {
+    fn frame_name() -> &'static str { "Inertial" }
+}
+
+let shape = PeriapsisParam::try_new(7000.0 * M, 0.42).expect("valid elliptic periapsis shape");
+assert_eq!(shape.kind(), ConicKind::Elliptic);
+
+let ClassifiedPeriapsisParam::Elliptic(typed) = shape.classify() else {
+    unreachable!("0.42 is elliptic")
+};
+let orientation = ConicOrientation::<Inertial>::try_new(28.5 * DEG, 40.0 * DEG, 15.0 * DEG)
+    .expect("valid conic orientation");
+let conic = OrientedConic::new(typed, orientation);
+let sma = conic.to_semi_major_axis().expect("elliptic conics convert to SMA");
+
+assert_eq!(sma.kind(), ConicKind::Elliptic);
+assert_eq!(sma.orientation(), conic.orientation());
+```
+
+For a fuller walkthrough, see the `conic_showcase` example:
+
+- `cargo run --example conic_showcase`
+
 ## Affine Operators
 
 `affn` includes typed affine operators for pure geometric transforms:

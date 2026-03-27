@@ -1,3 +1,5 @@
+//! Orientation-preserving wrappers that pair a conic shape with a frame tag.
+
 use qtty::LengthUnit;
 
 use crate::frames::ReferenceFrame;
@@ -17,23 +19,26 @@ pub struct OrientedConic<S: ConicShape, F: ReferenceFrame> {
 
 impl<S: ConicShape, F: ReferenceFrame> OrientedConic<S, F> {
     /// Creates a new oriented conic from an already-validated shape and orientation.
+    ///
+    /// This constructor performs no extra checks; it simply packages the two
+    /// validated components together.
     pub const fn new(shape: S, orientation: ConicOrientation<F>) -> Self {
         Self { shape, orientation }
     }
 
-    /// The shape (characteristic length + eccentricity).
+    /// Returns the stored shape component.
     #[inline]
     pub const fn shape(&self) -> &S {
         &self.shape
     }
 
-    /// The 3-D orientation in frame `F`.
+    /// Returns the stored 3-D orientation in frame `F`.
     #[inline]
     pub const fn orientation(&self) -> &ConicOrientation<F> {
         &self.orientation
     }
 
-    /// Classifies the conic from its eccentricity. Infallible.
+    /// Returns the conic family derived from the underlying shape.
     #[inline]
     pub fn kind(&self) -> ConicKind {
         self.shape.kind()
@@ -113,6 +118,9 @@ mod oriented_conic_serde {
 
 impl<U: LengthUnit, F: ReferenceFrame> OrientedConic<PeriapsisParam<U>, F> {
     /// Converts to semi-major-axis form, preserving orientation and frame.
+    ///
+    /// Returns `None` for parabolic shapes and for any non-finite converted
+    /// semi-major axis.
     pub fn to_semi_major_axis(&self) -> Option<OrientedConic<SemiMajorAxisParam<U>, F>> {
         self.shape
             .to_semi_major_axis()
@@ -122,6 +130,9 @@ impl<U: LengthUnit, F: ReferenceFrame> OrientedConic<PeriapsisParam<U>, F> {
 
 impl<U: LengthUnit, F: ReferenceFrame> OrientedConic<SemiMajorAxisParam<U>, F> {
     /// Converts to periapsis-distance form, preserving orientation and frame.
+    ///
+    /// Returns `None` if the derived periapsis distance overflows or becomes
+    /// non-finite.
     pub fn to_periapsis(&self) -> Option<OrientedConic<PeriapsisParam<U>, F>> {
         self.shape
             .to_periapsis()
@@ -130,7 +141,10 @@ impl<U: LengthUnit, F: ReferenceFrame> OrientedConic<SemiMajorAxisParam<U>, F> {
 }
 
 impl<U: LengthUnit, F: ReferenceFrame> OrientedConic<TypedPeriapsisParam<U, Elliptic>, F> {
-    /// Converts to elliptic semi-major-axis form. Returns `None` if the result overflows.
+    /// Converts to elliptic semi-major-axis form, preserving orientation and frame.
+    ///
+    /// Returns `None` if the derived semi-major axis overflows or becomes
+    /// non-finite.
     pub fn to_semi_major_axis(
         &self,
     ) -> Option<OrientedConic<TypedSemiMajorAxisParam<U, Elliptic>, F>> {
@@ -141,7 +155,10 @@ impl<U: LengthUnit, F: ReferenceFrame> OrientedConic<TypedPeriapsisParam<U, Elli
 }
 
 impl<U: LengthUnit, F: ReferenceFrame> OrientedConic<TypedPeriapsisParam<U, Hyperbolic>, F> {
-    /// Converts to hyperbolic semi-major-axis form. Returns `None` if the result overflows.
+    /// Converts to hyperbolic semi-major-axis form, preserving orientation and frame.
+    ///
+    /// Returns `None` if the derived semi-major axis overflows or becomes
+    /// non-finite.
     pub fn to_semi_major_axis(
         &self,
     ) -> Option<OrientedConic<TypedSemiMajorAxisParam<U, Hyperbolic>, F>> {
@@ -154,7 +171,10 @@ impl<U: LengthUnit, F: ReferenceFrame> OrientedConic<TypedPeriapsisParam<U, Hype
 impl<U: LengthUnit, K: NonParabolicKindMarker, F: ReferenceFrame>
     OrientedConic<TypedSemiMajorAxisParam<U, K>, F>
 {
-    /// Converts to periapsis-distance form. Returns `None` if the result overflows.
+    /// Converts to periapsis-distance form, preserving orientation and frame.
+    ///
+    /// Returns `None` if the derived periapsis distance overflows or becomes
+    /// non-finite.
     pub fn to_periapsis(&self) -> Option<OrientedConic<TypedPeriapsisParam<U, K>, F>> {
         self.shape
             .to_periapsis()

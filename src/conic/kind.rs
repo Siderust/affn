@@ -1,3 +1,5 @@
+//! Runtime conic-family classification derived from eccentricity.
+
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 

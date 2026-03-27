@@ -1,3 +1,5 @@
+//! Shared sealed traits for conic markers and validated shape types.
+
 use std::fmt;
 
 use super::{sealed, ConicKind};

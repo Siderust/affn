@@ -1,3 +1,5 @@
+//! Periapsis-based conic parameterisations and typed classification wrappers.
+
 use std::marker::PhantomData;
 
 use qtty::{LengthUnit, Meter, Quantity};
@@ -39,6 +41,9 @@ impl<U: LengthUnit> ConicShape for PeriapsisParam<U> {
 
 impl<U: LengthUnit> PeriapsisParam<U> {
     /// Constructs a validated periapsis-based conic shape.
+    ///
+    /// `periapsis_distance` must be finite and strictly positive, and
+    /// `eccentricity` must be finite and non-negative.
     pub fn try_new(
         periapsis_distance: Quantity<U>,
         eccentricity: f64,
@@ -55,6 +60,9 @@ impl<U: LengthUnit> PeriapsisParam<U> {
     }
 
     /// Constructs a periapsis-based conic shape without validation.
+    ///
+    /// The caller must ensure the same invariants enforced by
+    /// [`try_new`](Self::try_new).
     pub const fn new_unchecked(periapsis_distance: Quantity<U>, eccentricity: f64) -> Self {
         Self {
             periapsis_distance,
@@ -74,7 +82,10 @@ impl<U: LengthUnit> PeriapsisParam<U> {
         self.eccentricity
     }
 
-    /// Converts to semi-major-axis form.
+    /// Converts to semi-major-axis form using `a = q / |1 - e|`.
+    ///
+    /// Returns `None` for parabolic shapes (`e == 1`) and for any non-finite or
+    /// non-positive derived semi-major axis.
     pub fn to_semi_major_axis(&self) -> Option<SemiMajorAxisParam<U>> {
         let e = self.eccentricity;
         if e == 1.0 {
@@ -87,7 +98,7 @@ impl<U: LengthUnit> PeriapsisParam<U> {
         Some(SemiMajorAxisParam::new_unchecked(Quantity::new(a), e))
     }
 
-    /// Classifies this shape, returning a kind-typed wrapper.
+    /// Classifies this shape, returning a kind-typed wrapper with identical data.
     pub fn classify(self) -> ClassifiedPeriapsisParam<U> {
         match self.kind() {
             ConicKind::Elliptic => {
@@ -138,6 +149,7 @@ impl<U: LengthUnit, K: KindMarker> ConicShape for TypedPeriapsisParam<U, K> {
 }
 
 impl<U: LengthUnit, K: KindMarker> TypedPeriapsisParam<U, K> {
+    /// Wraps an erased periapsis shape that is already known to match `K`.
     pub(super) const fn from_inner(inner: PeriapsisParam<U>) -> Self {
         Self {
             inner,
@@ -157,7 +169,7 @@ impl<U: LengthUnit, K: KindMarker> TypedPeriapsisParam<U, K> {
         self.inner.eccentricity()
     }
 
-    /// Returns the inner erased shape.
+    /// Returns the inner erased shape, dropping the compile-time kind marker.
     #[inline]
     pub const fn into_inner(self) -> PeriapsisParam<U> {
         self.inner
@@ -165,7 +177,10 @@ impl<U: LengthUnit, K: KindMarker> TypedPeriapsisParam<U, K> {
 }
 
 impl<U: LengthUnit> TypedPeriapsisParam<U, Elliptic> {
-    /// Converts to elliptic semi-major-axis form. Returns `None` if the result overflows.
+    /// Converts to elliptic semi-major-axis form.
+    ///
+    /// Returns `None` if the derived semi-major axis overflows or becomes
+    /// non-finite.
     pub fn to_semi_major_axis(&self) -> Option<TypedSemiMajorAxisParam<U, Elliptic>> {
         self.inner
             .to_semi_major_axis()
@@ -174,7 +189,10 @@ impl<U: LengthUnit> TypedPeriapsisParam<U, Elliptic> {
 }
 
 impl<U: LengthUnit> TypedPeriapsisParam<U, Hyperbolic> {
-    /// Converts to hyperbolic semi-major-axis form. Returns `None` if the result overflows.
+    /// Converts to hyperbolic semi-major-axis form.
+    ///
+    /// Returns `None` if the derived semi-major axis overflows or becomes
+    /// non-finite.
     pub fn to_semi_major_axis(&self) -> Option<TypedSemiMajorAxisParam<U, Hyperbolic>> {
         self.inner
             .to_semi_major_axis()
