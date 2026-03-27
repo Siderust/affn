@@ -50,10 +50,13 @@ impl Rotation3 {
     /// # Arguments
     /// - `m`: A 3x3 array in row-major order where `m[row][col]`.
     ///
-    /// # Safety
-    /// The caller must ensure `m` is a valid rotation matrix (orthogonal, det = +1).
-    /// No validation is performed.
+    /// # Preconditions
+    /// `m` must be an orthogonal matrix with det = +1 (a proper rotation).
+    /// No validation is performed. Passing an invalid matrix produces a mathematically
+    /// incoherent `Rotation3` whose composition and inversion will silently propagate
+    /// garbage values.
     #[inline]
+    #[must_use]
     pub const fn from_matrix(m: [[f64; 3]; 3]) -> Self {
         Self { m }
     }
@@ -69,6 +72,7 @@ impl Rotation3 {
     /// # Returns
     /// A rotation matrix representing the given axis-angle rotation.
     #[inline]
+    #[must_use]
     pub fn from_axis_angle(axis: [f64; 3], angle: Radians) -> Self {
         let [x, y, z] = axis;
         let mag = (x * x + y * y + z * z).sqrt();
@@ -137,6 +141,7 @@ impl Rotation3 {
     /// - `y`: Rotation around Y axis.
     /// - `z`: Rotation around Z axis.
     #[inline]
+    #[must_use]
     pub fn from_euler_xyz(x: Radians, y: Radians, z: Radians) -> Self {
         let (sx, cx) = x.sin_cos();
         let (sy, cy) = y.sin_cos();
@@ -165,6 +170,7 @@ impl Rotation3 {
     /// - `x`: Rotation around X axis.
     /// - `z2`: Second rotation around Z axis.
     #[inline]
+    #[must_use]
     pub fn from_euler_zxz(z1: Radians, x: Radians, z2: Radians) -> Self {
         // Rz(z2) * Rx(x) * Rz(z1) has the same structure as Rz * Rx * Rz
         // which is the transpose pattern of fused_rx_rz_rx with swapped roles.
@@ -188,18 +194,21 @@ impl Rotation3 {
 
     /// Creates a rotation around the X axis from a typed `Radians` angle.
     #[inline]
+    #[must_use]
     pub fn rx(angle: Radians) -> Self {
         Self::from_x_rotation(angle.value())
     }
 
     /// Creates a rotation around the Y axis from a typed `Radians` angle.
     #[inline]
+    #[must_use]
     pub fn ry(angle: Radians) -> Self {
         Self::from_y_rotation(angle.value())
     }
 
     /// Creates a rotation around the Z axis from a typed `Radians` angle.
     #[inline]
+    #[must_use]
     pub fn rz(angle: Radians) -> Self {
         Self::from_z_rotation(angle.value())
     }
@@ -208,6 +217,7 @@ impl Rotation3 {
     ///
     /// For rotation matrices, transpose equals inverse.
     #[inline]
+    #[must_use]
     pub fn transpose(&self) -> Self {
         Self {
             m: [
@@ -222,6 +232,7 @@ impl Rotation3 {
     ///
     /// Alias for [`transpose`](Self::transpose).
     #[inline]
+    #[must_use]
     pub fn inverse(&self) -> Self {
         self.transpose()
     }
@@ -230,6 +241,7 @@ impl Rotation3 {
     ///
     /// The result applies `other` first, then `self`.
     #[inline]
+    #[must_use]
     pub fn compose(&self, other: &Self) -> Self {
         *self * *other
     }
@@ -238,6 +250,7 @@ impl Rotation3 {
     ///
     /// Computes `R * v` where `v` is treated as a column vector.
     #[inline]
+    #[must_use]
     pub fn apply_array(&self, v: [f64; 3]) -> [f64; 3] {
         [
             self.m[0][0] * v[0] + self.m[0][1] * v[1] + self.m[0][2] * v[2],
@@ -248,6 +261,7 @@ impl Rotation3 {
 
     /// Applies this rotation to an `XYZ<f64>`.
     #[inline]
+    #[must_use]
     pub fn apply_xyz(&self, xyz: XYZ<f64>) -> XYZ<f64> {
         let [x, y, z] = self.apply_array([xyz.x(), xyz.y(), xyz.z()]);
         XYZ::new(x, y, z)
@@ -276,6 +290,7 @@ impl Rotation3 {
     /// - `a`: Angle for the X rotation (applied second / left factor).
     /// - `b`: Angle for the Z rotation (applied first / right factor).
     #[inline]
+    #[must_use]
     pub fn fused_rx_rz(a: Radians, b: Radians) -> Self {
         let (sa, ca) = a.sin_cos();
         let (sb, cb) = b.sin_cos();
@@ -297,6 +312,7 @@ impl Rotation3 {
     /// - `a`: Angle for the Z rotation (applied second / left factor).
     /// - `b`: Angle for the X rotation (applied first / right factor).
     #[inline]
+    #[must_use]
     pub fn fused_rz_rx(a: Radians, b: Radians) -> Self {
         let (sa, ca) = a.sin_cos();
         let (sb, cb) = b.sin_cos();
@@ -321,6 +337,7 @@ impl Rotation3 {
     /// - `b`: Angle for the Z rotation (middle).
     /// - `c`: Angle for the inner X rotation (right).
     #[inline]
+    #[must_use]
     pub fn fused_rx_rz_rx(a: Radians, b: Radians, c: Radians) -> Self {
         let (sa, ca) = a.sin_cos();
         let (sb, cb) = b.sin_cos();
@@ -350,6 +367,7 @@ impl Rotation3 {
     /// - `b`: Angle for the Y rotation (middle).
     /// - `c`: Angle for the inner Z rotation (right).
     #[inline]
+    #[must_use]
     pub fn fused_rz_ry_rz(a: Radians, b: Radians, c: Radians) -> Self {
         let (sa, ca) = a.sin_cos();
         let (sb, cb) = b.sin_cos();
@@ -386,6 +404,7 @@ impl Rotation3 {
     /// - `c`: Angle for the inner X rotation (e.g., −φ̄).
     /// - `d`: Angle for the innermost Z rotation (e.g., −γ̄).
     #[inline]
+    #[must_use]
     pub fn fused_rx_rz_rx_rz(a: Radians, b: Radians, c: Radians, d: Radians) -> Self {
         let (sa, ca) = a.sin_cos();
         let (sb, cb) = b.sin_cos();
@@ -452,15 +471,11 @@ impl std::ops::Mul for Rotation3 {
 
     #[inline]
     fn mul(self, rhs: Self) -> Self::Output {
-        let mut m = [[0.0; 3]; 3];
-        #[allow(clippy::needless_range_loop)]
-        for i in 0..3 {
-            for j in 0..3 {
-                m[i][j] = self.m[i][0] * rhs.m[0][j]
-                    + self.m[i][1] * rhs.m[1][j]
-                    + self.m[i][2] * rhs.m[2][j];
-            }
-        }
+        let m = self.m.map(|row| {
+            std::array::from_fn(|j| {
+                row[0] * rhs.m[0][j] + row[1] * rhs.m[1][j] + row[2] * rhs.m[2][j]
+            })
+        });
         Self { m }
     }
 }

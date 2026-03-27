@@ -31,18 +31,21 @@ impl Translation3 {
 
     /// Creates a new translation from components.
     #[inline]
+    #[must_use]
     pub const fn new(x: f64, y: f64, z: f64) -> Self {
         Self { v: [x, y, z] }
     }
 
     /// Creates a translation from an array.
     #[inline]
+    #[must_use]
     pub const fn from_array(v: [f64; 3]) -> Self {
         Self { v }
     }
 
     /// Creates a translation from an `XYZ<f64>`.
     #[inline]
+    #[must_use]
     pub fn from_xyz(xyz: XYZ<f64>) -> Self {
         Self::new(xyz.x(), xyz.y(), xyz.z())
     }
@@ -62,18 +65,21 @@ impl Translation3 {
     /// assert!((t.v[0] - 1.0).abs() < 1e-12);
     /// ```
     #[inline]
+    #[must_use]
     pub fn from_quantities<U: Unit>(v: [Quantity<U>; 3]) -> Self {
         Self::new(v[0].value(), v[1].value(), v[2].value())
     }
 
     /// Returns the inverse translation.
     #[inline]
+    #[must_use]
     pub fn inverse(&self) -> Self {
         Self::new(-self.v[0], -self.v[1], -self.v[2])
     }
 
     /// Composes two translations: `self + other`.
     #[inline]
+    #[must_use]
     pub fn compose(&self, other: &Self) -> Self {
         Self::new(
             self.v[0] + other.v[0],

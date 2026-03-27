@@ -44,6 +44,7 @@ impl Isometry3 {
 
     /// Creates a new isometry from rotation and translation.
     #[inline]
+    #[must_use]
     pub const fn new(rotation: Rotation3, translation: Translation3) -> Self {
         Self {
             rotation,
@@ -53,6 +54,7 @@ impl Isometry3 {
 
     /// Creates an isometry with only rotation (no translation).
     #[inline]
+    #[must_use]
     pub const fn from_rotation(rotation: Rotation3) -> Self {
         Self {
             rotation,
@@ -62,6 +64,7 @@ impl Isometry3 {
 
     /// Creates an isometry with only translation (no rotation).
     #[inline]
+    #[must_use]
     pub const fn from_translation(translation: Translation3) -> Self {
         Self {
             rotation: Rotation3::IDENTITY,
@@ -73,6 +76,7 @@ impl Isometry3 {
     ///
     /// For `I = (R, t)`, the inverse is `I⁻¹ = (R⁻¹, -R⁻¹ * t)`.
     #[inline]
+    #[must_use]
     pub fn inverse(&self) -> Self {
         let r_inv = self.rotation.inverse();
         let t_inv = r_inv.apply_array(self.translation.v);
@@ -88,6 +92,7 @@ impl Isometry3 {
     /// For `I1 = (R1, t1)` and `I2 = (R2, t2)`:
     /// `I1 * I2 = (R1 * R2, R1 * t2 + t1)`
     #[inline]
+    #[must_use]
     pub fn compose(&self, other: &Self) -> Self {
         let rotation = self.rotation.compose(&other.rotation);
         let rotated_t = self.rotation.apply_array(other.translation.v);
