@@ -126,6 +126,7 @@ pub enum ClassifiedPeriapsisParam<U: LengthUnit = Meter> {
 }
 
 /// Periapsis-distance parameterisation branded with a specific conic kind `K`.
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct TypedPeriapsisParam<U: LengthUnit, K: KindMarker> {
     inner: PeriapsisParam<U>,

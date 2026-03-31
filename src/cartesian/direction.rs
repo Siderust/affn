@@ -80,6 +80,7 @@ use std::ops::Mul;
 ///
 /// This type is `#[repr(transparent)]` over `XYZ<f64>`, ensuring no runtime
 /// overhead compared to raw `Vector3<f64>`.
+#[repr(transparent)]
 #[derive(Debug, Clone, Copy)]
 pub struct Direction<F: ReferenceFrame> {
     pub(in crate::cartesian) xyz: XYZ<f64>,
@@ -539,5 +540,17 @@ mod tests {
         let text_exp = format!("{:.2e}", dir);
         let expected_y = format!("{:.2e}", dir.y());
         assert!(text_exp.contains(&format!("Y: {expected_y}")));
+    }
+
+    #[test]
+    fn direction_has_xyz_layout() {
+        assert_eq!(
+            core::mem::size_of::<Direction<TestFrame>>(),
+            core::mem::size_of::<XYZ<f64>>()
+        );
+        assert_eq!(
+            core::mem::align_of::<Direction<TestFrame>>(),
+            core::mem::align_of::<XYZ<f64>>()
+        );
     }
 }

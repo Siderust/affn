@@ -124,6 +124,12 @@ For a fuller walkthrough, see the `conic_showcase` example:
 
 - `cargo run --example conic_showcase`
 
+## Feature Flags
+
+- `serde`: serialization support for public coordinate and conic types
+- `astro`: astronomy-oriented marker types and integrations
+- `ffi`: enables `repr(transparent)` on thin wrapper types that have one real storage field plus marker `PhantomData`
+
 ## Affine Operators
 
 `affn` includes typed affine operators for pure geometric transforms:
