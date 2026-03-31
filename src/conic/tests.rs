@@ -260,8 +260,14 @@ fn typed_sma_new_rejects_wrong_kind() {
 #[test]
 fn typed_periapsis_has_inner_layout() {
     type Typed = TypedPeriapsisParam<Meter, Elliptic>;
-    assert_eq!(core::mem::size_of::<Typed>(), core::mem::size_of::<PeriapsisParam<Meter>>());
-    assert_eq!(core::mem::align_of::<Typed>(), core::mem::align_of::<PeriapsisParam<Meter>>());
+    assert_eq!(
+        core::mem::size_of::<Typed>(),
+        core::mem::size_of::<PeriapsisParam<Meter>>()
+    );
+    assert_eq!(
+        core::mem::align_of::<Typed>(),
+        core::mem::align_of::<PeriapsisParam<Meter>>()
+    );
 }
 
 #[test]
