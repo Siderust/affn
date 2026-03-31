@@ -66,6 +66,7 @@ use std::ops::{Add, Neg, Sub};
 ///
 /// This type uses `#[repr(transparent)]` over the internal storage,
 /// ensuring no runtime overhead compared to raw `Vector3<Quantity<U>>`.
+#[repr(transparent)]
 #[derive(Debug, Clone, Copy)]
 pub struct Vector<F: ReferenceFrame, U: Unit> {
     pub(in crate::cartesian) xyz: XYZ<Quantity<U>>,
@@ -537,5 +538,17 @@ mod tests {
         assert!((back.x().value() - v_au_day.x().value()).abs() < 1e-12);
         assert!((back.y().value() - v_au_day.y().value()).abs() < 1e-12);
         assert!((back.z().value() - v_au_day.z().value()).abs() < 1e-12);
+    }
+
+    #[test]
+    fn vector_has_xyz_layout() {
+        assert_eq!(
+            core::mem::size_of::<DispAu>(),
+            core::mem::size_of::<XYZ<Quantity<AstronomicalUnit>>>()
+        );
+        assert_eq!(
+            core::mem::align_of::<DispAu>(),
+            core::mem::align_of::<XYZ<Quantity<AstronomicalUnit>>>()
+        );
     }
 }

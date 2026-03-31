@@ -258,6 +258,32 @@ fn typed_sma_new_rejects_wrong_kind() {
 }
 
 #[test]
+fn typed_periapsis_has_inner_layout() {
+    type Typed = TypedPeriapsisParam<Meter, Elliptic>;
+    assert_eq!(
+        core::mem::size_of::<Typed>(),
+        core::mem::size_of::<PeriapsisParam<Meter>>()
+    );
+    assert_eq!(
+        core::mem::align_of::<Typed>(),
+        core::mem::align_of::<PeriapsisParam<Meter>>()
+    );
+}
+
+#[test]
+fn typed_sma_has_inner_layout() {
+    type Typed = TypedSemiMajorAxisParam<Meter, Elliptic>;
+    assert_eq!(
+        core::mem::size_of::<Typed>(),
+        core::mem::size_of::<SemiMajorAxisParam<Meter>>()
+    );
+    assert_eq!(
+        core::mem::align_of::<Typed>(),
+        core::mem::align_of::<SemiMajorAxisParam<Meter>>()
+    );
+}
+
+#[test]
 fn elliptic_periapsis_alias_is_usable() {
     let shape = PeriapsisParam::try_new(1.0 * M, 0.5).unwrap();
     let ClassifiedPeriapsisParam::Elliptic(typed) = shape.classify() else {

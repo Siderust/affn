@@ -119,6 +119,7 @@ pub enum ClassifiedSemiMajorAxisParam<U: LengthUnit = Meter> {
 }
 
 /// Semi-major-axis parameterisation branded with a non-parabolic kind `K`.
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct TypedSemiMajorAxisParam<U: LengthUnit, K: NonParabolicKindMarker> {
     inner: SemiMajorAxisParam<U>,
