@@ -108,6 +108,8 @@ pub mod ellipsoidal;
 
 // Affine operators (rotation, translation, isometry)
 pub mod ops;
+pub mod algebra;
+pub mod planar;
 
 // Shared serde utilities
 #[cfg(feature = "serde")]

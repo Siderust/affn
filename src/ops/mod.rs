@@ -39,10 +39,16 @@
 mod isometry;
 mod rotation;
 mod translation;
+mod isometry2;
+mod rotation2;
+mod translation2;
 
 pub use isometry::Isometry3;
 pub use rotation::Rotation3;
 pub use translation::Translation3;
+pub use isometry2::Isometry2;
+pub use rotation2::Rotation2;
+pub use translation2::Translation2;
 
 use crate::cartesian::xyz::XYZ;
 use crate::cartesian::{Direction, Position, Vector};

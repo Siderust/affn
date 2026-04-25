@@ -1,6 +1,6 @@
 //! 2D rotation operator.
 
-use qtty::units::Radian;
+use qtty::angular::Radians;
 
 /// A 2x2 rotation matrix for planar orientation transforms.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -24,7 +24,7 @@ impl Rotation2 {
     /// Creates a 2D counter-clockwise rotation.
     #[inline]
     #[must_use]
-    pub fn new(angle: Radian) -> Self {
+    pub fn new(angle: Radians) -> Self {
         let (s, c) = angle.sin_cos();
         Self {
             m: [[c, -s], [s, c]],
