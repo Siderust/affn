@@ -1,5 +1,8 @@
 [workspace]
 
+[patch.crates-io]
+qtty = { path = "../qtty/qtty" }
+
 [package]
 name = "affn"
 version = "0.6.0"
