@@ -29,7 +29,7 @@
 //! use affn::ellipsoidal::Position;
 //! use affn::frames::ReferenceFrame;
 //! use affn::centers::ReferenceCenter;
-//! use qtty::*;
+//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
 //!
 //! #[derive(Debug, Copy, Clone)]
 //! struct Geocentric;
@@ -51,7 +51,11 @@
 use crate::centers::ReferenceCenter;
 use crate::ellipsoid::{Ellipsoid, HasEllipsoid};
 use crate::frames::ReferenceFrame;
-use qtty::{Degrees, LengthUnit, Meter, Meters, Quantity, Radian};
+use qtty::{Quantity};
+use qtty::units::{Meter, Radian};
+use qtty::angular::Degrees;
+use qtty::length::LengthUnit;
+use qtty::length::Meters;
 
 use std::marker::PhantomData;
 
@@ -234,7 +238,7 @@ where
     /// ```rust
     /// use affn::ellipsoidal::Position;
     /// use affn::centers::ReferenceCenter;
-    /// use qtty::*;
+    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
     ///
     /// #[derive(Debug, Copy, Clone)]
     /// struct Geocentric;
@@ -298,7 +302,7 @@ where
     /// ```rust
     /// use affn::ellipsoidal::Position;
     /// use affn::centers::ReferenceCenter;
-    /// use qtty::*;
+    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
     ///
     /// #[derive(Debug, Copy, Clone)]
     /// struct Geocentric;
@@ -489,8 +493,11 @@ where
 mod tests {
     use super::*;
     use crate::{DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame};
-    use qtty::*;
-
+    use qtty::Quantity;
+    use qtty::units::{Meter, Kilometer, Radian, Degree, Second, AstronomicalUnit, Parsec};
+    use qtty::{M, KM, DEG, RAD, SEC};
+    #[allow(unused_imports)] use qtty::angular::{Degrees, Radians};
+    #[allow(unused_imports)] use qtty::length::{Meters, Kilometers};
     #[derive(Debug, Copy, Clone, ReferenceFrame)]
     struct TestFrame;
 

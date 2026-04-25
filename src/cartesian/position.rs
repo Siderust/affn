@@ -34,7 +34,7 @@
 //! use affn::cartesian::{Position, Displacement};
 //! use affn::centers::ReferenceCenter;
 //! use affn::frames::ReferenceFrame;
-//! use qtty::*;
+//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
 //!
 //! // Define custom center and frame (astronomy types are in downstream crates)
 //! #[derive(Debug, Copy, Clone)]
@@ -67,7 +67,8 @@ use super::vector::Displacement;
 use super::xyz::XYZ;
 use crate::centers::ReferenceCenter;
 use crate::frames::ReferenceFrame;
-use qtty::{LengthUnit, Quantity};
+use qtty::{Quantity};
+use qtty::length::LengthUnit;
 
 use std::marker::PhantomData;
 use std::ops::{Add, Sub};
@@ -215,7 +216,7 @@ where
     /// use affn::cartesian::Position;
     /// use affn::frames::ReferenceFrame;
     /// use affn::centers::ReferenceCenter;
-    /// use qtty::*;
+    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
     ///
     /// #[derive(Debug, Copy, Clone)]
     /// struct WorldFrame;
@@ -605,8 +606,11 @@ mod tests {
     use super::*;
     // Import the derives
     use crate::{DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame};
-    use qtty::*;
-
+    use qtty::Quantity;
+    use qtty::units::{Meter, Kilometer, Radian, Degree, Second, AstronomicalUnit, Parsec};
+    use qtty::{M, KM, DEG, RAD, SEC};
+    #[allow(unused_imports)] use qtty::angular::{Degrees, Radians};
+    #[allow(unused_imports)] use qtty::length::{Meters, Kilometers};
     // Define test-specific frame and center
     #[derive(Debug, Copy, Clone, ReferenceFrame)]
     struct TestFrame;

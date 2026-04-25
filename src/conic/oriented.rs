@@ -1,6 +1,6 @@
 //! Orientation-preserving wrappers that pair a conic shape with a frame tag.
 
-use qtty::LengthUnit;
+use qtty::length::LengthUnit;
 
 use crate::frames::ReferenceFrame;
 

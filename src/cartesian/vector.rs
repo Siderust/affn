@@ -26,7 +26,7 @@
 //! ```rust
 //! use affn::cartesian::{Vector, Displacement, Velocity};
 //! use affn::frames::ReferenceFrame;
-//! use qtty::*;
+//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
 //!
 //! // Define a custom frame (astronomy frames are defined in downstream crates)
 //! #[derive(Debug, Copy, Clone)]
@@ -48,7 +48,8 @@
 
 use super::xyz::XYZ;
 use crate::frames::ReferenceFrame;
-use qtty::{LengthUnit, Quantity, Unit};
+use qtty::{Quantity, Unit};
+use qtty::length::LengthUnit;
 
 use std::marker::PhantomData;
 use std::ops::{Add, Neg, Sub};
@@ -232,7 +233,7 @@ impl<F: ReferenceFrame, U: LengthUnit> Vector<F, U> {
     /// ```rust
     /// use affn::cartesian::Displacement;
     /// use affn::frames::ReferenceFrame;
-    /// use qtty::*;
+    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
     ///
     /// #[derive(Debug, Copy, Clone)]
     /// struct MyFrame;
@@ -376,7 +377,8 @@ mod tests {
     use super::*;
     // Import the derive
     use crate::DeriveReferenceFrame as ReferenceFrame;
-    use qtty::{AstronomicalUnit, Day, Kilometer, Meter, Per, Quantity};
+    use qtty::{Per, Quantity};
+    use qtty::units::{AstronomicalUnit, Day, Kilometer, Meter};
 
     // Define a test frame using the macro
     #[derive(Debug, Copy, Clone, ReferenceFrame)]

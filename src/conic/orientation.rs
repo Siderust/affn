@@ -2,7 +2,7 @@
 
 use std::marker::PhantomData;
 
-use qtty::Degrees;
+use qtty::angular::Degrees;
 
 use crate::frames::ReferenceFrame;
 

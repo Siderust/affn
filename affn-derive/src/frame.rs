@@ -99,17 +99,17 @@ pub(crate) fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<Tok
                         impl<C, U> ::affn::ellipsoidal::Position<C, #name, U>
                         where
                             C: ::affn::centers::ReferenceCenter,
-                            U: ::qtty::LengthUnit,
+                            U: ::qtty::length::LengthUnit,
                         {
                             #[doc = #polar_doc]
                             #[inline]
-                            pub fn #polar_ident(&self) -> ::qtty::Degrees {
+                            pub fn #polar_ident(&self) -> ::qtty::angular::Degrees {
                                 self.lat
                             }
 
                             #[doc = #azimuth_doc]
                             #[inline]
-                            pub fn #azimuth_ident(&self) -> ::qtty::Degrees {
+                            pub fn #azimuth_ident(&self) -> ::qtty::angular::Degrees {
                                 self.lon
                             }
 
@@ -131,8 +131,8 @@ pub(crate) fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<Tok
                         #[doc = #dir_new_doc]
                         #[inline]
                         pub fn new(
-                            #first_param: ::qtty::Degrees,
-                            #second_param: ::qtty::Degrees,
+                            #first_param: ::qtty::angular::Degrees,
+                            #second_param: ::qtty::angular::Degrees,
                         ) -> Self {
                             Self::new_raw(
                                 #polar_arg .wrap_quarter_fold(),
@@ -142,13 +142,13 @@ pub(crate) fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<Tok
 
                         #[doc = #polar_doc]
                         #[inline]
-                        pub fn #polar_ident(&self) -> ::qtty::Degrees {
+                        pub fn #polar_ident(&self) -> ::qtty::angular::Degrees {
                             self.polar
                         }
 
                         #[doc = #azimuth_doc]
                         #[inline]
-                        pub fn #azimuth_ident(&self) -> ::qtty::Degrees {
+                        pub fn #azimuth_ident(&self) -> ::qtty::angular::Degrees {
                             self.azimuth
                         }
                     }
@@ -158,17 +158,17 @@ pub(crate) fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<Tok
                     impl<C, U> ::affn::spherical::Position<C, #name, U>
                     where
                         C: ::affn::centers::ReferenceCenter,
-                        U: ::qtty::LengthUnit,
+                        U: ::qtty::length::LengthUnit,
                     {
                         #[doc = #polar_doc]
                         #[inline]
-                        pub fn #polar_ident(&self) -> ::qtty::Degrees {
+                        pub fn #polar_ident(&self) -> ::qtty::angular::Degrees {
                             self.polar
                         }
 
                         #[doc = #azimuth_doc]
                         #[inline]
-                        pub fn #azimuth_ident(&self) -> ::qtty::Degrees {
+                        pub fn #azimuth_ident(&self) -> ::qtty::angular::Degrees {
                             self.azimuth
                         }
                     }
@@ -178,13 +178,13 @@ pub(crate) fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<Tok
                     impl<C, U> ::affn::spherical::Position<C, #name, U>
                     where
                         C: ::affn::centers::ReferenceCenter<Params = ()>,
-                        U: ::qtty::LengthUnit,
+                        U: ::qtty::length::LengthUnit,
                     {
                         #[doc = #pos_new_doc]
                         #[inline]
                         pub fn new<T: Into<::qtty::Quantity<U>>>(
-                            #first_param: ::qtty::Degrees,
-                            #second_param: ::qtty::Degrees,
+                            #first_param: ::qtty::angular::Degrees,
+                            #second_param: ::qtty::angular::Degrees,
                             distance: T,
                         ) -> Self {
                             Self::new_raw(

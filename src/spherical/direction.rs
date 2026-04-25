@@ -31,7 +31,7 @@
 //! ```rust
 //! use affn::spherical::Direction;
 //! use affn::frames::ReferenceFrame;
-//! use qtty::*;
+//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
 //!
 //! #[derive(Debug, Copy, Clone)]
 //! struct WorldFrame;
@@ -45,7 +45,9 @@
 
 use crate::centers::ReferenceCenter;
 use crate::frames::ReferenceFrame;
-use qtty::{Degrees, LengthUnit, Quantity};
+use qtty::{Quantity};
+use qtty::angular::Degrees;
+use qtty::length::LengthUnit;
 
 use std::marker::PhantomData;
 
@@ -108,7 +110,7 @@ impl<F: ReferenceFrame> Direction<F> {
     /// use affn::spherical::Direction;
     /// use affn::frames::ReferenceFrame;
     /// use affn::centers::ReferenceCenter;
-    /// use qtty::*;
+    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
     ///
     /// #[derive(Debug, Copy, Clone)]
     /// struct WorldFrame;
@@ -161,7 +163,7 @@ impl<F: ReferenceFrame> Direction<F> {
     where
         F: ReferenceFrame,
     {
-        use qtty::Radian;
+        use qtty::units::Radian;
 
         let polar_rad = self.polar.to::<Radian>();
         let azimuth_rad = self.azimuth.to::<Radian>();
@@ -225,8 +227,11 @@ mod tests {
     use super::*;
     // Import the derives and traits
     use crate::{DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame};
-    use qtty::*;
-
+    use qtty::Quantity;
+    use qtty::units::{Meter, Kilometer, Radian, Degree, Second, AstronomicalUnit, Parsec};
+    use qtty::{M, KM, DEG, RAD, SEC};
+    #[allow(unused_imports)] use qtty::angular::{Degrees, Radians};
+    #[allow(unused_imports)] use qtty::length::{Meters, Kilometers};
     // Define test-specific frame and center
     #[derive(Debug, Copy, Clone, ReferenceFrame)]
     struct TestFrame;

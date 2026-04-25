@@ -170,7 +170,7 @@ impl std::ops::Mul<[f64; 3]> for Isometry3 {
 mod tests {
     use super::*;
     use crate::cartesian::xyz::XYZ;
-    use qtty::Radians;
+    use qtty::angular::Radians;
     use std::f64::consts::FRAC_PI_2;
 
     const EPSILON: f64 = 1e-12;
@@ -311,7 +311,8 @@ mod tests {
 
     #[test]
     fn test_isometry_mul_quantity_array() {
-        use qtty::{Meter, Quantity};
+        use qtty::{Quantity};
+        use qtty::units::{Meter};
         let rot = Rotation3::rz(Radians::new(FRAC_PI_2));
         let trans = Translation3::new(1.0, 0.0, 0.0);
         let iso = Isometry3::new(rot, trans);

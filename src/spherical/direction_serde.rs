@@ -2,7 +2,7 @@
 
 use super::Direction;
 use crate::frames::SphericalNaming;
-use qtty::Degrees;
+use qtty::angular::Degrees;
 use serde::de::{self, MapAccess, Visitor};
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize};

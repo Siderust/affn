@@ -48,7 +48,8 @@ use crate::cartesian::xyz::XYZ;
 use crate::cartesian::{Direction, Position, Vector};
 use crate::centers::ReferenceCenter;
 use crate::frames::ReferenceFrame;
-use qtty::{LengthUnit, Quantity, Unit};
+use qtty::{Quantity, Unit};
+use qtty::length::LengthUnit;
 
 // =============================================================================
 // Quantity-array and XYZ impls (all three operator types)
