@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1 - 2026-04-25]
+
+### Fixed
+- Restored API-compatible `new_raw` / `new_raw_with_params` aliases for spherical positions and directions while keeping the clearer `new_unchecked` names available.
+- Restored `Rotation3::from_matrix` as an unchecked compatibility constructor and added finite-input rejection to `Rotation3::try_from_matrix`.
+- Fixed spherical pole-crossing canonicalization so angles such as `polar = 100°` also rotate azimuth by `180°`, preserving the represented direction.
+- Canonical spherical position construction now maps negative distances to the equivalent positive distance at the antipodal direction.
+- Updated `affn-derive` frame-specific constructors to use the same spherical canonicalization rules as the core crate.
+- Fixed `qtty` dependency metadata so the `astro` feature resolves against `qtty 0.6.1` in standalone builds and CI.
+
+### Changed
+- `Translation3` and `Isometry3` now carry the translation unit as a zero-cost type parameter with a `Meter` default for source compatibility.
+- `Translation3::as_quantities::<U>()` now performs real unit conversion instead of re-wrapping raw magnitudes.
+- CI check, clippy, test, and doctest commands now validate all feature combinations used by release builds.
+- README feature/version guidance now matches the actual `0.6.x` public API.
+
 ## [0.6.0 - 2026-03-31]
 
 ### Added

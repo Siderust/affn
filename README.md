@@ -24,8 +24,8 @@ Add the dependency:
 
 ```toml
 [dependencies]
-affn = "0.4"
-qtty = "0.4"
+affn = "0.6.1"
+qtty = "0.6.1"
 ```
 
 Define a center + frame and do basic affine algebra:
@@ -126,9 +126,10 @@ For a fuller walkthrough, see the `conic_showcase` example:
 
 ## Feature Flags
 
-- `serde`: serialization support for public coordinate and conic types
-- `astro`: astronomy-oriented marker types and integrations
-- `ffi`: enables `repr(transparent)` on thin wrapper types that have one real storage field plus marker `PhantomData`
+- `astro` (enabled by default): astronomy and geodesy marker frames, plus the corresponding `qtty/astro` units
+- `serde`: serialization support for public coordinate and conic types; also enables `qtty/serde` and `nalgebra/serde-serialize`
+
+Thin wrapper types that have one real storage field plus marker `PhantomData` use transparent layouts directly; no extra feature flag is required.
 
 ## Affine Operators
 
@@ -161,6 +162,10 @@ let pos_b = (rot * pos_a).reinterpret_frame::<FrameB>();
 
 assert!(pos_b.y().value() > 0.999);
 ```
+
+`Translation3<U>` and `Isometry3<U>` carry the translation unit in the type. `Translation3::new(...)` remains available for raw numeric code, while `Translation3::from_quantities([1.0 * KM, 0.0 * KM, 0.0 * KM])` infers `Translation3<Kilometer>` and only applies to coordinates in compatible units. Use `to_unit::<TargetUnit>()` when a translation needs explicit unit conversion.
+
+Use `Rotation3::try_from_matrix(...)` for untrusted matrices. `Rotation3::from_matrix(...)` and `Rotation3::from_matrix_unchecked(...)` are unchecked compatibility constructors; their input must be a finite proper rotation matrix.
 
 ## Defining Custom Systems (Derive Macros)
 
@@ -217,6 +222,8 @@ let back: CPos<Center, Frame, Meter> = CPos::from_spherical(&sph);
 assert!((back.z().value() - 1.0).abs() < 1e-10);
 ```
 
+Frame-specific spherical constructors generated with `#[frame(inherent)]` canonicalize pole crossings without changing the represented direction. Raw constructors (`new_raw` / `new_unchecked`) are kept for compatibility and trusted data; they store angles exactly as supplied.
+
 ## Ellipsoidal Coordinates
 
 `affn::ellipsoidal::Position<C, F, U>` models geodetic longitude, latitude, and height above an ellipsoid. Conversions to and from Cartesian coordinates are available when the frame implements `HasEllipsoid`.
@@ -259,8 +266,8 @@ Enable the `astro` feature to use the built-in astronomy and geodesy marker fram
 
 ```toml
 [dependencies]
-affn = { version = "0.4", features = ["astro"] }
-qtty = "0.4"
+affn = { version = "0.6.1", features = ["astro"] }
+qtty = "0.6.1"
 ```
 
 Available built-ins include:
@@ -288,8 +295,8 @@ Enable it in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-affn = { version = "0.4", features = ["serde"] }
-qtty = "0.4"
+affn = { version = "0.6.1", features = ["serde"] }
+qtty = "0.6.1"
 ```
 
 This feature also forwards serialization support to dependencies where needed (e.g. `qtty/serde`, and nalgebra's `serde-serialize`).

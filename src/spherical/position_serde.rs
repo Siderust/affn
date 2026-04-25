@@ -3,9 +3,9 @@
 use super::Position;
 use crate::centers::ReferenceCenter;
 use crate::frames::SphericalNaming;
-use qtty::{Quantity};
 use qtty::angular::Degrees;
 use qtty::length::LengthUnit;
+use qtty::Quantity;
 use serde::de::{self, MapAccess, Visitor};
 use serde::ser::SerializeStruct;
 use serde::Serializer;
@@ -126,13 +126,12 @@ where
                 // Use default for center_params if not provided and ZST
                 let center_params = center_params.unwrap_or_default();
 
-                Ok(Position {
+                Ok(Position::new_with_params(
+                    center_params,
                     polar,
                     azimuth,
                     distance,
-                    center_params,
-                    _frame: PhantomData,
-                })
+                ))
             }
         }
 

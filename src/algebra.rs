@@ -32,6 +32,10 @@ pub trait Space: Copy + Clone + Debug {}
 impl Space for () {}
 
 /// A free vector in an affine space.
+///
+/// Vectors carry displacement-like data: they have magnitude and direction,
+/// but no absolute origin. They can be added to other vectors and used to
+/// translate points.
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy)]
 pub struct Vector<Sp: Space, U: Unit, const N: usize> {
@@ -40,6 +44,10 @@ pub struct Vector<Sp: Space, U: Unit, const N: usize> {
 }
 
 /// An affine point in an affine space.
+///
+/// Points represent locations, not displacements. They can be translated by
+/// vectors and subtracted from other points to produce vectors, but they do
+/// not support point-plus-point arithmetic.
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy)]
 pub struct Point<Sp: Space, U: Unit, const N: usize> {
@@ -182,12 +190,14 @@ impl<Sp: Space, U: Unit, const N: usize> PartialEq for Point<Sp, U, N> {
 }
 
 impl<Sp: Space, U: Unit> Vector1<Sp, U> {
+    /// Creates a one-dimensional vector.
     #[inline]
     #[must_use]
     pub fn new<T: Into<Quantity<U>>>(x: T) -> Self {
         Self::from_components([x.into()])
     }
 
+    /// Returns the x component.
     #[inline]
     #[must_use]
     pub fn x(&self) -> Quantity<U> {
@@ -196,12 +206,14 @@ impl<Sp: Space, U: Unit> Vector1<Sp, U> {
 }
 
 impl<Sp: Space, U: Unit> Point1<Sp, U> {
+    /// Creates a one-dimensional point.
     #[inline]
     #[must_use]
     pub fn new<T: Into<Quantity<U>>>(x: T) -> Self {
         Self::from_coordinates([x.into()])
     }
 
+    /// Returns the x coordinate.
     #[inline]
     #[must_use]
     pub fn x(&self) -> Quantity<U> {
@@ -210,18 +222,21 @@ impl<Sp: Space, U: Unit> Point1<Sp, U> {
 }
 
 impl<Sp: Space, U: Unit> Vector2<Sp, U> {
+    /// Creates a two-dimensional vector from `(x, y)`.
     #[inline]
     #[must_use]
     pub fn new<T: Into<Quantity<U>>>(x: T, y: T) -> Self {
         Self::from_components([x.into(), y.into()])
     }
 
+    /// Returns the x component.
     #[inline]
     #[must_use]
     pub fn x(&self) -> Quantity<U> {
         self.components[0]
     }
 
+    /// Returns the y component.
     #[inline]
     #[must_use]
     pub fn y(&self) -> Quantity<U> {
@@ -230,18 +245,21 @@ impl<Sp: Space, U: Unit> Vector2<Sp, U> {
 }
 
 impl<Sp: Space, U: Unit> Point2<Sp, U> {
+    /// Creates a two-dimensional point from `(x, y)`.
     #[inline]
     #[must_use]
     pub fn new<T: Into<Quantity<U>>>(x: T, y: T) -> Self {
         Self::from_coordinates([x.into(), y.into()])
     }
 
+    /// Returns the x coordinate.
     #[inline]
     #[must_use]
     pub fn x(&self) -> Quantity<U> {
         self.coordinates[0]
     }
 
+    /// Returns the y coordinate.
     #[inline]
     #[must_use]
     pub fn y(&self) -> Quantity<U> {
@@ -250,24 +268,28 @@ impl<Sp: Space, U: Unit> Point2<Sp, U> {
 }
 
 impl<Sp: Space, U: Unit> Vector3<Sp, U> {
+    /// Creates a three-dimensional vector from `(x, y, z)`.
     #[inline]
     #[must_use]
     pub fn new<T: Into<Quantity<U>>>(x: T, y: T, z: T) -> Self {
         Self::from_components([x.into(), y.into(), z.into()])
     }
 
+    /// Returns the x component.
     #[inline]
     #[must_use]
     pub fn x(&self) -> Quantity<U> {
         self.components[0]
     }
 
+    /// Returns the y component.
     #[inline]
     #[must_use]
     pub fn y(&self) -> Quantity<U> {
         self.components[1]
     }
 
+    /// Returns the z component.
     #[inline]
     #[must_use]
     pub fn z(&self) -> Quantity<U> {
@@ -276,24 +298,28 @@ impl<Sp: Space, U: Unit> Vector3<Sp, U> {
 }
 
 impl<Sp: Space, U: Unit> Point3<Sp, U> {
+    /// Creates a three-dimensional point from `(x, y, z)`.
     #[inline]
     #[must_use]
     pub fn new<T: Into<Quantity<U>>>(x: T, y: T, z: T) -> Self {
         Self::from_coordinates([x.into(), y.into(), z.into()])
     }
 
+    /// Returns the x coordinate.
     #[inline]
     #[must_use]
     pub fn x(&self) -> Quantity<U> {
         self.coordinates[0]
     }
 
+    /// Returns the y coordinate.
     #[inline]
     #[must_use]
     pub fn y(&self) -> Quantity<U> {
         self.coordinates[1]
     }
 
+    /// Returns the z coordinate.
     #[inline]
     #[must_use]
     pub fn z(&self) -> Quantity<U> {
@@ -306,7 +332,9 @@ impl<Sp: Space, U: Unit, const N: usize> Add for Vector<Sp, U, N> {
 
     #[inline]
     fn add(self, rhs: Self) -> Self::Output {
-        Self::from_components(core::array::from_fn(|i| self.components[i] + rhs.components[i]))
+        Self::from_components(core::array::from_fn(|i| {
+            self.components[i] + rhs.components[i]
+        }))
     }
 }
 
@@ -315,7 +343,9 @@ impl<Sp: Space, U: Unit, const N: usize> Sub for Vector<Sp, U, N> {
 
     #[inline]
     fn sub(self, rhs: Self) -> Self::Output {
-        Self::from_components(core::array::from_fn(|i| self.components[i] - rhs.components[i]))
+        Self::from_components(core::array::from_fn(|i| {
+            self.components[i] - rhs.components[i]
+        }))
     }
 }
 
@@ -333,7 +363,9 @@ impl<Sp: Space, U: Unit, const N: usize> Sub for Point<Sp, U, N> {
 
     #[inline]
     fn sub(self, rhs: Self) -> Self::Output {
-        Vector::from_components(core::array::from_fn(|i| self.coordinates[i] - rhs.coordinates[i]))
+        Vector::from_components(core::array::from_fn(|i| {
+            self.coordinates[i] - rhs.coordinates[i]
+        }))
     }
 }
 
@@ -342,7 +374,9 @@ impl<Sp: Space, U: Unit, const N: usize> Add<Vector<Sp, U, N>> for Point<Sp, U, 
 
     #[inline]
     fn add(self, rhs: Vector<Sp, U, N>) -> Self::Output {
-        Self::from_coordinates(core::array::from_fn(|i| self.coordinates[i] + rhs.components[i]))
+        Self::from_coordinates(core::array::from_fn(|i| {
+            self.coordinates[i] + rhs.components[i]
+        }))
     }
 }
 
@@ -351,7 +385,9 @@ impl<Sp: Space, U: Unit, const N: usize> Sub<Vector<Sp, U, N>> for Point<Sp, U, 
 
     #[inline]
     fn sub(self, rhs: Vector<Sp, U, N>) -> Self::Output {
-        Self::from_coordinates(core::array::from_fn(|i| self.coordinates[i] - rhs.components[i]))
+        Self::from_coordinates(core::array::from_fn(|i| {
+            self.coordinates[i] - rhs.components[i]
+        }))
     }
 }
 
@@ -371,6 +407,10 @@ fn normalize_pair(hi: f64, lo: f64) -> (f64, f64) {
 }
 
 /// A compensated quantity stored as `(hi, lo)`.
+///
+/// The pair is normalized so that `hi` carries the main magnitude and `lo`
+/// carries the residual correction. This is useful when large values need to
+/// preserve small increments through repeated arithmetic.
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct SplitQuantity<U: Unit> {
@@ -444,14 +484,17 @@ impl<U: Unit> SplitQuantity<U> {
         SplitQuantity::new(self.hi.to::<U2>(), self.lo.to::<U2>())
     }
 
-    /// Adds a quantity to the compensated low component and renormalizes.
+    /// Adds a quantity to the split value and renormalizes the `(hi, lo)` pair.
+    ///
+    /// The input is accumulated through the low component first so small
+    /// adjustments can be preserved instead of being rounded away immediately.
     #[inline]
     #[must_use]
     pub fn add_quantity(self, rhs: Quantity<U>) -> Self {
         Self::new(self.hi, self.lo + rhs)
     }
 
-    /// Subtracts a quantity from the compensated low component and renormalizes.
+    /// Subtracts a quantity from the split value and renormalizes the pair.
     #[inline]
     #[must_use]
     pub fn sub_quantity(self, rhs: Quantity<U>) -> Self {
@@ -465,7 +508,10 @@ impl<U: Unit> SplitQuantity<U> {
         Self::new(scaled(self.hi, factor), scaled(self.lo, factor))
     }
 
-    /// Returns `self - rhs` as a single quantity.
+    /// Returns `self - rhs` collapsed to a single quantity.
+    ///
+    /// This is appropriate when the result is expected to be a displacement or
+    /// difference, not another compensated coordinate.
     #[inline]
     #[must_use]
     pub fn difference(self, rhs: Self) -> Quantity<U> {
@@ -501,6 +547,9 @@ impl<U: Unit> Sub for SplitQuantity<U> {
 }
 
 /// A compensated one-dimensional point.
+///
+/// This is the affine-point analogue of [`SplitQuantity`]: it represents a
+/// location on a one-dimensional axis while preserving high/low precision.
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct SplitPoint1<Sp: Space, U: Unit> {
@@ -509,6 +558,9 @@ pub struct SplitPoint1<Sp: Space, U: Unit> {
 }
 
 /// A compensated one-dimensional free vector.
+///
+/// This is useful when a one-dimensional displacement needs the same
+/// compensated storage strategy as [`SplitPoint1`] or [`SplitQuantity`].
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct SplitVector1<Sp: Space, U: Unit> {
@@ -517,12 +569,14 @@ pub struct SplitVector1<Sp: Space, U: Unit> {
 }
 
 impl<Sp: Space, U: Unit> SplitPoint1<Sp, U> {
+    /// Creates a compensated point from raw high/low parts.
     #[inline]
     #[must_use]
     pub fn new<T: Into<Quantity<U>>, R: Into<Quantity<U>>>(hi: T, lo: R) -> Self {
         Self::from_split(SplitQuantity::new(hi, lo))
     }
 
+    /// Wraps an existing compensated quantity as a point.
     #[inline]
     #[must_use]
     pub const fn from_split(coordinate: SplitQuantity<U>) -> Self {
@@ -532,18 +586,21 @@ impl<Sp: Space, U: Unit> SplitPoint1<Sp, U> {
         }
     }
 
+    /// Returns the compensated coordinate storage.
     #[inline]
     #[must_use]
     pub fn coordinate(self) -> SplitQuantity<U> {
         self.coordinate
     }
 
+    /// Returns the collapsed value `hi + lo`.
     #[inline]
     #[must_use]
     pub fn total(self) -> Quantity<U> {
         self.coordinate.total()
     }
 
+    /// Returns the stored `(hi, lo)` pair.
     #[inline]
     #[must_use]
     pub fn pair(self) -> (Quantity<U>, Quantity<U>) {
@@ -552,12 +609,14 @@ impl<Sp: Space, U: Unit> SplitPoint1<Sp, U> {
 }
 
 impl<Sp: Space, U: Unit> SplitVector1<Sp, U> {
+    /// Creates a compensated vector from raw high/low parts.
     #[inline]
     #[must_use]
     pub fn new<T: Into<Quantity<U>>, R: Into<Quantity<U>>>(hi: T, lo: R) -> Self {
         Self::from_split(SplitQuantity::new(hi, lo))
     }
 
+    /// Wraps an existing compensated quantity as a vector.
     #[inline]
     #[must_use]
     pub const fn from_split(component: SplitQuantity<U>) -> Self {
@@ -567,6 +626,7 @@ impl<Sp: Space, U: Unit> SplitVector1<Sp, U> {
         }
     }
 
+    /// Returns the compensated component storage.
     #[inline]
     #[must_use]
     pub fn component(self) -> SplitQuantity<U> {
@@ -602,6 +662,10 @@ impl<Sp: Space, U: Unit> Sub<Quantity<U>> for SplitPoint1<Sp, U> {
 }
 
 /// One-dimensional affine map between axes with the same unit.
+///
+/// This encodes `target = target_origin + scale * (source - source_origin)`.
+/// It is useful for axis changes such as epoch shifts, offset encodings, or
+/// other linear reparameterizations on a shared unit system.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct AffineMap1<From: Space, To: Space, U: Unit> {
     source_origin: Quantity<U>,
@@ -642,6 +706,9 @@ impl<From: Space, To: Space, U: Unit> AffineMap1<From, To, U> {
     }
 
     /// Applies this map to an ordinary 1D point.
+    ///
+    /// Any source offset from `source_origin` is scaled, then re-anchored at
+    /// `target_origin`.
     #[inline]
     #[must_use]
     pub fn apply_point(self, source: Point1<From, U>) -> Point1<To, U> {
@@ -650,6 +717,10 @@ impl<From: Space, To: Space, U: Unit> AffineMap1<From, To, U> {
     }
 
     /// Applies this map to a compensated 1D point.
+    ///
+    /// The high part is shifted and scaled relative to the source/target
+    /// origins; the low part is scaled separately so the compensated remainder
+    /// stays meaningful after the mapping.
     #[inline]
     #[must_use]
     pub fn apply_split_point(self, source: SplitPoint1<From, U>) -> SplitPoint1<To, U> {
@@ -664,8 +735,8 @@ impl<From: Space, To: Space, U: Unit> AffineMap1<From, To, U> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::{Quantity};
     use qtty::units::{Kilometer, Meter, Second};
+    use qtty::Quantity;
 
     #[derive(Debug, Copy, Clone)]
     struct Axis;

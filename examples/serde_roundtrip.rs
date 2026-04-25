@@ -12,11 +12,8 @@ fn main() {
     use affn::centers::ReferenceCenter;
     use affn::frames::{ReferenceFrame, SphericalNaming};
     use affn::spherical::{Direction as SphericalDirection, Position as SphericalPosition};
-    use qtty::Quantity;
-    use qtty::units::{Meter, Kilometer, Radian, Degree, Second, AstronomicalUnit, Parsec};
-    use qtty::{M, KM, DEG, RAD, SEC};
-    #[allow(unused_imports)] use qtty::angular::{Degrees, Radians};
-    #[allow(unused_imports)] use qtty::length::{Meters, Kilometers};
+    use qtty::units::{Kilometer, Meter};
+    use qtty::{DEG, M};
     #[derive(Debug, Copy, Clone, PartialEq)]
     struct World;
     impl ReferenceFrame for World {

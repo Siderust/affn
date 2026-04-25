@@ -48,8 +48,8 @@
 
 use super::xyz::XYZ;
 use crate::frames::ReferenceFrame;
-use qtty::{Quantity, Unit};
 use qtty::length::LengthUnit;
+use qtty::{Quantity, Unit};
 
 use std::marker::PhantomData;
 use std::ops::{Add, Neg, Sub};
@@ -377,8 +377,8 @@ mod tests {
     use super::*;
     // Import the derive
     use crate::DeriveReferenceFrame as ReferenceFrame;
-    use qtty::{Per, Quantity};
     use qtty::units::{AstronomicalUnit, Day, Kilometer, Meter};
+    use qtty::{Per, Quantity};
 
     // Define a test frame using the macro
     #[derive(Debug, Copy, Clone, ReferenceFrame)]

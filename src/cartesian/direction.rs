@@ -58,8 +58,8 @@ use super::vector::Displacement;
 use super::xyz::XYZ;
 use crate::centers::ReferenceCenter;
 use crate::frames::ReferenceFrame;
-use qtty::{Quantity};
 use qtty::length::LengthUnit;
+use qtty::Quantity;
 
 use std::marker::PhantomData;
 use std::ops::Mul;
@@ -355,7 +355,7 @@ impl<F: ReferenceFrame> Direction<F> {
     /// - azimuth in `[0°, 360°)`
     pub fn to_spherical(&self) -> crate::spherical::Direction<F> {
         let (polar, azimuth) = crate::spherical::xyz_to_polar_azimuth(self.x(), self.y(), self.z());
-        crate::spherical::Direction::<F>::new_raw(polar, azimuth)
+        crate::spherical::Direction::<F>::new_unchecked(polar, azimuth)
     }
 }
 
@@ -413,11 +413,13 @@ mod tests {
     // Import the derive
     use crate::DeriveReferenceCenter as ReferenceCenter;
     use crate::DeriveReferenceFrame as ReferenceFrame;
+    #[allow(unused_imports)]
+    use qtty::angular::{Degrees, Radians};
+    #[allow(unused_imports)]
+    use qtty::length::{Kilometers, Meters};
+    use qtty::units::Meter;
     use qtty::Quantity;
-    use qtty::units::{Meter, Kilometer, Radian, Degree, Second, AstronomicalUnit, Parsec};
-    use qtty::{M, KM, DEG, RAD, SEC};
-    #[allow(unused_imports)] use qtty::angular::{Degrees, Radians};
-    #[allow(unused_imports)] use qtty::length::{Meters, Kilometers};
+    use qtty::M;
     // Define test-specific frame
     #[derive(Debug, Copy, Clone, ReferenceFrame)]
     struct TestFrame;

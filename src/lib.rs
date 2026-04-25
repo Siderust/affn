@@ -107,8 +107,8 @@ pub mod ellipsoid;
 pub mod ellipsoidal;
 
 // Affine operators (rotation, translation, isometry)
-pub mod ops;
 pub mod algebra;
+pub mod ops;
 pub mod planar;
 
 // Shared serde utilities

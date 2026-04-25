@@ -1,7 +1,7 @@
 //! Internal validation and classification helpers for conic shapes.
 
-use qtty::{Quantity};
 use qtty::length::LengthUnit;
+use qtty::Quantity;
 
 use super::{ConicKind, ConicValidationError};
 

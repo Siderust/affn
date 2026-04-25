@@ -2,12 +2,19 @@
 
 use super::{Rotation3, Translation3};
 use crate::cartesian::xyz::XYZ;
+use qtty::units::Meter;
+use qtty::Unit;
+use std::marker::PhantomData;
 
 /// A rigid body transformation combining rotation and translation.
 ///
 /// An isometry preserves distances and angles. It consists of:
 /// 1. A rotation component (`Rotation3`)
-/// 2. A translation component (`Translation3`)
+/// 2. A translation component (`Translation3<U>`)
+///
+/// The type parameter `U` is the unit of the translation component.
+/// When applying an isometry to a `Position<C, F, U>`, the translation
+/// is interpreted in unit `U`, matching the position's unit.
 ///
 /// # Application Order
 ///
@@ -28,27 +35,30 @@ use crate::cartesian::xyz::XYZ;
 /// expressed in the **old frame**, negated. Or equivalently, the vector that
 /// moves points FROM the old frame TO the new frame.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Isometry3 {
+pub struct Isometry3<U: Unit = Meter> {
     /// The rotation component.
     pub rotation: Rotation3,
-    /// The translation component (applied after rotation).
-    pub translation: Translation3,
+    /// The translation component (applied after rotation), in unit `U`.
+    pub translation: Translation3<U>,
+    _unit: PhantomData<U>,
 }
 
-impl Isometry3 {
+impl<U: Unit> Isometry3<U> {
     /// The identity isometry (no transformation).
     pub const IDENTITY: Self = Self {
         rotation: Rotation3::IDENTITY,
         translation: Translation3::ZERO,
+        _unit: PhantomData,
     };
 
     /// Creates a new isometry from rotation and translation.
     #[inline]
     #[must_use]
-    pub const fn new(rotation: Rotation3, translation: Translation3) -> Self {
+    pub const fn new(rotation: Rotation3, translation: Translation3<U>) -> Self {
         Self {
             rotation,
             translation,
+            _unit: PhantomData,
         }
     }
 
@@ -59,16 +69,18 @@ impl Isometry3 {
         Self {
             rotation,
             translation: Translation3::ZERO,
+            _unit: PhantomData,
         }
     }
 
     /// Creates an isometry with only translation (no rotation).
     #[inline]
     #[must_use]
-    pub const fn from_translation(translation: Translation3) -> Self {
+    pub const fn from_translation(translation: Translation3<U>) -> Self {
         Self {
             rotation: Rotation3::IDENTITY,
             translation,
+            _unit: PhantomData,
         }
     }
 
@@ -80,10 +92,7 @@ impl Isometry3 {
     pub fn inverse(&self) -> Self {
         let r_inv = self.rotation.inverse();
         let t_inv = r_inv.apply_array(self.translation.v);
-        Self {
-            rotation: r_inv,
-            translation: Translation3::new(-t_inv[0], -t_inv[1], -t_inv[2]),
-        }
+        Self::new(r_inv, Translation3::new(-t_inv[0], -t_inv[1], -t_inv[2]))
     }
 
     /// Composes two isometries: `self * other`.
@@ -101,15 +110,13 @@ impl Isometry3 {
             rotated_t[1] + self.translation.v[1],
             rotated_t[2] + self.translation.v[2],
         );
-        Self {
-            rotation,
-            translation,
-        }
+        Self::new(rotation, translation)
     }
 
     /// Applies this isometry to a raw `[f64; 3]` array (as a point).
     ///
-    /// Computes `R * p + t`.
+    /// Computes `R * p + t`. The caller is responsible for ensuring the
+    /// array values are in the same unit as the translation.
     #[inline]
     pub fn apply_point(&self, p: [f64; 3]) -> [f64; 3] {
         let rotated = self.rotation.apply_array(p);
@@ -138,13 +145,13 @@ impl Isometry3 {
     }
 }
 
-impl Default for Isometry3 {
+impl<U: Unit> Default for Isometry3<U> {
     fn default() -> Self {
         Self::IDENTITY
     }
 }
 
-impl std::ops::Mul for Isometry3 {
+impl<U: Unit> std::ops::Mul for Isometry3<U> {
     type Output = Self;
 
     #[inline]
@@ -154,7 +161,10 @@ impl std::ops::Mul for Isometry3 {
 }
 
 /// Applies an isometry (rotation + translation) to a raw `[f64; 3]` point: `R * p + t`.
-impl std::ops::Mul<[f64; 3]> for Isometry3 {
+///
+/// The caller is responsible for ensuring the array values are in the same unit
+/// as the isometry's translation component.
+impl<U: Unit> std::ops::Mul<[f64; 3]> for Isometry3<U> {
     type Output = [f64; 3];
 
     #[inline]
@@ -163,14 +173,15 @@ impl std::ops::Mul<[f64; 3]> for Isometry3 {
     }
 }
 
-// Mul<[Quantity<U>; 3]> and Mul<XYZ<Quantity<U>>> are generated
-// by impl_quantity_mul! in the parent module.
+// Mul<[Quantity<U>; 3]>, Mul<XYZ<Quantity<U>>>, and Mul<Position<C,F,U>>
+// are implemented directly in the parent module (ops/mod.rs).
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::cartesian::xyz::XYZ;
     use qtty::angular::Radians;
+    use qtty::units::Meter;
     use std::f64::consts::FRAC_PI_2;
 
     const EPSILON: f64 = 1e-12;
@@ -189,7 +200,7 @@ mod tests {
 
     #[test]
     fn test_isometry_identity() {
-        let iso = Isometry3::IDENTITY;
+        let iso = Isometry3::<Meter>::IDENTITY;
         let p = [1.0, 2.0, 3.0];
         assert_array_eq(
             iso.apply_point(p),
@@ -201,7 +212,7 @@ mod tests {
     #[test]
     fn test_isometry_rotation_only() {
         let rot = Rotation3::rz(Radians::new(FRAC_PI_2));
-        let iso = Isometry3::from_rotation(rot);
+        let iso = Isometry3::<Meter>::from_rotation(rot);
 
         let p = [1.0, 0.0, 0.0];
         let result = iso.apply_point(p);
@@ -210,7 +221,7 @@ mod tests {
 
     #[test]
     fn test_isometry_translation_only() {
-        let trans = Translation3::new(1.0, 2.0, 3.0);
+        let trans = Translation3::<Meter>::new(1.0, 2.0, 3.0);
         let iso = Isometry3::from_translation(trans);
 
         let p = [0.0, 0.0, 0.0];
@@ -221,7 +232,7 @@ mod tests {
     #[test]
     fn test_isometry_combined() {
         let rot = Rotation3::rz(Radians::new(FRAC_PI_2));
-        let trans = Translation3::new(1.0, 0.0, 0.0);
+        let trans = Translation3::<Meter>::new(1.0, 0.0, 0.0);
         let iso = Isometry3::new(rot, trans);
 
         let p = [1.0, 0.0, 0.0];
@@ -232,7 +243,7 @@ mod tests {
     #[test]
     fn test_isometry_inverse() {
         let rot = Rotation3::rz(Radians::new(0.5));
-        let trans = Translation3::new(1.0, 2.0, 3.0);
+        let trans = Translation3::<Meter>::new(1.0, 2.0, 3.0);
         let iso = Isometry3::new(rot, trans);
         let iso_inv = iso.inverse();
 
@@ -246,11 +257,11 @@ mod tests {
     fn test_isometry_composition() {
         let iso1 = Isometry3::new(
             Rotation3::rz(Radians::new(FRAC_PI_2)),
-            Translation3::new(1.0, 0.0, 0.0),
+            Translation3::<Meter>::new(1.0, 0.0, 0.0),
         );
         let iso2 = Isometry3::new(
             Rotation3::rx(Radians::new(FRAC_PI_2)),
-            Translation3::new(0.0, 1.0, 0.0),
+            Translation3::<Meter>::new(0.0, 1.0, 0.0),
         );
 
         let composed = iso1.compose(&iso2);
@@ -263,7 +274,7 @@ mod tests {
     #[test]
     fn test_isometry_apply_vector() {
         let rot = Rotation3::rz(Radians::new(FRAC_PI_2));
-        let trans = Translation3::new(100.0, 200.0, 300.0);
+        let trans = Translation3::<Meter>::new(100.0, 200.0, 300.0);
         let iso = Isometry3::new(rot, trans);
 
         let v = [1.0, 0.0, 0.0];
@@ -273,14 +284,14 @@ mod tests {
 
     #[test]
     fn test_isometry_helpers_and_ops() {
-        let iso = Isometry3::default();
-        assert_eq!(iso, Isometry3::IDENTITY);
+        let iso: Isometry3<Meter> = Isometry3::default();
+        assert_eq!(iso, Isometry3::<Meter>::IDENTITY);
 
         let iso1 = Isometry3::new(
             Rotation3::rz(Radians::new(FRAC_PI_2)),
-            Translation3::new(1.0, 0.0, 0.0),
+            Translation3::<Meter>::new(1.0, 0.0, 0.0),
         );
-        let iso2 = Isometry3::from_translation(Translation3::new(0.0, 1.0, 0.0));
+        let iso2 = Isometry3::from_translation(Translation3::<Meter>::new(0.0, 1.0, 0.0));
         let composed = iso1 * iso2;
 
         let p = XYZ::new(1.0, 0.0, 0.0);
@@ -303,7 +314,7 @@ mod tests {
     #[test]
     fn test_isometry_mul_f64_array() {
         let rot = Rotation3::rz(Radians::new(FRAC_PI_2));
-        let trans = Translation3::new(1.0, 0.0, 0.0);
+        let trans = Translation3::<Meter>::new(1.0, 0.0, 0.0);
         let iso = Isometry3::new(rot, trans);
         let result = iso * [1.0, 0.0, 0.0];
         assert_array_eq(result, [1.0, 1.0, 0.0], "Isometry * [f64; 3]");
@@ -311,10 +322,9 @@ mod tests {
 
     #[test]
     fn test_isometry_mul_quantity_array() {
-        use qtty::{Quantity};
-        use qtty::units::{Meter};
+        use qtty::Quantity;
         let rot = Rotation3::rz(Radians::new(FRAC_PI_2));
-        let trans = Translation3::new(1.0, 0.0, 0.0);
+        let trans = Translation3::<Meter>::new(1.0, 0.0, 0.0);
         let iso = Isometry3::new(rot, trans);
         let v = [
             Quantity::<Meter>::new(1.0),

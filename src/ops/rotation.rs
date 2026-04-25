@@ -45,20 +45,73 @@ impl Rotation3 {
         m: [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
     };
 
-    /// Creates a rotation matrix from raw row-major data.
+    /// Creates a rotation matrix from raw row-major data without validation.
     ///
     /// # Arguments
     /// - `m`: A 3x3 array in row-major order where `m[row][col]`.
     ///
-    /// # Preconditions
+    /// # Safety (logical)
     /// `m` must be an orthogonal matrix with det = +1 (a proper rotation).
     /// No validation is performed. Passing an invalid matrix produces a mathematically
     /// incoherent `Rotation3` whose composition and inversion will silently propagate
-    /// garbage values.
+    /// garbage values, and `Rotation3 * Direction<F>` will manufacture a `Direction`
+    /// whose norm is not 1.
+    #[inline]
+    #[must_use]
+    pub const fn from_matrix_unchecked(m: [[f64; 3]; 3]) -> Self {
+        Self { m }
+    }
+
+    /// Creates a rotation matrix from raw row-major data without validation.
+    ///
+    /// This is the historical constructor name and is kept for API stability.
+    /// Prefer [`try_from_matrix`](Self::try_from_matrix) for untrusted matrices.
+    ///
+    /// # Preconditions
+    ///
+    /// `m` must be finite, orthogonal, and have determinant `+1`.
     #[inline]
     #[must_use]
     pub const fn from_matrix(m: [[f64; 3]; 3]) -> Self {
-        Self { m }
+        Self::from_matrix_unchecked(m)
+    }
+
+    /// Creates a rotation matrix from raw row-major data, validating orthogonality.
+    ///
+    /// Returns `None` if `m` is not a proper rotation matrix (i.e., `Mᵀ·M` is not
+    /// close to the identity within tolerance `1e-7`, or `det(M)` is not close to +1).
+    ///
+    /// # Arguments
+    /// - `m`: A 3x3 array in row-major order where `m[row][col]`.
+    #[inline]
+    #[must_use]
+    pub fn try_from_matrix(m: [[f64; 3]; 3]) -> Option<Self> {
+        const TOL: f64 = 1e-7;
+
+        if !m.iter().flatten().all(|value| value.is_finite()) {
+            return None;
+        }
+
+        // Check Mᵀ·M ≈ I
+        for i in 0..3 {
+            for j in 0..3 {
+                let dot: f64 = m[0][i] * m[0][j] + m[1][i] * m[1][j] + m[2][i] * m[2][j];
+                let expected = if i == j { 1.0 } else { 0.0 };
+                if !dot.is_finite() || (dot - expected).abs() > TOL {
+                    return None;
+                }
+            }
+        }
+
+        // Check det(M) ≈ +1
+        let det = m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+            - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+            + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+        if !det.is_finite() || (det - 1.0).abs() > TOL {
+            return None;
+        }
+
+        Some(Self { m })
     }
 
     /// Creates a rotation from an axis-angle representation.
@@ -604,8 +657,27 @@ mod tests {
         let identity = Rotation3::default();
         assert_eq!(identity, Rotation3::IDENTITY);
         let matrix = *identity.as_matrix();
-        let from_matrix = Rotation3::from_matrix(matrix);
+        let from_matrix = Rotation3::try_from_matrix(matrix).unwrap();
         assert_eq!(from_matrix, Rotation3::IDENTITY);
+    }
+
+    #[test]
+    fn test_try_from_matrix_rejects_non_orthogonal() {
+        // Scaling matrix — not orthogonal
+        let bad = [[2.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 2.0]];
+        assert!(Rotation3::try_from_matrix(bad).is_none());
+
+        // Reflection (det = -1)
+        let refl = [[-1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]];
+        assert!(Rotation3::try_from_matrix(refl).is_none());
+
+        // Non-finite input
+        let nan = [[f64::NAN, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]];
+        assert!(Rotation3::try_from_matrix(nan).is_none());
+
+        // Valid rotation: Rz(π/2)
+        let rz = *Rotation3::rz(Radians::new(std::f64::consts::FRAC_PI_2)).as_matrix();
+        assert!(Rotation3::try_from_matrix(rz).is_some());
     }
 
     #[test]
@@ -649,8 +721,8 @@ mod tests {
 
     #[test]
     fn test_rotation_mul_quantity_preserves_unit() {
-        use qtty::{Quantity};
-        use qtty::units::{AstronomicalUnit};
+        use qtty::units::AstronomicalUnit;
+        use qtty::Quantity;
         let r = Rotation3::rz(Radians::new(FRAC_PI_2));
         let v = [
             Quantity::<AstronomicalUnit>::new(3.0),
@@ -665,8 +737,8 @@ mod tests {
 
     #[test]
     fn test_rotation_mul_quantity_roundtrip() {
-        use qtty::{Quantity};
-        use qtty::units::{Meter};
+        use qtty::units::Meter;
+        use qtty::Quantity;
         let r = Rotation3::rz(Radians::new(0.7));
         let r_inv = r.inverse();
         let v = [
@@ -802,11 +874,13 @@ mod tests {
         use crate::{
             DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame,
         };
-        use qtty::Quantity;
-        use qtty::units::{Meter, Kilometer, Radian, Degree, Second, AstronomicalUnit, Parsec};
-        use qtty::{M, KM, DEG, RAD, SEC};
-        #[allow(unused_imports)] use qtty::angular::{Degrees, Radians};
-        #[allow(unused_imports)] use qtty::length::{Meters, Kilometers};
+
+        use qtty::units::{AstronomicalUnit, Meter};
+
+        #[allow(unused_imports)]
+        use qtty::angular::{Degrees, Radians};
+        #[allow(unused_imports)]
+        use qtty::length::{Kilometers, Meters};
         #[derive(Debug, Copy, Clone, ReferenceFrame)]
         struct FrameA;
         #[derive(Debug, Copy, Clone, ReferenceFrame)]

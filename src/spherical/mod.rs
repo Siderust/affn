@@ -15,8 +15,7 @@ pub use direction::Direction;
 
 /// Canonicalize an azimuthal angle to the range `[0°, 360°)`.
 #[inline]
-#[allow(dead_code)]
-pub(crate) fn canonicalize_azimuth(angle: qtty::angular::Degrees) -> qtty::angular::Degrees {
+pub fn canonicalize_azimuth(angle: qtty::angular::Degrees) -> qtty::angular::Degrees {
     angle.normalize()
 }
 
@@ -24,9 +23,12 @@ pub(crate) fn canonicalize_azimuth(angle: qtty::angular::Degrees) -> qtty::angul
 ///
 /// Out-of-range values are *folded* (reflected at the pole), not clamped.
 /// For example, `100° → 80°` and `-100° → -80°`.
+///
+/// This folds only the polar angle. When canonicalizing a complete spherical
+/// coordinate, use [`canonicalize_polar_azimuth`] so pole crossings also rotate
+/// the azimuth by 180°.
 #[inline]
-#[allow(dead_code)]
-pub(crate) fn canonicalize_polar(angle: qtty::angular::Degrees) -> qtty::angular::Degrees {
+pub fn canonicalize_polar(angle: qtty::angular::Degrees) -> qtty::angular::Degrees {
     let wrapped = angle.wrap_signed(); // (-180°, 180°]
     let v = wrapped.value();
     if v > 90.0 {
@@ -38,6 +40,37 @@ pub(crate) fn canonicalize_polar(angle: qtty::angular::Degrees) -> qtty::angular
     }
 }
 
+/// Canonicalize a spherical angle pair without changing the represented direction.
+///
+/// - `polar` is folded into `[-90°, +90°]`.
+/// - `azimuth` is normalized into `[0°, 360°)`.
+/// - Crossing either pole rotates the azimuth by 180° so the resulting pair
+///   represents the same unit vector.
+#[inline]
+#[must_use]
+pub fn canonicalize_polar_azimuth(
+    polar: qtty::angular::Degrees,
+    azimuth: qtty::angular::Degrees,
+) -> (qtty::angular::Degrees, qtty::angular::Degrees) {
+    use qtty::angular::Degrees;
+
+    let wrapped = polar.wrap_signed();
+    let v = wrapped.value();
+    let mut azimuth_deg = azimuth.value();
+
+    let polar = if v > 90.0 {
+        azimuth_deg += 180.0;
+        Degrees::new(180.0 - v)
+    } else if v < -90.0 {
+        azimuth_deg += 180.0;
+        Degrees::new(-180.0 - v)
+    } else {
+        wrapped
+    };
+
+    (polar, Degrees::new(azimuth_deg).normalize())
+}
+
 /// Converts Cartesian unit-vector components (x, y, z) to spherical angles.
 ///
 /// Returns `(polar, azimuth)` in degrees, canonicalized to:
@@ -47,7 +80,11 @@ pub(crate) fn canonicalize_polar(angle: qtty::angular::Degrees) -> qtty::angular
 /// The z component is clamped to `[-1, 1]` to prevent `asin` domain errors
 /// from floating-point imprecision.
 #[inline]
-pub(crate) fn xyz_to_polar_azimuth(x: f64, y: f64, z: f64) -> (qtty::angular::Degrees, qtty::angular::Degrees) {
+pub(crate) fn xyz_to_polar_azimuth(
+    x: f64,
+    y: f64,
+    z: f64,
+) -> (qtty::angular::Degrees, qtty::angular::Degrees) {
     use qtty::angular::Degrees;
     let z_clamped = z.clamp(-1.0, 1.0);
     let polar = Degrees::new(z_clamped.asin().to_degrees());
@@ -66,8 +103,8 @@ pub(crate) fn angular_separation_impl(
     polar2: qtty::angular::Degrees,
     azimuth2: qtty::angular::Degrees,
 ) -> qtty::angular::Degrees {
-    use qtty::units::{Degree, Radian};
     use qtty::angular::Radians;
+    use qtty::units::{Degree, Radian};
 
     let az1 = azimuth1.to::<Radian>();
     let po1 = polar1.to::<Radian>();
