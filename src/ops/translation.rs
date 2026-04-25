@@ -59,7 +59,7 @@ impl Translation3 {
     /// # Example
     /// ```
     /// use affn::ops::Translation3;
-    /// use qtty::*;
+    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
     ///
     /// let t = Translation3::from_quantities([1.0 * AU, 0.5 * AU, -0.3 * AU]);
     /// assert!((t.v[0] - 1.0).abs() < 1e-12);
@@ -266,7 +266,8 @@ mod tests {
 
     #[test]
     fn test_translation_mul_quantity_array() {
-        use qtty::{Meter, Quantity};
+        use qtty::{Quantity};
+        use qtty::units::{Meter};
         let t = Translation3::new(1.0, 2.0, 3.0);
         let v = [
             Quantity::<Meter>::new(10.0),
@@ -281,7 +282,8 @@ mod tests {
 
     #[test]
     fn test_translation_from_quantities() {
-        use qtty::{AstronomicalUnit, Quantity};
+        use qtty::{Quantity};
+        use qtty::units::{AstronomicalUnit};
         let q = [
             Quantity::<AstronomicalUnit>::new(1.0),
             Quantity::<AstronomicalUnit>::new(0.5),
@@ -295,7 +297,8 @@ mod tests {
 
     #[test]
     fn test_translation_as_quantities() {
-        use qtty::{Kilometer, Quantity};
+        use qtty::{Quantity};
+        use qtty::units::{Kilometer};
         let t = Translation3::new(100.0, 200.0, 300.0);
         let q: [Quantity<Kilometer>; 3] = t.as_quantities();
         assert!((q[0].value() - 100.0).abs() < EPSILON);
@@ -305,7 +308,8 @@ mod tests {
 
     #[test]
     fn test_translation_from_as_quantities_roundtrip() {
-        use qtty::{Meter, Quantity};
+        use qtty::{Quantity};
+        use qtty::units::{Meter};
         let original = [
             Quantity::<Meter>::new(1.5),
             Quantity::<Meter>::new(-2.3),

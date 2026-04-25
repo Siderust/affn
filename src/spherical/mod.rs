@@ -16,7 +16,7 @@ pub use direction::Direction;
 /// Canonicalize an azimuthal angle to the range `[0°, 360°)`.
 #[inline]
 #[allow(dead_code)]
-pub(crate) fn canonicalize_azimuth(angle: qtty::Degrees) -> qtty::Degrees {
+pub(crate) fn canonicalize_azimuth(angle: qtty::angular::Degrees) -> qtty::angular::Degrees {
     angle.normalize()
 }
 
@@ -26,13 +26,13 @@ pub(crate) fn canonicalize_azimuth(angle: qtty::Degrees) -> qtty::Degrees {
 /// For example, `100° → 80°` and `-100° → -80°`.
 #[inline]
 #[allow(dead_code)]
-pub(crate) fn canonicalize_polar(angle: qtty::Degrees) -> qtty::Degrees {
+pub(crate) fn canonicalize_polar(angle: qtty::angular::Degrees) -> qtty::angular::Degrees {
     let wrapped = angle.wrap_signed(); // (-180°, 180°]
     let v = wrapped.value();
     if v > 90.0 {
-        qtty::Degrees::new(180.0 - v)
+        qtty::angular::Degrees::new(180.0 - v)
     } else if v < -90.0 {
-        qtty::Degrees::new(-180.0 - v)
+        qtty::angular::Degrees::new(-180.0 - v)
     } else {
         wrapped
     }
@@ -47,8 +47,8 @@ pub(crate) fn canonicalize_polar(angle: qtty::Degrees) -> qtty::Degrees {
 /// The z component is clamped to `[-1, 1]` to prevent `asin` domain errors
 /// from floating-point imprecision.
 #[inline]
-pub(crate) fn xyz_to_polar_azimuth(x: f64, y: f64, z: f64) -> (qtty::Degrees, qtty::Degrees) {
-    use qtty::Degrees;
+pub(crate) fn xyz_to_polar_azimuth(x: f64, y: f64, z: f64) -> (qtty::angular::Degrees, qtty::angular::Degrees) {
+    use qtty::angular::Degrees;
     let z_clamped = z.clamp(-1.0, 1.0);
     let polar = Degrees::new(z_clamped.asin().to_degrees());
     let azimuth = Degrees::new(y.atan2(x).to_degrees()).normalize();
@@ -61,12 +61,13 @@ pub(crate) fn xyz_to_polar_azimuth(x: f64, y: f64, z: f64) -> (qtty::Degrees, qt
 /// This is more numerically stable than the simpler cos-based formula.
 #[inline]
 pub(crate) fn angular_separation_impl(
-    polar1: qtty::Degrees,
-    azimuth1: qtty::Degrees,
-    polar2: qtty::Degrees,
-    azimuth2: qtty::Degrees,
-) -> qtty::Degrees {
-    use qtty::{Degree, Radian, Radians};
+    polar1: qtty::angular::Degrees,
+    azimuth1: qtty::angular::Degrees,
+    polar2: qtty::angular::Degrees,
+    azimuth2: qtty::angular::Degrees,
+) -> qtty::angular::Degrees {
+    use qtty::units::{Degree, Radian};
+    use qtty::angular::Radians;
 
     let az1 = azimuth1.to::<Radian>();
     let po1 = polar1.to::<Radian>();

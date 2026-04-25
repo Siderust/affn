@@ -1,7 +1,7 @@
 //! 3x3 rotation matrix operator.
 
 use crate::cartesian::xyz::XYZ;
-use qtty::Radians;
+use qtty::angular::Radians;
 
 /// A 3x3 rotation matrix for orientation transforms.
 ///
@@ -19,7 +19,7 @@ use qtty::Radians;
 ///
 /// ```rust
 /// use affn::Rotation3;
-/// use qtty::Radians;
+/// use qtty::angular::Radians;
 /// use std::f64::consts::FRAC_PI_2;
 ///
 /// // Rotate 90° around the Z axis
@@ -497,7 +497,7 @@ impl std::ops::Mul<[f64; 3]> for Rotation3 {
 mod tests {
     use super::*;
     use crate::cartesian::xyz::XYZ;
-    use qtty::Radians;
+    use qtty::angular::Radians;
     use std::f64::consts::{FRAC_PI_2, PI};
 
     const EPSILON: f64 = 1e-12;
@@ -617,7 +617,7 @@ mod tests {
 
     #[test]
     fn test_rotation_mul_quantity_array() {
-        use qtty::Meter;
+        use qtty::units::Meter;
         use qtty::Quantity;
         let r = Rotation3::rz(Radians::new(FRAC_PI_2));
         let v = [
@@ -633,7 +633,7 @@ mod tests {
 
     #[test]
     fn test_rotation_mul_xyz_quantity() {
-        use qtty::Meter;
+        use qtty::units::Meter;
         use qtty::Quantity;
         let r = Rotation3::rz(Radians::new(FRAC_PI_2));
         let xyz: XYZ<Quantity<Meter>> = XYZ::new(
@@ -649,7 +649,8 @@ mod tests {
 
     #[test]
     fn test_rotation_mul_quantity_preserves_unit() {
-        use qtty::{AstronomicalUnit, Quantity};
+        use qtty::{Quantity};
+        use qtty::units::{AstronomicalUnit};
         let r = Rotation3::rz(Radians::new(FRAC_PI_2));
         let v = [
             Quantity::<AstronomicalUnit>::new(3.0),
@@ -664,7 +665,8 @@ mod tests {
 
     #[test]
     fn test_rotation_mul_quantity_roundtrip() {
-        use qtty::{Meter, Quantity};
+        use qtty::{Quantity};
+        use qtty::units::{Meter};
         let r = Rotation3::rz(Radians::new(0.7));
         let r_inv = r.inverse();
         let v = [
@@ -800,8 +802,11 @@ mod tests {
         use crate::{
             DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame,
         };
-        use qtty::*;
-
+        use qtty::Quantity;
+        use qtty::units::{Meter, Kilometer, Radian, Degree, Second, AstronomicalUnit, Parsec};
+        use qtty::{M, KM, DEG, RAD, SEC};
+        #[allow(unused_imports)] use qtty::angular::{Degrees, Radians};
+        #[allow(unused_imports)] use qtty::length::{Meters, Kilometers};
         #[derive(Debug, Copy, Clone, ReferenceFrame)]
         struct FrameA;
         #[derive(Debug, Copy, Clone, ReferenceFrame)]

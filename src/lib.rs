@@ -65,7 +65,7 @@
 //! use affn::cartesian::{Position, Displacement};
 //! use affn::frames::ReferenceFrame;
 //! use affn::centers::ReferenceCenter;
-//! use qtty::*;
+//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
 //!
 //! // Define domain-specific types
 //! #[derive(Debug, Copy, Clone)]

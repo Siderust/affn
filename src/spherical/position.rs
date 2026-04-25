@@ -20,7 +20,7 @@
 //! use affn::spherical::Position;
 //! use affn::frames::ReferenceFrame;
 //! use affn::centers::ReferenceCenter;
-//! use qtty::*;
+//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
 //!
 //! #[derive(Debug, Copy, Clone)]
 //! struct WorldFrame;
@@ -44,7 +44,10 @@
 
 use crate::centers;
 use crate::frames;
-use qtty::*;
+use qtty::Quantity;
+use qtty::units::Radian;
+use qtty::angular::Degrees;
+use qtty::length::LengthUnit;
 
 use std::marker::PhantomData;
 
@@ -285,6 +288,8 @@ mod tests {
     // Import the derives and traits
     use crate::{DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame};
     use std::f64::consts::SQRT_2;
+    use qtty::units::Meter;
+    use qtty::{M, DEG};
 
     // Define test-specific frame and center
     #[derive(Debug, Copy, Clone, ReferenceFrame)]

@@ -2,7 +2,9 @@
 
 use std::marker::PhantomData;
 
-use qtty::{LengthUnit, Meter, Quantity};
+use qtty::{Quantity};
+use qtty::units::{Meter};
+use qtty::length::LengthUnit;
 
 use super::internal::{
     classify_eccentricity_unchecked, validate_eccentricity, validate_positive_length,

@@ -105,7 +105,7 @@ struct TestCenter;
 
 #[test]
 fn test_derive_with_position() {
-    use qtty::Kilometer;
+    use qtty::units::Kilometer;
 
     let pos = Position::<TestCenter, TestFrame, Kilometer>::new(1.0, 2.0, 3.0);
     assert_eq!(pos.x().value(), 1.0);

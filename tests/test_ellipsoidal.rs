@@ -17,8 +17,11 @@
 use affn::ellipsoid::{Ellipsoid, Grs80, HasEllipsoid, Wgs84};
 use affn::ellipsoidal::Position;
 use affn::prelude::*;
-use qtty::*;
-
+use qtty::Quantity;
+use qtty::units::{Meter, Kilometer, Radian, Degree, Second, AstronomicalUnit, Parsec};
+use qtty::{M, KM, DEG, RAD, SEC};
+#[allow(unused_imports)] use qtty::angular::{Degrees, Radians};
+#[allow(unused_imports)] use qtty::length::{Meters, Kilometers};
 #[cfg(feature = "astro")]
 use affn::frames::{ECEF, ITRF};
 

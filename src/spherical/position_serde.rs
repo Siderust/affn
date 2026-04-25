@@ -3,7 +3,9 @@
 use super::Position;
 use crate::centers::ReferenceCenter;
 use crate::frames::SphericalNaming;
-use qtty::{Degrees, LengthUnit, Quantity};
+use qtty::{Quantity};
+use qtty::angular::Degrees;
+use qtty::length::LengthUnit;
 use serde::de::{self, MapAccess, Visitor};
 use serde::ser::SerializeStruct;
 use serde::Serializer;

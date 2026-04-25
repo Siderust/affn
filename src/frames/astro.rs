@@ -400,8 +400,11 @@ mod tests {
     use crate::centers::{AffineCenter, ReferenceCenter};
     use crate::frames::{ReferenceFrame, SphericalNaming};
     use crate::spherical::{Direction, Position};
-    use qtty::*;
-
+    use qtty::Quantity;
+    use qtty::units::{Meter, Kilometer, Radian, Degree, Second, AstronomicalUnit, Parsec};
+    use qtty::{M, KM, DEG, RAD, SEC};
+    #[allow(unused_imports)] use qtty::angular::{Degrees, Radians};
+    #[allow(unused_imports)] use qtty::length::{Meters, Kilometers};
     #[test]
     fn test_frame_names() {
         assert_eq!(ICRS::frame_name(), "ICRS");

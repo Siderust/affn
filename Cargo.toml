@@ -19,9 +19,9 @@ categories = ["science", "mathematics"]
 name = "affn"
 
 [features]
-default = []
+default = ["astro"]
 serde = ["dep:serde", "qtty/serde", "nalgebra/serde-serialize"]
-astro = []
+astro = ["qtty/astro"]
 
 [dependencies]
 affn-derive = { version = "0.1.3", path = "affn-derive" }

@@ -4,7 +4,8 @@ use super::Position;
 use crate::cartesian::xyz::XYZ;
 use crate::centers::ReferenceCenter;
 use crate::frames::ReferenceFrame;
-use qtty::{LengthUnit, Quantity};
+use qtty::{Quantity};
+use qtty::length::LengthUnit;
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
 
