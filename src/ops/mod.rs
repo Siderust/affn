@@ -37,25 +37,25 @@
 //! like directions.
 
 mod isometry;
-mod rotation;
-mod translation;
 mod isometry2;
+mod rotation;
 mod rotation2;
+mod translation;
 mod translation2;
 
 pub use isometry::Isometry3;
-pub use rotation::Rotation3;
-pub use translation::Translation3;
 pub use isometry2::Isometry2;
+pub use rotation::Rotation3;
 pub use rotation2::Rotation2;
+pub use translation::Translation3;
 pub use translation2::Translation2;
 
 use crate::cartesian::xyz::XYZ;
 use crate::cartesian::{Direction, Position, Vector};
 use crate::centers::ReferenceCenter;
 use crate::frames::ReferenceFrame;
-use qtty::{Quantity, Unit};
 use qtty::length::LengthUnit;
+use qtty::{Quantity, Unit};
 
 // =============================================================================
 // Quantity-array and XYZ impls (all three operator types)
@@ -87,8 +87,46 @@ macro_rules! impl_quantity_mul {
 }
 
 impl_quantity_mul!(Rotation3, apply_array, apply_xyz);
-impl_quantity_mul!(Translation3, apply_array, apply_xyz);
-impl_quantity_mul!(Isometry3, apply_point, apply_xyz);
+
+// Translation3<U> and Isometry3<U> are unit-typed, so they can only multiply
+// quantities in the same unit U they were constructed with.
+impl<U: Unit> std::ops::Mul<[Quantity<U>; 3]> for Translation3<U> {
+    type Output = [Quantity<U>; 3];
+
+    #[inline]
+    fn mul(self, rhs: [Quantity<U>; 3]) -> [Quantity<U>; 3] {
+        let [x, y, z] = self.apply_array([rhs[0].value(), rhs[1].value(), rhs[2].value()]);
+        [Quantity::new(x), Quantity::new(y), Quantity::new(z)]
+    }
+}
+
+impl<U: Unit> std::ops::Mul<XYZ<Quantity<U>>> for Translation3<U> {
+    type Output = XYZ<Quantity<U>>;
+
+    #[inline]
+    fn mul(self, rhs: XYZ<Quantity<U>>) -> XYZ<Quantity<U>> {
+        XYZ::from_raw(self.apply_xyz(rhs.to_raw()))
+    }
+}
+
+impl<U: Unit> std::ops::Mul<[Quantity<U>; 3]> for Isometry3<U> {
+    type Output = [Quantity<U>; 3];
+
+    #[inline]
+    fn mul(self, rhs: [Quantity<U>; 3]) -> [Quantity<U>; 3] {
+        let [x, y, z] = self.apply_point([rhs[0].value(), rhs[1].value(), rhs[2].value()]);
+        [Quantity::new(x), Quantity::new(y), Quantity::new(z)]
+    }
+}
+
+impl<U: Unit> std::ops::Mul<XYZ<Quantity<U>>> for Isometry3<U> {
+    type Output = XYZ<Quantity<U>>;
+
+    #[inline]
+    fn mul(self, rhs: XYZ<Quantity<U>>) -> XYZ<Quantity<U>> {
+        XYZ::from_raw(self.apply_xyz(rhs.to_raw()))
+    }
+}
 
 // =============================================================================
 // Coordinate-type impls: Position, Vector, Direction
@@ -124,8 +162,50 @@ macro_rules! impl_position_mul {
 }
 
 impl_position_mul!(Rotation3, apply_array);
-impl_position_mul!(Translation3, apply_array);
-impl_position_mul!(Isometry3, apply_point);
+
+// Translation3<U> and Isometry3<U> enforce that the translation unit matches
+// the position unit at compile time.
+impl<C, F, U> std::ops::Mul<Position<C, F, U>> for Translation3<U>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+    U: LengthUnit,
+    C::Params: Clone,
+{
+    type Output = Position<C, F, U>;
+
+    #[inline]
+    fn mul(self, rhs: Position<C, F, U>) -> Position<C, F, U> {
+        let [x, y, z] = self.apply_array([rhs.x().value(), rhs.y().value(), rhs.z().value()]);
+        Position::new_with_params(
+            rhs.center_params().clone(),
+            Quantity::<U>::new(x),
+            Quantity::<U>::new(y),
+            Quantity::<U>::new(z),
+        )
+    }
+}
+
+impl<C, F, U> std::ops::Mul<Position<C, F, U>> for Isometry3<U>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+    U: LengthUnit,
+    C::Params: Clone,
+{
+    type Output = Position<C, F, U>;
+
+    #[inline]
+    fn mul(self, rhs: Position<C, F, U>) -> Position<C, F, U> {
+        let [x, y, z] = self.apply_point([rhs.x().value(), rhs.y().value(), rhs.z().value()]);
+        Position::new_with_params(
+            rhs.center_params().clone(),
+            Quantity::<U>::new(x),
+            Quantity::<U>::new(y),
+            Quantity::<U>::new(z),
+        )
+    }
+}
 
 /// `Rotation3 * Vector<F, U>` — rotates a free vector, preserving frame and unit.
 ///

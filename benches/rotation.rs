@@ -8,7 +8,7 @@ use std::hint::black_box;
 use std::time::Duration;
 
 use affn::Rotation3;
-use qtty::Radians;
+use qtty::angular::Radians;
 
 fn bench_rotation_ops(c: &mut Criterion) {
     let mut group = c.benchmark_group("rotation3");

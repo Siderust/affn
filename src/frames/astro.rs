@@ -400,11 +400,13 @@ mod tests {
     use crate::centers::{AffineCenter, ReferenceCenter};
     use crate::frames::{ReferenceFrame, SphericalNaming};
     use crate::spherical::{Direction, Position};
+    #[allow(unused_imports)]
+    use qtty::angular::{Degrees, Radians};
+    #[allow(unused_imports)]
+    use qtty::length::{Kilometers, Meters};
+    use qtty::units::{Kilometer, Parsec};
     use qtty::Quantity;
-    use qtty::units::{Meter, Kilometer, Radian, Degree, Second, AstronomicalUnit, Parsec};
-    use qtty::{M, KM, DEG, RAD, SEC};
-    #[allow(unused_imports)] use qtty::angular::{Degrees, Radians};
-    #[allow(unused_imports)] use qtty::length::{Meters, Kilometers};
+    use qtty::DEG;
     #[test]
     fn test_frame_names() {
         assert_eq!(ICRS::frame_name(), "ICRS");
@@ -546,7 +548,7 @@ mod tests {
             }
         }
 
-        let p = Position::<ParamCenter, ICRS, Parsec>::new_raw_with_params(
+        let p = Position::<ParamCenter, ICRS, Parsec>::new_unchecked_with_params(
             42.0,
             45.0 * DEG,
             120.0 * DEG,

@@ -2,6 +2,7 @@
 
 use super::Direction;
 use crate::frames::SphericalNaming;
+use crate::spherical::canonicalize_polar_azimuth;
 use qtty::angular::Degrees;
 use serde::de::{self, MapAccess, Visitor};
 use serde::ser::SerializeStruct;
@@ -74,7 +75,8 @@ impl<'de, F: SphericalNaming> Deserialize<'de> for Direction<F> {
                 let polar = polar.ok_or_else(|| de::Error::missing_field(polar_name))?;
                 let azimuth = azimuth.ok_or_else(|| de::Error::missing_field(azimuth_name))?;
 
-                Ok(Direction::new_raw(polar, azimuth))
+                let (polar, azimuth) = canonicalize_polar_azimuth(polar, azimuth);
+                Ok(Direction::new_unchecked(polar, azimuth))
             }
         }
 

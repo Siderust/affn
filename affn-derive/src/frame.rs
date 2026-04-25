@@ -69,7 +69,7 @@ pub(crate) fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<Tok
                     (&azimuth_ident, &polar_ident)
                 };
 
-                // new_raw always takes (polar, azimuth)
+                // The core spherical constructors always take (polar, azimuth).
                 let (polar_arg, azimuth_arg) = (&polar_ident, &azimuth_ident);
 
                 let polar_doc = format!("Returns the {} angle in degrees.", polar);
@@ -134,10 +134,9 @@ pub(crate) fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<Tok
                             #first_param: ::qtty::angular::Degrees,
                             #second_param: ::qtty::angular::Degrees,
                         ) -> Self {
-                            Self::new_raw(
-                                #polar_arg .wrap_quarter_fold(),
-                                #azimuth_arg .normalize(),
-                            )
+                            let (polar, azimuth) =
+                                ::affn::spherical::canonicalize_polar_azimuth(#polar_arg, #azimuth_arg);
+                            Self::new_unchecked(polar, azimuth)
                         }
 
                         #[doc = #polar_doc]
@@ -187,11 +186,7 @@ pub(crate) fn derive_reference_frame_impl(input: DeriveInput) -> syn::Result<Tok
                             #second_param: ::qtty::angular::Degrees,
                             distance: T,
                         ) -> Self {
-                            Self::new_raw(
-                                #polar_arg .wrap_quarter_fold(),
-                                #azimuth_arg .normalize(),
-                                distance.into(),
-                            )
+                            Self::new_with_params((), #polar_arg, #azimuth_arg, distance.into())
                         }
                     }
 

@@ -114,13 +114,17 @@ impl<F: ReferenceFrame, U: Unit> Vector<F, U> {
     #[inline]
     #[must_use]
     pub fn scale(&self, factor: f64) -> Self {
-        Self { xy: self.xy.scale(factor) }
+        Self {
+            xy: self.xy.scale(factor),
+        }
     }
 
     #[inline]
     #[must_use]
     pub fn to_unit<U2: Unit<Dim = U::Dim>>(&self) -> Vector<F, U2> {
-        Vector { xy: self.xy.to_unit() }
+        Vector {
+            xy: self.xy.to_unit(),
+        }
     }
 
     #[inline]
@@ -143,7 +147,9 @@ impl<F: ReferenceFrame, U: Unit> Add for Vector<F, U> {
 
     #[inline]
     fn add(self, rhs: Self) -> Self::Output {
-        Self { xy: self.xy + rhs.xy }
+        Self {
+            xy: self.xy + rhs.xy,
+        }
     }
 }
 
@@ -152,7 +158,9 @@ impl<F: ReferenceFrame, U: Unit> Sub for Vector<F, U> {
 
     #[inline]
     fn sub(self, rhs: Self) -> Self::Output {
-        Self { xy: self.xy - rhs.xy }
+        Self {
+            xy: self.xy - rhs.xy,
+        }
     }
 }
 
@@ -168,11 +176,7 @@ impl<F: ReferenceFrame, U: Unit> Neg for Vector<F, U> {
 impl<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> Position<C, F, U> {
     #[inline]
     #[must_use]
-    pub fn new_with_params<T: Into<Quantity<U>>>(
-        center_params: C::Params,
-        x: T,
-        y: T,
-    ) -> Self {
+    pub fn new_with_params<T: Into<Quantity<U>>>(center_params: C::Params, x: T, y: T) -> Self {
         Self {
             xy: Point2::new(x, y),
             center_params,
@@ -379,7 +383,11 @@ where
     #[inline]
     fn mul(self, rhs: Position<C, F, U>) -> Self::Output {
         let [x, y] = self.apply_array([rhs.x().value(), rhs.y().value()]);
-        Position::new_with_params(rhs.center_params.clone(), Quantity::new(x), Quantity::new(y))
+        Position::new_with_params(
+            rhs.center_params.clone(),
+            Quantity::new(x),
+            Quantity::new(y),
+        )
     }
 }
 
@@ -395,7 +403,11 @@ where
     #[inline]
     fn mul(self, rhs: Position<C, F, U>) -> Self::Output {
         let [x, y] = self.apply_array([rhs.x().value(), rhs.y().value()]);
-        Position::new_with_params(rhs.center_params.clone(), Quantity::new(x), Quantity::new(y))
+        Position::new_with_params(
+            rhs.center_params.clone(),
+            Quantity::new(x),
+            Quantity::new(y),
+        )
     }
 }
 
@@ -411,7 +423,11 @@ where
     #[inline]
     fn mul(self, rhs: Position<C, F, U>) -> Self::Output {
         let [x, y] = self.apply_point([rhs.x().value(), rhs.y().value()]);
-        Position::new_with_params(rhs.center_params.clone(), Quantity::new(x), Quantity::new(y))
+        Position::new_with_params(
+            rhs.center_params.clone(),
+            Quantity::new(x),
+            Quantity::new(y),
+        )
     }
 }
 
@@ -420,8 +436,8 @@ mod tests {
     use super::*;
     use crate::{DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame};
     use qtty::angular::Radians;
-    use qtty::{Quantity};
-    use qtty::units::{Meter};
+    use qtty::units::Meter;
+    use qtty::Quantity;
 
     #[derive(Debug, Copy, Clone, ReferenceFrame)]
     struct TestFrame;

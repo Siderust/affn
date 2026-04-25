@@ -3,8 +3,8 @@
 use super::{Direction, Displacement, Position};
 use crate::centers::ReferenceCenter;
 use crate::frames::ReferenceFrame;
-use qtty::{Quantity};
 use qtty::length::LengthUnit;
+use qtty::Quantity;
 
 /// Computes the line-of-sight direction from an observer to a target.
 ///

@@ -83,9 +83,9 @@ impl core::ops::Mul for Rotation2 {
 
     #[inline]
     fn mul(self, rhs: Self) -> Self::Output {
-        let m = self.m.map(|row| {
-            core::array::from_fn(|j| row[0] * rhs.m[0][j] + row[1] * rhs.m[1][j])
-        });
+        let m = self
+            .m
+            .map(|row| core::array::from_fn(|j| row[0] * rhs.m[0][j] + row[1] * rhs.m[1][j]));
         Self { m }
     }
 }

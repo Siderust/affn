@@ -375,8 +375,8 @@ impl<T: std::fmt::UpperExp + Copy> std::fmt::UpperExp for XYZ<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use qtty::units::Meter;
     use qtty::{Quantity, M};
-    use qtty::units::{Meter};
 
     #[test]
     fn test_xyz_basic_ops() {
