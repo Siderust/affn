@@ -26,7 +26,7 @@ use crate::algebra::{Point2, Space, Vector2};
 use crate::centers::ReferenceCenter;
 use crate::frames::ReferenceFrame;
 use crate::ops::{Isometry2, Rotation2, Translation2};
-use qtty::units::Radian;
+use qtty::angular::Radians;
 use qtty::length::LengthUnit;
 use qtty::{Quantity, Unit};
 
@@ -333,8 +333,8 @@ impl<F: ReferenceFrame> Direction<F> {
 
     #[inline]
     #[must_use]
-    pub fn angle(self) -> Radian {
-        Radian::new(self.y().atan2(self.x()))
+    pub fn angle(self) -> Radians {
+        Radians::new(self.y().atan2(self.x()))
     }
 
     #[inline]
@@ -419,7 +419,7 @@ where
 mod tests {
     use super::*;
     use crate::{DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame};
-    use qtty::units::Radian;
+    use qtty::angular::Radians;
     use qtty::{Quantity};
     use qtty::units::{Meter};
 
@@ -444,12 +444,12 @@ mod tests {
     #[test]
     fn rotation_translation_isometry() {
         let p = Position::<TestCenter, TestFrame, Meter>::new(1.0, 0.0);
-        let rotated = Rotation2::new(Radian::new(core::f64::consts::FRAC_PI_2)) * p;
+        let rotated = Rotation2::new(Radians::new(core::f64::consts::FRAC_PI_2)) * p;
         assert!(rotated.x().value().abs() < 1e-12);
         assert!((rotated.y().value() - 1.0).abs() < 1e-12);
 
         let iso = Isometry2::new(
-            Rotation2::new(Radian::new(core::f64::consts::FRAC_PI_2)),
+            Rotation2::new(Radians::new(core::f64::consts::FRAC_PI_2)),
             Translation2::<Meter>::new(1.0, 2.0),
         );
         let result = iso * p;
