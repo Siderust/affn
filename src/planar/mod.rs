@@ -482,4 +482,163 @@ mod tests {
         assert!((displacement.x().value() - 6.0).abs() < 1e-12);
         assert!((displacement.y().value() - 8.0).abs() < 1e-12);
     }
+
+    #[test]
+    fn vector_arithmetic() {
+        let a = Vector::<TestFrame, Meter>::new(1.0, 2.0);
+        let b = Vector::<TestFrame, Meter>::new(3.0, 4.0);
+        let sum = a + b;
+        assert_eq!(sum.x(), Quantity::<Meter>::new(4.0));
+        assert_eq!(sum.y(), Quantity::<Meter>::new(6.0));
+        let diff = b - a;
+        assert_eq!(diff.x(), Quantity::<Meter>::new(2.0));
+        assert_eq!(diff.y(), Quantity::<Meter>::new(2.0));
+        let neg = -a;
+        assert_eq!(neg.x(), Quantity::<Meter>::new(-1.0));
+        assert_eq!(neg.y(), Quantity::<Meter>::new(-2.0));
+    }
+
+    #[test]
+    fn vector_from_components() {
+        use qtty::units::Meter;
+        let qs = [Quantity::<Meter>::new(5.0), Quantity::<Meter>::new(-3.0)];
+        let v = Vector::<TestFrame, Meter>::from_components(qs);
+        assert_eq!(v.components()[0], Quantity::<Meter>::new(5.0));
+        assert_eq!(v.components()[1], Quantity::<Meter>::new(-3.0));
+    }
+
+    #[test]
+    fn vector_magnitude() {
+        let v = Vector::<TestFrame, Meter>::new(3.0, 4.0);
+        assert!((v.magnitude().value() - 5.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn vector_scale() {
+        let v = Vector::<TestFrame, Meter>::new(1.0, 2.0);
+        let scaled = v.scale(3.0);
+        assert_eq!(scaled.x(), Quantity::<Meter>::new(3.0));
+        assert_eq!(scaled.y(), Quantity::<Meter>::new(6.0));
+    }
+
+    #[test]
+    fn vector_to_unit() {
+        use qtty::units::Kilometer;
+        let v = Vector::<TestFrame, Meter>::new(1000.0, 2000.0);
+        let vkm: Vector<TestFrame, Kilometer> = v.to_unit();
+        assert!((vkm.x().value() - 1.0).abs() < 1e-10);
+        assert!((vkm.y().value() - 2.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn vector_reinterpret_frame() {
+        #[derive(Debug, Copy, Clone, ReferenceFrame)]
+        struct OtherFrame;
+        let v = Vector::<TestFrame, Meter>::new(1.0, 2.0);
+        let v2: Vector<OtherFrame, Meter> = v.reinterpret_frame();
+        assert_eq!(v2.x(), Quantity::<Meter>::new(1.0));
+    }
+
+    #[test]
+    fn vector_normalize_zero_returns_none() {
+        let v = Vector::<TestFrame, Meter>::new(0.0, 0.0);
+        assert!(v.normalize().is_none());
+    }
+
+    #[test]
+    fn vector_normalize_nonzero() {
+        let v = Vector::<TestFrame, Meter>::new(3.0, 4.0);
+        let dir = v.normalize().unwrap();
+        assert!((dir.x() - 0.6).abs() < 1e-12);
+        assert!((dir.y() - 0.8).abs() < 1e-12);
+    }
+
+    #[test]
+    fn position_distance() {
+        let p = Position::<TestCenter, TestFrame, Meter>::new(3.0, 4.0);
+        assert!((p.distance().value() - 5.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn position_to_unit() {
+        use qtty::units::Kilometer;
+        let p = Position::<TestCenter, TestFrame, Meter>::new(1000.0, 2000.0);
+        let pkm: Position<TestCenter, TestFrame, Kilometer> = p.to_unit();
+        assert!((pkm.x().value() - 1.0).abs() < 1e-10);
+        assert!((pkm.y().value() - 2.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn position_reinterpret_frame() {
+        #[derive(Debug, Copy, Clone, ReferenceFrame)]
+        struct OtherFrame;
+        let p = Position::<TestCenter, TestFrame, Meter>::new(1.0, 2.0);
+        let p2: Position<TestCenter, OtherFrame, Meter> = p.reinterpret_frame();
+        assert_eq!(p2.x(), Quantity::<Meter>::new(1.0));
+    }
+
+    #[test]
+    fn position_sub_displacement() {
+        let p = Position::<TestCenter, TestFrame, Meter>::new(5.0, 6.0);
+        let d = Vector::<TestFrame, Meter>::new(1.0, 2.0);
+        let result = p - d;
+        assert_eq!(result.x(), Quantity::<Meter>::new(4.0));
+        assert_eq!(result.y(), Quantity::<Meter>::new(4.0));
+    }
+
+    #[test]
+    fn direction_try_new_zero_returns_none() {
+        assert!(Direction::<TestFrame>::try_new(0.0, 0.0).is_none());
+    }
+
+    #[test]
+    fn direction_new_unit() {
+        let dir = Direction::<TestFrame>::new_unit(1.0, 0.0);
+        assert_eq!(dir.x(), 1.0);
+        assert_eq!(dir.y(), 0.0);
+    }
+
+    #[test]
+    fn direction_angle() {
+        let dir = Direction::<TestFrame>::new(1.0, 0.0);
+        assert!((dir.angle().value()).abs() < 1e-12);
+        let dir_up = Direction::<TestFrame>::new(0.0, 1.0);
+        assert!((dir_up.angle().value() - core::f64::consts::FRAC_PI_2).abs() < 1e-12);
+    }
+
+    #[test]
+    fn rotation2_mul_vector() {
+        let r = Rotation2::new(Radians::new(core::f64::consts::FRAC_PI_2));
+        let v = Vector::<TestFrame, Meter>::new(1.0, 0.0);
+        let rv = r * v;
+        assert!(rv.x().value().abs() < 1e-12);
+        assert!((rv.y().value() - 1.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn rotation2_mul_direction() {
+        let r = Rotation2::new(Radians::new(core::f64::consts::FRAC_PI_2));
+        let d = Direction::<TestFrame>::new(1.0, 0.0);
+        let rd = r * d;
+        assert!(rd.x().abs() < 1e-12);
+        assert!((rd.y() - 1.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn translation2_mul_position() {
+        let t = Translation2::<Meter>::new(3.0, 4.0);
+        let p = Position::<TestCenter, TestFrame, Meter>::new(1.0, 2.0);
+        let result = t * p;
+        assert_eq!(result.x(), Quantity::<Meter>::new(4.0));
+        assert_eq!(result.y(), Quantity::<Meter>::new(6.0));
+    }
+
+    #[test]
+    fn position_with_params() {
+        #[derive(Debug, Copy, Clone, ReferenceCenter)]
+        #[center(params = u32)]
+        struct ParamCenter;
+        let p = Position::<ParamCenter, TestFrame, Meter>::new_with_params(42u32, 1.0f64, 2.0f64);
+        assert_eq!(*p.center_params(), 42u32);
+    }
 }
