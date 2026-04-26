@@ -98,3 +98,92 @@ impl core::ops::Mul<[f64; 2]> for Rotation2 {
         self.apply_array(rhs)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use qtty::angular::Radians;
+    use std::f64::consts::{FRAC_PI_2, PI};
+
+    fn approx_eq(a: f64, b: f64) -> bool {
+        (a - b).abs() < 1e-12
+    }
+
+    fn approx_eq_arr(a: [f64; 2], b: [f64; 2]) -> bool {
+        approx_eq(a[0], b[0]) && approx_eq(a[1], b[1])
+    }
+
+    #[test]
+    fn identity_is_default() {
+        let id: Rotation2 = Default::default();
+        assert_eq!(id, Rotation2::IDENTITY);
+    }
+
+    #[test]
+    fn from_matrix_round_trip() {
+        let m = [[0.0_f64, -1.0], [1.0, 0.0]];
+        let r = Rotation2::from_matrix(m);
+        assert_eq!(r.as_matrix(), &m);
+    }
+
+    #[test]
+    fn new_90_deg_rotation() {
+        let r = Rotation2::new(Radians::new(FRAC_PI_2));
+        let result = r.apply_array([1.0, 0.0]);
+        assert!(approx_eq(result[0], 0.0));
+        assert!(approx_eq(result[1], 1.0));
+    }
+
+    #[test]
+    fn transpose_is_inverse() {
+        let r = Rotation2::new(Radians::new(PI / 4.0));
+        let rt = r.transpose();
+        let composed = r * rt;
+        assert!(approx_eq(composed.as_matrix()[0][0], 1.0));
+        assert!(approx_eq(composed.as_matrix()[0][1], 0.0));
+        assert!(approx_eq(composed.as_matrix()[1][0], 0.0));
+        assert!(approx_eq(composed.as_matrix()[1][1], 1.0));
+    }
+
+    #[test]
+    fn inverse_undoes_rotation() {
+        let r = Rotation2::new(Radians::new(FRAC_PI_2));
+        let v = [1.0, 0.0];
+        let rotated = r.apply_array(v);
+        let back = r.inverse().apply_array(rotated);
+        assert!(approx_eq_arr(back, v));
+    }
+
+    #[test]
+    fn compose_adds_angles() {
+        let r1 = Rotation2::new(Radians::new(FRAC_PI_2));
+        let r2 = Rotation2::new(Radians::new(FRAC_PI_2));
+        let combined = r1.compose(&r2);
+        let result = combined.apply_array([1.0, 0.0]);
+        // 180° rotation → [-1, 0]
+        assert!(approx_eq(result[0], -1.0));
+        assert!(approx_eq(result[1], 0.0));
+    }
+
+    #[test]
+    fn mul_rotation_same_as_compose() {
+        let r1 = Rotation2::new(Radians::new(1.0));
+        let r2 = Rotation2::new(Radians::new(0.5));
+        let via_mul = r1 * r2;
+        let via_compose = r1.compose(&r2);
+        assert_eq!(via_mul, via_compose);
+    }
+
+    #[test]
+    fn mul_array_same_as_apply_array() {
+        let r = Rotation2::new(Radians::new(0.7));
+        let v = [3.0, 4.0];
+        assert_eq!(r * v, r.apply_array(v));
+    }
+
+    #[test]
+    fn apply_array_identity_is_noop() {
+        let v = [5.0, -3.0];
+        assert_eq!(Rotation2::IDENTITY.apply_array(v), v);
+    }
+}

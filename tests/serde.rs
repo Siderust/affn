@@ -415,3 +415,137 @@ fn test_oriented_conic_serde_roundtrip() {
             .expect("deserialize OrientedConic<SemiMajorAxisParam, _>");
     assert_eq!(semi_major, semi_major_deserialized);
 }
+
+// =============================================================================
+// Ellipsoidal Position Serde Tests
+// =============================================================================
+
+#[test]
+fn test_ellipsoidal_position_serde_roundtrip() {
+    use affn::ellipsoidal::Position as EllipsoidalPosition;
+    use qtty::angular::Degrees;
+    use qtty::units::Meter;
+
+    let pos = EllipsoidalPosition::<TestCenter, TestFrame, Meter>::new(
+        Degrees::new(10.5),
+        Degrees::new(48.2),
+        qtty::Quantity::<Meter>::new(350.0),
+    );
+
+    let json = serde_json::to_string(&pos).expect("serialize ellipsoidal Position");
+    let deserialized: EllipsoidalPosition<TestCenter, TestFrame, Meter> =
+        serde_json::from_str(&json).expect("deserialize ellipsoidal Position");
+
+    assert_eq!(pos.lon, deserialized.lon);
+    assert_eq!(pos.lat, deserialized.lat);
+    assert_eq!(pos.height, deserialized.height);
+}
+
+#[test]
+fn test_ellipsoidal_position_serde_with_center_params() {
+    use affn::ellipsoidal::Position as EllipsoidalPosition;
+    use qtty::angular::Degrees;
+    use qtty::units::Meter;
+
+    let params = CenterParams {
+        x: 1.0,
+        y: 2.0,
+        z: 3.0,
+    };
+    let pos = EllipsoidalPosition::<ParameterizedCenter, TestFrame, Meter>::new_with_params(
+        params.clone(),
+        Degrees::new(-74.0),
+        Degrees::new(40.7),
+        qtty::Quantity::<Meter>::new(10.0),
+    );
+
+    let json = serde_json::to_string(&pos).expect("serialize ellipsoidal Position with params");
+    assert!(json.contains("center_params"));
+    let deserialized: EllipsoidalPosition<ParameterizedCenter, TestFrame, Meter> =
+        serde_json::from_str(&json).expect("deserialize ellipsoidal Position with params");
+
+    assert_eq!(pos.center_params(), deserialized.center_params());
+    assert_eq!(pos.lon, deserialized.lon);
+    assert_eq!(pos.lat, deserialized.lat);
+    assert_eq!(pos.height, deserialized.height);
+}
+
+#[test]
+fn test_ellipsoidal_position_serde_missing_field_error() {
+    use affn::ellipsoidal::Position as EllipsoidalPosition;
+    use qtty::units::Meter;
+
+    let bad_json = r#"{"lon_deg": 10.0, "lat_deg": 20.0}"#;
+    let result =
+        serde_json::from_str::<EllipsoidalPosition<TestCenter, TestFrame, Meter>>(bad_json);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_ellipsoidal_position_serde_duplicate_field_error() {
+    use affn::ellipsoidal::Position as EllipsoidalPosition;
+    use qtty::units::Meter;
+
+    let bad_json = r#"{"lon_deg": 10.0, "lon_deg": 11.0, "lat_deg": 20.0, "height": 0.0}"#;
+    let result =
+        serde_json::from_str::<EllipsoidalPosition<TestCenter, TestFrame, Meter>>(bad_json);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_ellipsoidal_position_serde_unknown_field_ignored() {
+    use affn::ellipsoidal::Position as EllipsoidalPosition;
+    use qtty::units::Meter;
+
+    let json_with_extra =
+        r#"{"lon_deg": 5.0, "lat_deg": 10.0, "height": 100.0, "unknown": "ignored"}"#;
+    let result =
+        serde_json::from_str::<EllipsoidalPosition<TestCenter, TestFrame, Meter>>(json_with_extra);
+    assert!(result.is_ok());
+}
+
+// =============================================================================
+// Conic serde error path tests
+// =============================================================================
+
+#[test]
+fn test_periapsis_param_serde_rejects_invalid() {
+    // eccentricity = -1 is invalid; deserialization should fail
+    let bad_json = r#"{"periapsis_distance": 1000.0, "eccentricity": -1.0}"#;
+    let result = serde_json::from_str::<PeriapsisParam<Meter>>(bad_json);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_semi_major_axis_param_serde_rejects_parabolic() {
+    let bad_json = r#"{"semi_major_axis": 1000.0, "eccentricity": 1.0}"#;
+    let result = serde_json::from_str::<SemiMajorAxisParam<Meter>>(bad_json);
+    assert!(result.is_err());
+}
+
+#[test]
+#[cfg(feature = "astro")]
+fn test_conic_orientation_serde_roundtrip() {
+    let ori =
+        ConicOrientation::<EclipticMeanJ2000>::try_new(30.0 * DEG, 60.0 * DEG, 90.0 * DEG).unwrap();
+    let json = serde_json::to_string(&ori).expect("serialize ConicOrientation");
+    let deserialized: ConicOrientation<EclipticMeanJ2000> =
+        serde_json::from_str(&json).expect("deserialize ConicOrientation");
+    assert_eq!(ori.inclination(), deserialized.inclination());
+    assert_eq!(
+        ori.longitude_of_ascending_node(),
+        deserialized.longitude_of_ascending_node()
+    );
+    assert_eq!(
+        ori.argument_of_periapsis(),
+        deserialized.argument_of_periapsis()
+    );
+}
+
+#[test]
+#[cfg(feature = "astro")]
+fn test_conic_orientation_serde_rejects_non_finite() {
+    let bad_json = r#"{"inclination": 0.0, "longitude_of_ascending_node": 0.0, "argument_of_periapsis": "inf"}"#;
+    let result = serde_json::from_str::<ConicOrientation<EclipticMeanJ2000>>(bad_json);
+    assert!(result.is_err());
+}
