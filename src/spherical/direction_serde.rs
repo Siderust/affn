@@ -1,10 +1,11 @@
-//! Serde implementation for Spherical Direction type
+//! Serde implementation for Spherical Direction type.
 
 use super::Direction;
 use crate::frames::SphericalNaming;
+use crate::serde_utils::{collect_field, skip_unknown, take_required};
 use crate::spherical::canonicalize_polar_azimuth;
 use qtty::angular::Degrees;
-use serde::de::{self, MapAccess, Visitor};
+use serde::de::{MapAccess, Visitor};
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize};
 use serde::{Deserializer, Serializer};
@@ -12,10 +13,7 @@ use std::fmt;
 use std::marker::PhantomData;
 
 impl<F: SphericalNaming> Serialize for Direction<F> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let polar_name = F::polar_name();
         let azimuth_name = F::azimuth_name();
 
@@ -27,10 +25,7 @@ impl<F: SphericalNaming> Serialize for Direction<F> {
 }
 
 impl<'de, F: SphericalNaming> Deserialize<'de> for Direction<F> {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         struct DirectionVisitor<F>(PhantomData<F>);
 
         impl<'de, F: SphericalNaming> Visitor<'de> for DirectionVisitor<F> {
@@ -45,10 +40,7 @@ impl<'de, F: SphericalNaming> Deserialize<'de> for Direction<F> {
                 )
             }
 
-            fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
-            where
-                M: MapAccess<'de>,
-            {
+            fn visit_map<M: MapAccess<'de>>(self, mut map: M) -> Result<Self::Value, M::Error> {
                 let polar_name = F::polar_name();
                 let azimuth_name = F::azimuth_name();
 
@@ -57,23 +49,16 @@ impl<'de, F: SphericalNaming> Deserialize<'de> for Direction<F> {
 
                 while let Some(key) = map.next_key::<String>()? {
                     if key == polar_name {
-                        if polar.is_some() {
-                            return Err(de::Error::duplicate_field(polar_name));
-                        }
-                        polar = Some(map.next_value()?);
+                        collect_field(&mut polar, polar_name, &mut map)?;
                     } else if key == azimuth_name {
-                        if azimuth.is_some() {
-                            return Err(de::Error::duplicate_field(azimuth_name));
-                        }
-                        azimuth = Some(map.next_value()?);
+                        collect_field(&mut azimuth, azimuth_name, &mut map)?;
                     } else {
-                        // Skip unknown fields
-                        let _ = map.next_value::<de::IgnoredAny>()?;
+                        skip_unknown(&mut map)?;
                     }
                 }
 
-                let polar = polar.ok_or_else(|| de::Error::missing_field(polar_name))?;
-                let azimuth = azimuth.ok_or_else(|| de::Error::missing_field(azimuth_name))?;
+                let polar = take_required(polar, polar_name)?;
+                let azimuth = take_required(azimuth, azimuth_name)?;
 
                 let (polar, azimuth) = canonicalize_polar_azimuth(polar, azimuth);
                 Ok(Direction::new_unchecked(polar, azimuth))

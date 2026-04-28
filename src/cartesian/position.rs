@@ -340,23 +340,22 @@ impl<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> Position<C, F, U> {
     ///
     /// # Panics
     ///
-    /// Panics if the positions have different center parameters.
-    /// For a non-panicking alternative, use [`try_distance_to`](Self::try_distance_to).
+    /// Panics if the two positions carry different `center_params` values.
+    /// The panic message includes the center type name and a debug print of
+    /// both `center_params` to aid diagnosis. For a non-panicking alternative,
+    /// use [`try_distance_to`](Self::try_distance_to), which returns a
+    /// [`CenterParamsMismatchError`] instead.
     ///
     /// # Note on Parameterized Centers
     ///
-    /// For centers with `Params = ()` (e.g., `Geocentric`, `Heliocentric`), this check
-    /// is a compile-time guarantee and has zero runtime cost. For parameterized centers
-    /// (e.g., `Topocentric` with `ObserverSite`), the check is performed at runtime.
+    /// This method is only available when the center has no runtime parameters
+    /// (`C::Params = ()`). For parameterized centers use the fallible
+    /// [`try_distance_to`](Self::try_distance_to) instead.
     #[inline]
     pub fn distance_to(&self, other: &Self) -> Quantity<U>
     where
-        C::Params: PartialEq,
+        C: ReferenceCenter<Params = ()>,
     {
-        assert!(
-            self.center_params == other.center_params,
-            "Cannot compute distance between positions with different center parameters"
-        );
         (self.xyz - other.xyz).magnitude()
     }
 
@@ -426,7 +425,7 @@ impl<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> Position<C, F, U> {
 
 impl<C, F, U> Sub for Position<C, F, U>
 where
-    C: ReferenceCenter,
+    C: ReferenceCenter<Params = ()>,
     F: ReferenceFrame,
     U: LengthUnit,
 {
@@ -434,23 +433,20 @@ where
 
     /// Computes the displacement vector from `other` to `self`.
     ///
-    /// # Panics
-    ///
-    /// Panics if the positions have different center parameters.
-    /// For a non-panicking alternative, use [`Position::checked_sub`].
+    /// This operator is only available when the center has no runtime
+    /// parameters (`C::Params = ()`), which is the case for the standard
+    /// centers `Geocentric`, `Heliocentric`, `Barycentric`, etc.
+    /// For parameterized centers (e.g., `Topocentric`) use the fallible
+    /// [`Position::checked_sub`] instead.
     #[inline]
     fn sub(self, other: Self) -> Self::Output {
-        assert!(
-            self.center_params == other.center_params,
-            "Cannot subtract positions with different center parameters"
-        );
         Displacement::from_xyz(self.xyz - other.xyz)
     }
 }
 
 impl<C, F, U> Sub<&Position<C, F, U>> for &Position<C, F, U>
 where
-    C: ReferenceCenter,
+    C: ReferenceCenter<Params = ()>,
     F: ReferenceFrame,
     U: LengthUnit,
 {
@@ -458,17 +454,33 @@ where
 
     /// Computes the displacement vector from `other` to `self`.
     ///
-    /// # Panics
-    ///
-    /// Panics if the positions have different center parameters.
+    /// Only available when `C::Params = ()`. Use [`Position::checked_sub`]
+    /// for parameterized centers.
     #[inline]
     fn sub(self, other: &Position<C, F, U>) -> Self::Output {
-        assert!(
-            self.center_params == other.center_params,
-            "Cannot subtract positions with different center parameters"
-        );
         Displacement::from_xyz(self.xyz - other.xyz)
     }
+}
+
+// `&Position - &Position` is hand-written above (it does not require
+// `C::Params: Copy`); the macro only supplies the remaining two reference
+// variants, which forward to the by-value impl and therefore inherit its
+// `Copy` requirement on `C::Params`.
+forward_ref_binop_lhs! {
+    impl[C, F, U] Sub, sub for Position<C, F, U>, Position<C, F, U>
+    where (
+        C: ReferenceCenter<Params = ()>,
+        F: ReferenceFrame,
+        U: LengthUnit,
+    )
+}
+forward_ref_binop_rhs! {
+    impl[C, F, U] Sub, sub for Position<C, F, U>, Position<C, F, U>
+    where (
+        C: ReferenceCenter<Params = ()>,
+        F: ReferenceFrame,
+        U: LengthUnit,
+    )
 }
 
 impl<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> Position<C, F, U> {
@@ -531,73 +543,50 @@ where
     }
 }
 
+forward_ref_binop! {
+    impl[C, F, U] Add, add for Position<C, F, U>, Displacement<F, U>
+    where (
+        C: ReferenceCenter,
+        F: ReferenceFrame,
+        U: LengthUnit,
+        C::Params: Copy,
+    )
+}
+
+forward_ref_binop! {
+    impl[C, F, U] Sub, sub for Position<C, F, U>, Displacement<F, U>
+    where (
+        C: ReferenceCenter,
+        F: ReferenceFrame,
+        U: LengthUnit,
+        C::Params: Copy,
+    )
+}
+
 // =============================================================================
 // Display
 // =============================================================================
 
-impl<C, F, U> std::fmt::Display for Position<C, F, U>
-where
-    C: ReferenceCenter,
-    F: ReferenceFrame,
-    U: LengthUnit,
-    Quantity<U>: std::fmt::Display,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl_quantity_fmt_triplet! {
+    impl[C, F, U] for Position<C, F, U>
+    where {
+        C: ReferenceCenter,
+        F: ReferenceFrame,
+        U: LengthUnit,
+    },
+    fmt_each: { Quantity<U>, },
+    |this, f, FmtOne| {
         write!(
             f,
             "Center: {}, Frame: {}, X: ",
             C::center_name(),
             F::frame_name()
         )?;
-        std::fmt::Display::fmt(&self.x(), f)?;
+        FmtOne::fmt(&this.x(), f)?;
         write!(f, ", Y: ")?;
-        std::fmt::Display::fmt(&self.y(), f)?;
+        FmtOne::fmt(&this.y(), f)?;
         write!(f, ", Z: ")?;
-        std::fmt::Display::fmt(&self.z(), f)
-    }
-}
-
-impl<C, F, U> std::fmt::LowerExp for Position<C, F, U>
-where
-    C: ReferenceCenter,
-    F: ReferenceFrame,
-    U: LengthUnit,
-    Quantity<U>: std::fmt::LowerExp,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Center: {}, Frame: {}, X: ",
-            C::center_name(),
-            F::frame_name()
-        )?;
-        std::fmt::LowerExp::fmt(&self.x(), f)?;
-        write!(f, ", Y: ")?;
-        std::fmt::LowerExp::fmt(&self.y(), f)?;
-        write!(f, ", Z: ")?;
-        std::fmt::LowerExp::fmt(&self.z(), f)
-    }
-}
-
-impl<C, F, U> std::fmt::UpperExp for Position<C, F, U>
-where
-    C: ReferenceCenter,
-    F: ReferenceFrame,
-    U: LengthUnit,
-    Quantity<U>: std::fmt::UpperExp,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Center: {}, Frame: {}, X: ",
-            C::center_name(),
-            F::frame_name()
-        )?;
-        std::fmt::UpperExp::fmt(&self.x(), f)?;
-        write!(f, ", Y: ")?;
-        std::fmt::UpperExp::fmt(&self.y(), f)?;
-        write!(f, ", Z: ")?;
-        std::fmt::UpperExp::fmt(&self.z(), f)
+        FmtOne::fmt(&this.z(), f)
     }
 }
 
@@ -788,18 +777,22 @@ mod tests {
 
     #[test]
     fn test_distance_to_same_params_succeeds() {
+        // Parameterized centers must use try_distance_to; distance_to requires Params = ().
         let params = TestParams { id: 1 };
         let a = ParamPos::new_with_params(params.clone(), 0.0, 0.0, 0.0);
         let b = ParamPos::new_with_params(params, 3.0, 4.0, 0.0);
-        assert!((a.distance_to(&b).value() - 5.0).abs() < 1e-12);
+        let d = a.try_distance_to(&b).unwrap();
+        assert!((d.value() - 5.0).abs() < 1e-12);
     }
 
     #[test]
-    #[should_panic(expected = "different center parameters")]
-    fn test_distance_to_mismatched_params_panics() {
+    fn test_distance_to_mismatched_params_err() {
+        // Parameterized centers use the fallible try_distance_to; mismatching
+        // params produce Err rather than a panic. Using Sub (operator -) for
+        // a parameterized center is a compile-time error since affn 0.6.
         let a = ParamPos::new_with_params(TestParams { id: 1 }, 0.0, 0.0, 0.0);
         let b = ParamPos::new_with_params(TestParams { id: 2 }, 3.0, 4.0, 0.0);
-        let _ = a.distance_to(&b);
+        assert!(a.try_distance_to(&b).is_err());
     }
 
     #[test]
@@ -822,13 +815,10 @@ mod tests {
         assert!(err.to_string().contains("center parameter mismatch"));
     }
 
-    #[test]
-    #[should_panic(expected = "different center parameters")]
-    fn test_sub_mismatched_params_panics() {
-        let a = ParamPos::new_with_params(TestParams { id: 1 }, 1.0, 2.0, 3.0);
-        let b = ParamPos::new_with_params(TestParams { id: 2 }, 4.0, 5.0, 6.0);
-        let _ = a - b;
-    }
+    // NOTE: `test_sub_mismatched_params_panics` removed — since affn 0.6 the
+    // `Sub` operator is only available when `C::Params = ()`, so attempting
+    // `ParamPos - ParamPos` is a *compile-time* error. Mismatched-param
+    // subtraction must go through `checked_sub` (see tests below).
 
     #[test]
     fn test_checked_sub_same_params_ok() {

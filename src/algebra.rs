@@ -71,7 +71,7 @@ pub type Vector3<Sp, U> = Vector<Sp, U, 3>;
 
 #[inline]
 fn scaled<U: Unit>(value: Quantity<U>, factor: f64) -> Quantity<U> {
-    Quantity::new(value.value() * factor)
+    value * factor
 }
 
 impl<Sp: Space, U: Unit, const N: usize> Vector<Sp, U, N> {
@@ -338,6 +338,10 @@ impl<Sp: Space, U: Unit, const N: usize> Add for Vector<Sp, U, N> {
     }
 }
 
+forward_ref_binop! {
+    impl[Sp: Space, U: Unit, const N: usize] Add, add for Vector<Sp, U, N>, Vector<Sp, U, N>
+}
+
 impl<Sp: Space, U: Unit, const N: usize> Sub for Vector<Sp, U, N> {
     type Output = Self;
 
@@ -349,6 +353,10 @@ impl<Sp: Space, U: Unit, const N: usize> Sub for Vector<Sp, U, N> {
     }
 }
 
+forward_ref_binop! {
+    impl[Sp: Space, U: Unit, const N: usize] Sub, sub for Vector<Sp, U, N>, Vector<Sp, U, N>
+}
+
 impl<Sp: Space, U: Unit, const N: usize> Neg for Vector<Sp, U, N> {
     type Output = Self;
 
@@ -356,6 +364,10 @@ impl<Sp: Space, U: Unit, const N: usize> Neg for Vector<Sp, U, N> {
     fn neg(self) -> Self::Output {
         Self::from_components(self.components.map(|c| -c))
     }
+}
+
+forward_ref_unop! {
+    impl[Sp: Space, U: Unit, const N: usize] Neg, neg for Vector<Sp, U, N>
 }
 
 impl<Sp: Space, U: Unit, const N: usize> Sub for Point<Sp, U, N> {
@@ -369,6 +381,10 @@ impl<Sp: Space, U: Unit, const N: usize> Sub for Point<Sp, U, N> {
     }
 }
 
+forward_ref_binop! {
+    impl[Sp: Space, U: Unit, const N: usize] Sub, sub for Point<Sp, U, N>, Point<Sp, U, N>
+}
+
 impl<Sp: Space, U: Unit, const N: usize> Add<Vector<Sp, U, N>> for Point<Sp, U, N> {
     type Output = Self;
 
@@ -378,6 +394,10 @@ impl<Sp: Space, U: Unit, const N: usize> Add<Vector<Sp, U, N>> for Point<Sp, U, 
             self.coordinates[i] + rhs.components[i]
         }))
     }
+}
+
+forward_ref_binop! {
+    impl[Sp: Space, U: Unit, const N: usize] Add, add for Point<Sp, U, N>, Vector<Sp, U, N>
 }
 
 impl<Sp: Space, U: Unit, const N: usize> Sub<Vector<Sp, U, N>> for Point<Sp, U, N> {
@@ -391,8 +411,15 @@ impl<Sp: Space, U: Unit, const N: usize> Sub<Vector<Sp, U, N>> for Point<Sp, U, 
     }
 }
 
+forward_ref_binop! {
+    impl[Sp: Space, U: Unit, const N: usize] Sub, sub for Point<Sp, U, N>, Vector<Sp, U, N>
+}
+
 #[inline]
-fn two_sum(a: f64, b: f64) -> (f64, f64) {
+fn two_sum<T>(a: T, b: T) -> (T, T)
+where
+    T: Copy + std::ops::Add<Output = T> + std::ops::Sub<Output = T>,
+{
     let s = a + b;
     let bb = s - a;
     let err = (a - (s - bb)) + (b - bb);
@@ -400,7 +427,10 @@ fn two_sum(a: f64, b: f64) -> (f64, f64) {
 }
 
 #[inline]
-fn normalize_pair(hi: f64, lo: f64) -> (f64, f64) {
+fn normalize_pair<T>(hi: T, lo: T) -> (T, T)
+where
+    T: Copy + std::ops::Add<Output = T> + std::ops::Sub<Output = T>,
+{
     let (sum, err) = two_sum(hi, lo);
     let (sum2, err2) = two_sum(sum, err);
     (sum2, err2)
@@ -435,11 +465,8 @@ impl<U: Unit> SplitQuantity<U> {
     pub fn new<T: Into<Quantity<U>>, R: Into<Quantity<U>>>(hi: T, lo: R) -> Self {
         let hi = hi.into();
         let lo = lo.into();
-        let (hi, lo) = normalize_pair(hi.value(), lo.value());
-        Self {
-            hi: Quantity::new(hi),
-            lo: Quantity::new(lo),
-        }
+        let (hi, lo) = normalize_pair(hi, lo);
+        Self { hi, lo }
     }
 
     /// Creates a split quantity from a single quantity.
@@ -528,6 +555,8 @@ impl<U: Unit> Add<Quantity<U>> for SplitQuantity<U> {
     }
 }
 
+forward_ref_binop! { impl[U: Unit] Add, add for SplitQuantity<U>, Quantity<U> }
+
 impl<U: Unit> Sub<Quantity<U>> for SplitQuantity<U> {
     type Output = Self;
 
@@ -537,6 +566,8 @@ impl<U: Unit> Sub<Quantity<U>> for SplitQuantity<U> {
     }
 }
 
+forward_ref_binop! { impl[U: Unit] Sub, sub for SplitQuantity<U>, Quantity<U> }
+
 impl<U: Unit> Sub for SplitQuantity<U> {
     type Output = Quantity<U>;
 
@@ -545,6 +576,8 @@ impl<U: Unit> Sub for SplitQuantity<U> {
         self.difference(rhs)
     }
 }
+
+forward_ref_binop! { impl[U: Unit] Sub, sub for SplitQuantity<U>, SplitQuantity<U> }
 
 /// A compensated one-dimensional point.
 ///
@@ -643,6 +676,8 @@ impl<Sp: Space, U: Unit> Sub for SplitPoint1<Sp, U> {
     }
 }
 
+forward_ref_binop! { impl[Sp: Space, U: Unit] Sub, sub for SplitPoint1<Sp, U>, SplitPoint1<Sp, U> }
+
 impl<Sp: Space, U: Unit> Add<Quantity<U>> for SplitPoint1<Sp, U> {
     type Output = Self;
 
@@ -652,6 +687,8 @@ impl<Sp: Space, U: Unit> Add<Quantity<U>> for SplitPoint1<Sp, U> {
     }
 }
 
+forward_ref_binop! { impl[Sp: Space, U: Unit] Add, add for SplitPoint1<Sp, U>, Quantity<U> }
+
 impl<Sp: Space, U: Unit> Sub<Quantity<U>> for SplitPoint1<Sp, U> {
     type Output = Self;
 
@@ -660,6 +697,8 @@ impl<Sp: Space, U: Unit> Sub<Quantity<U>> for SplitPoint1<Sp, U> {
         Self::from_split(self.coordinate - rhs)
     }
 }
+
+forward_ref_binop! { impl[Sp: Space, U: Unit] Sub, sub for SplitPoint1<Sp, U>, Quantity<U> }
 
 /// One-dimensional affine map between axes with the same unit.
 ///

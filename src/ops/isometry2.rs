@@ -98,6 +98,8 @@ impl<U: Unit> core::ops::Mul for Isometry2<U> {
     }
 }
 
+forward_ref_binop! { impl[U: Unit] Mul, mul for Isometry2<U>, Isometry2<U> }
+
 impl<U: Unit> core::ops::Mul<[f64; 2]> for Isometry2<U> {
     type Output = [f64; 2];
 
@@ -106,6 +108,8 @@ impl<U: Unit> core::ops::Mul<[f64; 2]> for Isometry2<U> {
         self.apply_point(rhs)
     }
 }
+
+forward_ref_binop! { impl[U: Unit] Mul, mul for Isometry2<U>, [f64; 2] }
 
 #[cfg(test)]
 mod tests {

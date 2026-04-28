@@ -1,19 +1,17 @@
-//! Serde implementations for Cartesian Position type
+//! Serde implementations for Cartesian Position type.
 
 use super::Position;
 use crate::cartesian::xyz::XYZ;
 use crate::centers::ReferenceCenter;
 use crate::frames::ReferenceFrame;
+use crate::serde_utils::{collect_field, is_zero_sized, skip_unknown, take_required};
 use qtty::length::LengthUnit;
 use qtty::Quantity;
+use serde::de::{MapAccess, Visitor};
+use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::marker::PhantomData;
-
-use crate::serde_utils::is_zero_sized;
-
-// =============================================================================
-// Position Serde Implementation
-// =============================================================================
 
 impl<C, F, U> Serialize for Position<C, F, U>
 where
@@ -22,23 +20,15 @@ where
     U: LengthUnit,
     C::Params: Serialize,
 {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        use serde::ser::SerializeStruct;
-
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let has_params = !is_zero_sized(self.center_params());
         let field_count = if has_params { 2 } else { 1 };
 
         let mut state = serializer.serialize_struct("Position", field_count)?;
         state.serialize_field("xyz", &self.xyz)?;
-
-        // Only serialize center_params if it's not zero-sized
         if has_params {
             state.serialize_field("center_params", self.center_params())?;
         }
-
         state.end()
     }
 }
@@ -50,23 +40,12 @@ where
     U: LengthUnit,
     C::Params: Deserialize<'de> + Default,
 {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        #[derive(Deserialize)]
-        #[serde(field_identifier, rename_all = "lowercase")]
-        enum Field {
-            Xyz,
-            #[serde(rename = "center_params")]
-            CenterParams,
-        }
-
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         struct PositionVisitor<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit>(
             PhantomData<(C, F, U)>,
         );
 
-        impl<'de, C, F, U> serde::de::Visitor<'de> for PositionVisitor<C, F, U>
+        impl<'de, C, F, U> Visitor<'de> for PositionVisitor<C, F, U>
         where
             C: ReferenceCenter,
             F: ReferenceFrame,
@@ -75,38 +54,26 @@ where
         {
             type Value = Position<C, F, U>;
 
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("struct Position")
             }
 
-            fn visit_map<V>(self, mut map: V) -> Result<Position<C, F, U>, V::Error>
-            where
-                V: serde::de::MapAccess<'de>,
-            {
-                let mut xyz = None;
-                let mut center_params = None;
+            fn visit_map<V: MapAccess<'de>>(self, mut map: V) -> Result<Self::Value, V::Error> {
+                let mut xyz: Option<XYZ<Quantity<U>>> = None;
+                let mut center_params: Option<C::Params> = None;
 
-                while let Some(key) = map.next_key()? {
-                    match key {
-                        Field::Xyz => {
-                            if xyz.is_some() {
-                                return Err(serde::de::Error::duplicate_field("xyz"));
-                            }
-                            xyz = Some(map.next_value()?);
+                while let Some(key) = map.next_key::<String>()? {
+                    match key.as_str() {
+                        "xyz" => collect_field(&mut xyz, "xyz", &mut map)?,
+                        "center_params" => {
+                            collect_field(&mut center_params, "center_params", &mut map)?
                         }
-                        Field::CenterParams => {
-                            if center_params.is_some() {
-                                return Err(serde::de::Error::duplicate_field("center_params"));
-                            }
-                            center_params = Some(map.next_value()?);
-                        }
+                        _ => skip_unknown(&mut map)?,
                     }
                 }
 
-                let xyz: XYZ<Quantity<U>> =
-                    xyz.ok_or_else(|| serde::de::Error::missing_field("xyz"))?;
+                let xyz = take_required(xyz, "xyz")?;
                 let center_params = center_params.unwrap_or_default();
-
                 Ok(Position::from_xyz_with_params(center_params, xyz))
             }
         }

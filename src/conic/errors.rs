@@ -6,7 +6,7 @@ use std::fmt;
 use serde::{Deserialize, Serialize};
 
 /// Validation errors for conic geometry models.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum ConicValidationError {
     /// Eccentricity must be finite and non-negative.
@@ -19,6 +19,17 @@ pub enum ConicValidationError {
     ParabolicSemiMajorAxis,
     /// Orientation angles must be finite.
     InvalidOrientation,
+    /// A strict orientation constructor received an angle outside its canonical range.
+    ///
+    /// `field` identifies the offending angle (`"inclination"`,
+    /// `"longitude_of_ascending_node"`, or `"argument_of_periapsis"`).
+    /// `value` is the rejected value, in degrees.
+    OutOfRange {
+        /// Name of the angle field that was out of range.
+        field: &'static str,
+        /// The rejected value, expressed in degrees.
+        value: f64,
+    },
 }
 
 impl fmt::Display for ConicValidationError {
@@ -34,6 +45,9 @@ impl fmt::Display for ConicValidationError {
                 )
             }
             Self::InvalidOrientation => write!(f, "orientation angles must be finite"),
+            Self::OutOfRange { field, value } => {
+                write!(f, "orientation angle `{field}` is out of canonical range: {value}°")
+            }
         }
     }
 }

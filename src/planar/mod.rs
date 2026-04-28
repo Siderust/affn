@@ -153,6 +153,8 @@ impl<F: ReferenceFrame, U: Unit> Add for Vector<F, U> {
     }
 }
 
+forward_ref_binop! { impl[F: ReferenceFrame, U: Unit] Add, add for Vector<F, U>, Vector<F, U> }
+
 impl<F: ReferenceFrame, U: Unit> Sub for Vector<F, U> {
     type Output = Self;
 
@@ -164,6 +166,8 @@ impl<F: ReferenceFrame, U: Unit> Sub for Vector<F, U> {
     }
 }
 
+forward_ref_binop! { impl[F: ReferenceFrame, U: Unit] Sub, sub for Vector<F, U>, Vector<F, U> }
+
 impl<F: ReferenceFrame, U: Unit> Neg for Vector<F, U> {
     type Output = Self;
 
@@ -172,6 +176,8 @@ impl<F: ReferenceFrame, U: Unit> Neg for Vector<F, U> {
         Self { xy: -self.xy }
     }
 }
+
+forward_ref_unop! { impl[F: ReferenceFrame, U: Unit] Neg, neg for Vector<F, U> }
 
 impl<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> Position<C, F, U> {
     #[inline]
@@ -259,6 +265,16 @@ where
     }
 }
 
+forward_ref_binop! {
+    impl[C, F, U] Sub, sub for Position<C, F, U>, Position<C, F, U>
+    where (
+        C: ReferenceCenter,
+        F: ReferenceFrame,
+        U: LengthUnit,
+        C::Params: Copy,
+    )
+}
+
 impl<C, F, U> Add<Displacement<F, U>> for Position<C, F, U>
 where
     C: ReferenceCenter,
@@ -277,6 +293,16 @@ where
     }
 }
 
+forward_ref_binop! {
+    impl[C, F, U] Add, add for Position<C, F, U>, Displacement<F, U>
+    where (
+        C: ReferenceCenter,
+        F: ReferenceFrame,
+        U: LengthUnit,
+        C::Params: Copy,
+    )
+}
+
 impl<C, F, U> Sub<Displacement<F, U>> for Position<C, F, U>
 where
     C: ReferenceCenter,
@@ -293,6 +319,16 @@ where
             center_params: self.center_params.clone(),
         }
     }
+}
+
+forward_ref_binop! {
+    impl[C, F, U] Sub, sub for Position<C, F, U>, Displacement<F, U>
+    where (
+        C: ReferenceCenter,
+        F: ReferenceFrame,
+        U: LengthUnit,
+        C::Params: Copy,
+    )
 }
 
 impl<F: ReferenceFrame> Direction<F> {
@@ -361,6 +397,8 @@ impl<F: ReferenceFrame, U: Unit> Mul<Vector<F, U>> for Rotation2 {
     }
 }
 
+forward_ref_binop! { impl[F: ReferenceFrame, U: Unit] Mul, mul for Rotation2, Vector<F, U> }
+
 impl<F: ReferenceFrame> Mul<Direction<F>> for Rotation2 {
     type Output = Direction<F>;
 
@@ -370,6 +408,8 @@ impl<F: ReferenceFrame> Mul<Direction<F>> for Rotation2 {
         Direction::new(x, y)
     }
 }
+
+forward_ref_binop! { impl[F: ReferenceFrame] Mul, mul for Rotation2, Direction<F> }
 
 impl<C, F, U> Mul<Position<C, F, U>> for Rotation2
 where
@@ -389,6 +429,16 @@ where
             Quantity::new(y),
         )
     }
+}
+
+forward_ref_binop! {
+    impl[C, F, U] Mul, mul for Rotation2, Position<C, F, U>
+    where (
+        C: ReferenceCenter,
+        F: ReferenceFrame,
+        U: LengthUnit,
+        C::Params: Copy,
+    )
 }
 
 impl<C, F, U> Mul<Position<C, F, U>> for Translation2<U>
@@ -411,6 +461,16 @@ where
     }
 }
 
+forward_ref_binop! {
+    impl[C, F, U] Mul, mul for Translation2<U>, Position<C, F, U>
+    where (
+        C: ReferenceCenter,
+        F: ReferenceFrame,
+        U: LengthUnit,
+        C::Params: Copy,
+    )
+}
+
 impl<C, F, U> Mul<Position<C, F, U>> for Isometry2<U>
 where
     C: ReferenceCenter,
@@ -429,6 +489,16 @@ where
             Quantity::new(y),
         )
     }
+}
+
+forward_ref_binop! {
+    impl[C, F, U] Mul, mul for Isometry2<U>, Position<C, F, U>
+    where (
+        C: ReferenceCenter,
+        F: ReferenceFrame,
+        U: LengthUnit,
+        C::Params: Copy,
+    )
 }
 
 #[cfg(test)]

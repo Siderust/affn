@@ -93,11 +93,11 @@ impl<U: LengthUnit> PeriapsisParam<U> {
         if e == 1.0 {
             return None;
         }
-        let a = self.periapsis_distance.value() / (1.0 - e).abs();
-        if !a.is_finite() || a <= 0.0 {
+        let a = self.periapsis_distance * (1.0 / (1.0 - e).abs());
+        if !a.is_finite() || a <= Quantity::new(0.0) {
             return None;
         }
-        Some(SemiMajorAxisParam::new_unchecked(Quantity::new(a), e))
+        Some(SemiMajorAxisParam::new_unchecked(a, e))
     }
 
     /// Classifies this shape, returning a kind-typed wrapper with identical data.

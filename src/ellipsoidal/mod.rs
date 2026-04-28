@@ -23,7 +23,7 @@
 //! explicit, ellipsoid-aware conversion.
 
 pub mod position;
-pub use position::Position;
+pub use position::{GeodeticConvergenceError, Position};
 
 // =============================================================================
 // Shared normalisation helpers

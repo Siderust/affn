@@ -88,11 +88,11 @@ impl<U: LengthUnit> SemiMajorAxisParam<U> {
     /// distance.
     pub fn to_periapsis(&self) -> Option<PeriapsisParam<U>> {
         let e = self.eccentricity;
-        let q = self.semi_major_axis.value() * (1.0 - e).abs();
-        if !q.is_finite() || q <= 0.0 {
+        let q = self.semi_major_axis * (1.0 - e).abs();
+        if !q.is_finite() || q <= Quantity::new(0.0) {
             return None;
         }
-        Some(PeriapsisParam::new_unchecked(Quantity::new(q), e))
+        Some(PeriapsisParam::new_unchecked(q, e))
     }
 
     /// Classifies this shape, returning a kind-typed wrapper with identical data.

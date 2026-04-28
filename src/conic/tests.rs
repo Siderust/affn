@@ -576,3 +576,156 @@ fn orientation_rejects_nan_argument_of_periapsis() {
         Err(ConicValidationError::InvalidOrientation)
     );
 }
+
+// ==================== ConicOrientation canonicalization ====================
+
+const ORIENTATION_EPS: f64 = 1e-12;
+
+#[test]
+fn orientation_try_new_wraps_longitude_of_ascending_node() {
+    // 400° should wrap to 40°.
+    let o = ConicOrientation::<TestFrame>::try_new(
+        45.0 * DEG,
+        400.0 * DEG,
+        30.0 * DEG,
+    )
+    .unwrap();
+    assert!((o.longitude_of_ascending_node().value() - 40.0).abs() < ORIENTATION_EPS);
+    assert!((o.inclination().value() - 45.0).abs() < ORIENTATION_EPS);
+    assert!((o.argument_of_periapsis().value() - 30.0).abs() < ORIENTATION_EPS);
+}
+
+#[test]
+fn orientation_try_new_wraps_argument_of_periapsis_negative() {
+    // -30° should wrap to 330°.
+    let o = ConicOrientation::<TestFrame>::try_new(
+        45.0 * DEG,
+        20.0 * DEG,
+        -30.0 * DEG,
+    )
+    .unwrap();
+    assert!((o.argument_of_periapsis().value() - 330.0).abs() < ORIENTATION_EPS);
+}
+
+#[test]
+fn orientation_try_new_canonicalizes_negative_inclination() {
+    // -10° folds via rem_euclid to 350°, which exceeds 180°, so it reflects to
+    // 360° - 350° = 10°, and the LAN is rotated by 180°.
+    let o = ConicOrientation::<TestFrame>::try_new(
+        -10.0 * DEG,
+        20.0 * DEG,
+        30.0 * DEG,
+    )
+    .unwrap();
+    assert!(o.inclination().value() >= 0.0 && o.inclination().value() <= 180.0);
+    assert!((o.inclination().value() - 10.0).abs() < ORIENTATION_EPS);
+    assert!((o.longitude_of_ascending_node().value() - 200.0).abs() < ORIENTATION_EPS);
+    // AoP is unaffected by inclination folding.
+    assert!((o.argument_of_periapsis().value() - 30.0).abs() < ORIENTATION_EPS);
+}
+
+#[test]
+fn orientation_try_new_canonicalizes_large_inclination() {
+    // 4 rad ≈ 229.183°. Inside [0,360), exceeds 180°, so reflects to
+    // 360° - 229.183° ≈ 130.817°, and LAN rotates by 180°.
+    let raw_deg = 4.0_f64.to_degrees();
+    let o = ConicOrientation::<TestFrame>::try_new(
+        Degrees::new(raw_deg),
+        20.0 * DEG,
+        30.0 * DEG,
+    )
+    .unwrap();
+    assert!(o.inclination().value() >= 0.0 && o.inclination().value() <= 180.0);
+    let expected_i = 360.0 - raw_deg;
+    assert!((o.inclination().value() - expected_i).abs() < ORIENTATION_EPS);
+    assert!((o.longitude_of_ascending_node().value() - 200.0).abs() < ORIENTATION_EPS);
+}
+
+#[test]
+fn orientation_try_new_strict_accepts_canonical_values() {
+    let o = ConicOrientation::<TestFrame>::try_new_strict(
+        45.0 * DEG,
+        20.0 * DEG,
+        30.0 * DEG,
+    )
+    .unwrap();
+    assert!((o.inclination().value() - 45.0).abs() < ORIENTATION_EPS);
+}
+
+#[test]
+fn orientation_try_new_strict_rejects_negative_inclination() {
+    let err = ConicOrientation::<TestFrame>::try_new_strict(
+        -10.0 * DEG,
+        20.0 * DEG,
+        30.0 * DEG,
+    )
+    .unwrap_err();
+    match err {
+        ConicValidationError::OutOfRange { field, value } => {
+            assert_eq!(field, "inclination");
+            assert!((value - -10.0).abs() < ORIENTATION_EPS);
+        }
+        other => panic!("expected OutOfRange, got {other:?}"),
+    }
+}
+
+#[test]
+fn orientation_try_new_strict_rejects_large_inclination() {
+    let raw_deg = 4.0_f64.to_degrees();
+    let err = ConicOrientation::<TestFrame>::try_new_strict(
+        Degrees::new(raw_deg),
+        20.0 * DEG,
+        30.0 * DEG,
+    )
+    .unwrap_err();
+    assert!(matches!(
+        err,
+        ConicValidationError::OutOfRange { field: "inclination", .. }
+    ));
+}
+
+#[test]
+fn orientation_try_new_strict_rejects_out_of_range_lan() {
+    let err = ConicOrientation::<TestFrame>::try_new_strict(
+        45.0 * DEG,
+        400.0 * DEG,
+        30.0 * DEG,
+    )
+    .unwrap_err();
+    assert!(matches!(
+        err,
+        ConicValidationError::OutOfRange {
+            field: "longitude_of_ascending_node",
+            ..
+        }
+    ));
+}
+
+#[test]
+fn orientation_try_new_strict_rejects_out_of_range_aop() {
+    let err = ConicOrientation::<TestFrame>::try_new_strict(
+        45.0 * DEG,
+        20.0 * DEG,
+        -30.0 * DEG,
+    )
+    .unwrap_err();
+    assert!(matches!(
+        err,
+        ConicValidationError::OutOfRange {
+            field: "argument_of_periapsis",
+            ..
+        }
+    ));
+}
+
+#[test]
+fn orientation_try_new_strict_rejects_nan() {
+    assert_eq!(
+        ConicOrientation::<TestFrame>::try_new_strict(
+            Degrees::new(f64::NAN),
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+        ),
+        Err(ConicValidationError::InvalidOrientation)
+    );
+}

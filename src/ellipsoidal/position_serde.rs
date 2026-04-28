@@ -8,19 +8,15 @@
 use super::Position;
 use crate::centers::ReferenceCenter;
 use crate::frames::ReferenceFrame;
-use crate::serde_utils::is_zero_sized;
+use crate::serde_utils::{collect_field, is_zero_sized, skip_unknown, take_required};
 use qtty::angular::Degrees;
 use qtty::length::LengthUnit;
 use qtty::Quantity;
-use serde::de::{self, MapAccess, Visitor};
+use serde::de::{MapAccess, Visitor};
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize, Serializer};
 use std::fmt;
 use std::marker::PhantomData;
-
-// =============================================================================
-// Serialize
-// =============================================================================
 
 impl<C, F, U> Serialize for Position<C, F, U>
 where
@@ -29,10 +25,7 @@ where
     F: ReferenceFrame,
     U: LengthUnit,
 {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let has_params = !is_zero_sized(&self.center_params);
         let field_count = if has_params { 4 } else { 3 };
         let mut state = serializer.serialize_struct("Position", field_count)?;
@@ -46,10 +39,6 @@ where
     }
 }
 
-// =============================================================================
-// Deserialize
-// =============================================================================
-
 impl<'de, C, F, U> Deserialize<'de> for Position<C, F, U>
 where
     C: ReferenceCenter,
@@ -57,10 +46,7 @@ where
     F: ReferenceFrame,
     U: LengthUnit,
 {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         struct EllipsoidalVisitor<C, F, U>(PhantomData<(C, F, U)>);
 
         impl<'de, C, F, U> Visitor<'de> for EllipsoidalVisitor<C, F, U>
@@ -79,10 +65,7 @@ where
                 )
             }
 
-            fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
-            where
-                M: MapAccess<'de>,
-            {
+            fn visit_map<M: MapAccess<'de>>(self, mut map: M) -> Result<Self::Value, M::Error> {
                 let mut lon: Option<Degrees> = None;
                 let mut lat: Option<Degrees> = None;
                 let mut height: Option<Quantity<U>> = None;
@@ -90,39 +73,19 @@ where
 
                 while let Some(key) = map.next_key::<String>()? {
                     match key.as_str() {
-                        "lon_deg" => {
-                            if lon.is_some() {
-                                return Err(de::Error::duplicate_field("lon_deg"));
-                            }
-                            lon = Some(map.next_value()?);
-                        }
-                        "lat_deg" => {
-                            if lat.is_some() {
-                                return Err(de::Error::duplicate_field("lat_deg"));
-                            }
-                            lat = Some(map.next_value()?);
-                        }
-                        "height" => {
-                            if height.is_some() {
-                                return Err(de::Error::duplicate_field("height"));
-                            }
-                            height = Some(map.next_value()?);
-                        }
+                        "lon_deg" => collect_field(&mut lon, "lon_deg", &mut map)?,
+                        "lat_deg" => collect_field(&mut lat, "lat_deg", &mut map)?,
+                        "height" => collect_field(&mut height, "height", &mut map)?,
                         "center_params" => {
-                            if center_params.is_some() {
-                                return Err(de::Error::duplicate_field("center_params"));
-                            }
-                            center_params = Some(map.next_value()?);
+                            collect_field(&mut center_params, "center_params", &mut map)?
                         }
-                        _ => {
-                            let _ = map.next_value::<de::IgnoredAny>()?;
-                        }
+                        _ => skip_unknown(&mut map)?,
                     }
                 }
 
-                let lon = lon.ok_or_else(|| de::Error::missing_field("lon_deg"))?;
-                let lat = lat.ok_or_else(|| de::Error::missing_field("lat_deg"))?;
-                let height = height.ok_or_else(|| de::Error::missing_field("height"))?;
+                let lon = take_required(lon, "lon_deg")?;
+                let lat = take_required(lat, "lat_deg")?;
+                let height = take_required(height, "height")?;
                 let center_params = center_params.unwrap_or_default();
 
                 Ok(Position {

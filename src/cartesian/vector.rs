@@ -49,7 +49,7 @@
 use super::xyz::XYZ;
 use crate::frames::ReferenceFrame;
 use qtty::length::LengthUnit;
-use qtty::{Quantity, Unit};
+use qtty::{Quantity, Unit, UnitMul};
 
 use std::marker::PhantomData;
 use std::ops::{Add, Neg, Sub};
@@ -187,9 +187,20 @@ impl<F: ReferenceFrame, U: Unit> Vector<F, U> {
     }
 
     /// Computes the squared magnitude (avoids sqrt, useful for comparisons).
+    ///
+    /// Returns the value in the squared unit `U^2` but typed as plain `f64`
+    /// because the `qtty` crate currently has no `U^2` type. Once squared
+    /// units are introduced the typed variant
+    /// [`magnitude_squared`](Self::magnitude_squared) will return
+    /// `Quantity<U^2>` and this `_raw` variant will be deprecated.
+    #[deprecated(
+        since = "0.7.0",
+        note = "qtty now provides squared units; the typed dot/cross/magnitude_squared variants are dimensionally correct. Use them instead."
+    )]
     #[inline]
-    pub fn magnitude_squared(&self) -> f64 {
-        self.xyz.magnitude_squared()
+    pub fn magnitude_squared_raw(&self) -> f64 {
+        #[allow(deprecated)]
+        self.xyz.magnitude_squared_raw()
     }
 
     /// Scales the vector by a scalar factor.
@@ -198,18 +209,34 @@ impl<F: ReferenceFrame, U: Unit> Vector<F, U> {
         Self::from_xyz(XYZ::from_raw(self.xyz.to_raw().scale(factor)))
     }
 
-    /// Computes the dot product with another vector (returns dimensionless f64).
+    /// Computes the dot product with another vector.
     ///
-    /// Note: For proper dimensional analysis, the result would be U²,
-    /// but we return the raw f64 value for convenience.
+    /// Returns the value in the squared unit `U^2` but typed as plain `f64`
+    /// because the `qtty` crate currently has no `U^2` type. Once squared
+    /// units are introduced the typed variant [`dot`](Self::dot) will
+    /// return `Quantity<U^2>` and this `_raw` variant will be deprecated.
+    #[deprecated(
+        since = "0.7.0",
+        note = "qtty now provides squared units; the typed dot/cross/magnitude_squared variants are dimensionally correct. Use them instead."
+    )]
     #[inline]
-    pub fn dot(&self, other: &Self) -> f64 {
+    pub fn dot_raw(&self, other: &Self) -> f64 {
         self.xyz.to_raw().dot(&other.xyz.to_raw())
     }
 
     /// Computes the cross product with another vector.
+    ///
+    /// Returns the value in the squared unit `U^2` but typed as `Vector<F, U>`
+    /// because the `qtty` crate currently has no `U^2` type. Once squared
+    /// units are introduced the typed variant [`cross`](Self::cross) will
+    /// return a vector in `Quantity<U^2>` and this `_raw` variant will be
+    /// deprecated.
+    #[deprecated(
+        since = "0.7.0",
+        note = "qtty now provides squared units; the typed dot/cross/magnitude_squared variants are dimensionally correct. Use them instead."
+    )]
     #[inline]
-    pub fn cross(&self, other: &Self) -> Self {
+    pub fn cross_raw(&self, other: &Self) -> Self {
         Self::from_xyz(XYZ::from_raw(self.xyz.to_raw().cross(&other.xyz.to_raw())))
     }
 
@@ -217,6 +244,43 @@ impl<F: ReferenceFrame, U: Unit> Vector<F, U> {
     #[inline]
     pub fn negate(&self) -> Self {
         Self::from_xyz(-self.xyz)
+    }
+}
+
+// =============================================================================
+// Squared-unit operations (require U: UnitMul<U>)
+// =============================================================================
+
+impl<F: ReferenceFrame, U: Unit + UnitMul<U>> Vector<F, U> {
+    /// Computes the squared magnitude (avoids sqrt, useful for comparisons).
+    ///
+    /// Returns a quantity in the squared unit `U·U` (e.g. `m·m` for a
+    /// length vector), produced by the [`UnitMul`] machinery in `qtty`.
+    #[inline]
+    pub fn magnitude_squared(&self) -> Quantity<<U as UnitMul<U>>::Output> {
+        self.xyz.magnitude_squared()
+    }
+
+    /// Computes the dot product with another vector.
+    ///
+    /// Returns a quantity in the squared unit `U·U`.
+    #[inline]
+    pub fn dot(&self, other: &Self) -> Quantity<<U as UnitMul<U>>::Output> {
+        let s = self.xyz.to_raw().dot(&other.xyz.to_raw());
+        Quantity::new(s)
+    }
+
+    /// Computes the cross product with another vector.
+    ///
+    /// Returns a vector whose components are in the squared unit `U·U`.
+    #[inline]
+    pub fn cross(&self, other: &Self) -> Vector<F, <U as UnitMul<U>>::Output> {
+        let raw = self.xyz.to_raw().cross(&other.xyz.to_raw());
+        Vector::<F, <U as UnitMul<U>>::Output>::new(
+            Quantity::new(raw.x()),
+            Quantity::new(raw.y()),
+            Quantity::new(raw.z()),
+        )
     }
 }
 
@@ -277,6 +341,8 @@ impl<F: ReferenceFrame, U: Unit> Add for Vector<F, U> {
     }
 }
 
+forward_ref_binop! { impl[F: ReferenceFrame, U: Unit] Add, add for Vector<F, U>, Vector<F, U> }
+
 impl<F: ReferenceFrame, U: Unit> Sub for Vector<F, U> {
     type Output = Self;
 
@@ -287,6 +353,8 @@ impl<F: ReferenceFrame, U: Unit> Sub for Vector<F, U> {
     }
 }
 
+forward_ref_binop! { impl[F: ReferenceFrame, U: Unit] Sub, sub for Vector<F, U>, Vector<F, U> }
+
 impl<F: ReferenceFrame, U: Unit> Neg for Vector<F, U> {
     type Output = Self;
 
@@ -295,6 +363,8 @@ impl<F: ReferenceFrame, U: Unit> Neg for Vector<F, U> {
         self.negate()
     }
 }
+
+forward_ref_unop! { impl[F: ReferenceFrame, U: Unit] Neg, neg for Vector<F, U> }
 
 // =============================================================================
 // PartialEq
@@ -310,45 +380,20 @@ impl<F: ReferenceFrame, U: Unit> PartialEq for Vector<F, U> {
 // Display
 // =============================================================================
 
-impl<F: ReferenceFrame, U: Unit> std::fmt::Display for Vector<F, U>
-where
-    Quantity<U>: std::fmt::Display,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl_quantity_fmt_triplet! {
+    impl[F, U] for Vector<F, U>
+    where {
+        F: ReferenceFrame,
+        U: Unit,
+    },
+    fmt_each: { Quantity<U>, },
+    |this, f, FmtOne| {
         write!(f, "Vector<{}> X: ", F::frame_name())?;
-        std::fmt::Display::fmt(&self.x(), f)?;
+        FmtOne::fmt(&this.x(), f)?;
         write!(f, ", Y: ")?;
-        std::fmt::Display::fmt(&self.y(), f)?;
+        FmtOne::fmt(&this.y(), f)?;
         write!(f, ", Z: ")?;
-        std::fmt::Display::fmt(&self.z(), f)
-    }
-}
-
-impl<F: ReferenceFrame, U: Unit> std::fmt::LowerExp for Vector<F, U>
-where
-    Quantity<U>: std::fmt::LowerExp,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Vector<{}> X: ", F::frame_name())?;
-        std::fmt::LowerExp::fmt(&self.x(), f)?;
-        write!(f, ", Y: ")?;
-        std::fmt::LowerExp::fmt(&self.y(), f)?;
-        write!(f, ", Z: ")?;
-        std::fmt::LowerExp::fmt(&self.z(), f)
-    }
-}
-
-impl<F: ReferenceFrame, U: Unit> std::fmt::UpperExp for Vector<F, U>
-where
-    Quantity<U>: std::fmt::UpperExp,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Vector<{}> X: ", F::frame_name())?;
-        std::fmt::UpperExp::fmt(&self.x(), f)?;
-        write!(f, ", Y: ")?;
-        std::fmt::UpperExp::fmt(&self.y(), f)?;
-        write!(f, ", Z: ")?;
-        std::fmt::UpperExp::fmt(&self.z(), f)
+        FmtOne::fmt(&this.z(), f)
     }
 }
 
@@ -402,6 +447,38 @@ mod tests {
         assert!((diff.x().value() - 3.0).abs() < 1e-12);
         assert!((diff.y().value() - 3.0).abs() < 1e-12);
         assert!((diff.z().value() - 3.0).abs() < 1e-12);
+    }
+
+    /// Smoke test: every reference combination of a representative binary
+    /// operator (`Vector + Vector`) and unary operator (`-Vector`) must
+    /// produce identical results to the by-value form.
+    #[test]
+    fn ref_ops_uniformity_smoke() {
+        let a = DispAu::new(1.0, 2.0, 3.0);
+        let b = DispAu::new(4.0, 5.0, 6.0);
+        let expected = DispAu::new(5.0, 7.0, 9.0);
+
+        let by_value = a + b;
+        let lhs_ref = &a + b;
+        let rhs_ref = a + &b;
+        let both_ref = &a + &b;
+
+        let check = |got: DispAu| {
+            assert!((got.x().value() - expected.x().value()).abs() < 1e-12);
+            assert!((got.y().value() - expected.y().value()).abs() < 1e-12);
+            assert!((got.z().value() - expected.z().value()).abs() < 1e-12);
+        };
+        check(by_value);
+        check(lhs_ref);
+        check(rhs_ref);
+        check(both_ref);
+
+        // Unary Neg: by-value and &T must agree.
+        let n_value = -a;
+        let n_ref = -&a;
+        assert!((n_value.x().value() - n_ref.x().value()).abs() < 1e-12);
+        assert!((n_value.y().value() - n_ref.y().value()).abs() < 1e-12);
+        assert!((n_value.z().value() - n_ref.z().value()).abs() < 1e-12);
     }
 
     #[test]
@@ -468,15 +545,18 @@ mod tests {
         assert!((neg.x().value() + 1.0).abs() < 1e-12);
         assert!((neg.y().value() + 2.0).abs() < 1e-12);
 
-        let dot = v.dot(&DispAu::new(0.0, 1.0, 0.0));
+        #[allow(deprecated)]
+        let dot = v.dot_raw(&DispAu::new(0.0, 1.0, 0.0));
         assert!((dot - 2.0).abs() < 1e-12);
 
-        let cross = v.cross(&DispAu::new(0.0, 1.0, 0.0));
+        #[allow(deprecated)]
+        let cross = v.cross_raw(&DispAu::new(0.0, 1.0, 0.0));
         assert!((cross.x().value() + 3.0).abs() < 1e-12);
         assert!(cross.y().value().abs() < 1e-12);
         assert!((cross.z().value() - 1.0).abs() < 1e-12);
 
-        let magnitude_sq = v.magnitude_squared();
+        #[allow(deprecated)]
+        let magnitude_sq = v.magnitude_squared_raw();
         assert!((magnitude_sq - 14.0).abs() < 1e-12);
 
         let from_vec3 = DispAu::from_vec3(nalgebra::Vector3::new(
@@ -492,6 +572,35 @@ mod tests {
 
         let neg_op = -v;
         assert_eq!(neg_op, neg);
+    }
+
+    #[test]
+    fn test_typed_dot_cross_magnitude_squared() {
+        // Typed dot/cross/magnitude_squared return Quantity<Prod<U, U>>.
+        use qtty::Prod;
+
+        let v = Displacement::<TestFrame, Meter>::new(1.0, 0.0, 0.0);
+        let w = Displacement::<TestFrame, Meter>::new(1.0, 0.0, 0.0);
+
+        // Type assertion: dot returns Quantity<Prod<Meter, Meter>>
+        let d: Quantity<Prod<Meter, Meter>> = v.dot(&w);
+        assert!((d.value() - 1.0).abs() < 1e-12);
+
+        // magnitude_squared also returns Quantity<Prod<Meter, Meter>>
+        let m2: Quantity<Prod<Meter, Meter>> = v.magnitude_squared();
+        assert!((m2.value() - 1.0).abs() < 1e-12);
+
+        // sqrt round-trips back to Quantity<Meter>
+        let m: Quantity<Meter> = m2.sqrt();
+        assert!((m.value() - 1.0).abs() < 1e-12);
+
+        // cross returns Vector<F, Prod<Meter, Meter>>
+        let a = Displacement::<TestFrame, Meter>::new(1.0, 0.0, 0.0);
+        let b = Displacement::<TestFrame, Meter>::new(0.0, 1.0, 0.0);
+        let c: Vector<TestFrame, Prod<Meter, Meter>> = a.cross(&b);
+        assert!((c.x().value()).abs() < 1e-12);
+        assert!((c.y().value()).abs() < 1e-12);
+        assert!((c.z().value() - 1.0).abs() < 1e-12);
     }
 
     #[test]

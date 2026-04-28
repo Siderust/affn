@@ -91,6 +91,14 @@
 // Allow the crate to refer to itself as `::affn::` for derive macro compatibility
 extern crate self as affn;
 
+// Internal `Display`/`LowerExp`/`UpperExp` triplet macro. Must precede any
+// modules that use it.
+#[macro_use]
+mod fmt_macros;
+
+#[macro_use]
+mod op_macros;
+
 // Coordinate type implementations
 pub mod cartesian;
 pub mod conic;
@@ -144,7 +152,7 @@ pub use conic::{
 pub use spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 
 // Re-export ellipsoidal Position for standalone usage
-pub use ellipsoidal::Position as EllipsoidalPosition;
+pub use ellipsoidal::{GeodeticConvergenceError, Position as EllipsoidalPosition};
 
 /// Prelude module for convenient imports.
 ///
@@ -179,7 +187,7 @@ pub mod prelude {
     pub use crate::ops::{Isometry3, Rotation3, Translation3};
 
     // Ellipsoidal coordinate type (always available)
-    pub use crate::ellipsoidal::Position as EllipsoidalPosition;
+    pub use crate::ellipsoidal::{GeodeticConvergenceError, Position as EllipsoidalPosition};
 
     // Ellipsoid traits and predefined ellipsoids (always available)
     pub use crate::ellipsoid::{Ellipsoid, Grs80, HasEllipsoid, Wgs84};

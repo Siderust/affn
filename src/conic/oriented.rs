@@ -48,7 +48,12 @@ impl<S: ConicShape, F: ReferenceFrame> OrientedConic<S, F> {
 #[cfg(feature = "serde")]
 mod oriented_conic_serde {
     use super::*;
+    use crate::serde_utils::{collect_field, skip_unknown, take_required};
+    use serde::de::{MapAccess, Visitor};
+    use serde::ser::SerializeStruct;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use std::fmt;
+    use std::marker::PhantomData;
 
     impl<S, F> Serialize for OrientedConic<S, F>
     where
@@ -56,7 +61,6 @@ mod oriented_conic_serde {
         F: ReferenceFrame,
     {
         fn serialize<Ser: Serializer>(&self, s: Ser) -> Result<Ser::Ok, Ser::Error> {
-            use serde::ser::SerializeStruct;
             let mut state = s.serialize_struct("OrientedConic", 2)?;
             state.serialize_field("shape", &self.shape)?;
             state.serialize_field("orientation", &self.orientation)?;
@@ -70,10 +74,6 @@ mod oriented_conic_serde {
         F: ReferenceFrame,
     {
         fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
-            use serde::de::{MapAccess, Visitor};
-            use std::fmt;
-            use std::marker::PhantomData;
-
             struct OrientedConicVisitor<S: ConicShape, F: ReferenceFrame>(PhantomData<(S, F)>);
 
             impl<'de, S, F> Visitor<'de> for OrientedConicVisitor<S, F>
@@ -93,21 +93,17 @@ mod oriented_conic_serde {
 
                     while let Some(key) = map.next_key::<String>()? {
                         match key.as_str() {
-                            "shape" => {
-                                shape = Some(map.next_value()?);
-                            }
+                            "shape" => collect_field(&mut shape, "shape", &mut map)?,
                             "orientation" => {
-                                orientation = Some(map.next_value()?);
+                                collect_field(&mut orientation, "orientation", &mut map)?
                             }
-                            _ => {
-                                map.next_value::<serde::de::IgnoredAny>()?;
-                            }
+                            _ => skip_unknown(&mut map)?,
                         }
                     }
-                    let shape = shape.ok_or_else(|| serde::de::Error::missing_field("shape"))?;
-                    let orientation = orientation
-                        .ok_or_else(|| serde::de::Error::missing_field("orientation"))?;
-                    Ok(OrientedConic::new(shape, orientation))
+                    Ok(OrientedConic::new(
+                        take_required(shape, "shape")?,
+                        take_required(orientation, "orientation")?,
+                    ))
                 }
             }
 
