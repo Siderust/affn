@@ -72,6 +72,10 @@ impl Rotation3 {
     /// `m` must be finite, orthogonal, and have determinant `+1`.
     #[inline]
     #[must_use]
+    #[deprecated(
+        since = "0.6.2",
+        note = "Use try_from_matrix (validates) or from_matrix_unchecked (no validation)"
+    )]
     pub const fn from_matrix(m: [[f64; 3]; 3]) -> Self {
         Self::from_matrix_unchecked(m)
     }
@@ -533,6 +537,8 @@ impl std::ops::Mul for Rotation3 {
     }
 }
 
+forward_ref_binop! { impl Mul, mul for Rotation3, Rotation3 }
+
 /// Applies a rotation to a raw `[f64; 3]` column vector: `R * v`.
 impl std::ops::Mul<[f64; 3]> for Rotation3 {
     type Output = [f64; 3];
@@ -542,6 +548,8 @@ impl std::ops::Mul<[f64; 3]> for Rotation3 {
         self.apply_array(rhs)
     }
 }
+
+forward_ref_binop! { impl Mul, mul for Rotation3, [f64; 3] }
 
 // Mul<[Quantity<U>; 3]> and Mul<XYZ<Quantity<U>>> are generated
 // by impl_quantity_mul! in the parent module.

@@ -1,23 +1,18 @@
-//! Serde implementations for Spherical coordinate types
+//! Serde implementations for Spherical coordinate types.
 
 use super::Position;
 use crate::centers::ReferenceCenter;
 use crate::frames::SphericalNaming;
+use crate::serde_utils::{collect_field, is_zero_sized, skip_unknown, take_required};
 use qtty::angular::Degrees;
 use qtty::length::LengthUnit;
 use qtty::Quantity;
-use serde::de::{self, MapAccess, Visitor};
+use serde::de::{MapAccess, Visitor};
 use serde::ser::SerializeStruct;
 use serde::Serializer;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::marker::PhantomData;
-
-use crate::serde_utils::is_zero_sized;
-
-// =============================================================================
-// Position Serde Implementation (with SphericalNaming)
-// =============================================================================
 
 impl<C, F, U> Serialize for Position<C, F, U>
 where
@@ -26,10 +21,7 @@ where
     F: SphericalNaming,
     U: LengthUnit,
 {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let polar_name = F::polar_name();
         let azimuth_name = F::azimuth_name();
         let distance_name = F::distance_name();
@@ -54,10 +46,7 @@ where
     F: SphericalNaming,
     U: LengthUnit,
 {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         struct PositionVisitor<C, F, U>(PhantomData<(C, F, U)>);
 
         impl<'de, C, F, U> Visitor<'de> for PositionVisitor<C, F, U>
@@ -79,10 +68,7 @@ where
                 )
             }
 
-            fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
-            where
-                M: MapAccess<'de>,
-            {
+            fn visit_map<M: MapAccess<'de>>(self, mut map: M) -> Result<Self::Value, M::Error> {
                 let polar_name = F::polar_name();
                 let azimuth_name = F::azimuth_name();
                 let distance_name = F::distance_name();
@@ -94,36 +80,21 @@ where
 
                 while let Some(key) = map.next_key::<String>()? {
                     if key == polar_name {
-                        if polar.is_some() {
-                            return Err(de::Error::duplicate_field(polar_name));
-                        }
-                        polar = Some(map.next_value()?);
+                        collect_field(&mut polar, polar_name, &mut map)?;
                     } else if key == azimuth_name {
-                        if azimuth.is_some() {
-                            return Err(de::Error::duplicate_field(azimuth_name));
-                        }
-                        azimuth = Some(map.next_value()?);
+                        collect_field(&mut azimuth, azimuth_name, &mut map)?;
                     } else if key == distance_name {
-                        if distance.is_some() {
-                            return Err(de::Error::duplicate_field(distance_name));
-                        }
-                        distance = Some(map.next_value()?);
+                        collect_field(&mut distance, distance_name, &mut map)?;
                     } else if key == "center_params" {
-                        if center_params.is_some() {
-                            return Err(de::Error::duplicate_field("center_params"));
-                        }
-                        center_params = Some(map.next_value()?);
+                        collect_field(&mut center_params, "center_params", &mut map)?;
                     } else {
-                        // Skip unknown fields
-                        let _ = map.next_value::<de::IgnoredAny>()?;
+                        skip_unknown(&mut map)?;
                     }
                 }
 
-                let polar = polar.ok_or_else(|| de::Error::missing_field(polar_name))?;
-                let azimuth = azimuth.ok_or_else(|| de::Error::missing_field(azimuth_name))?;
-                let distance = distance.ok_or_else(|| de::Error::missing_field(distance_name))?;
-
-                // Use default for center_params if not provided and ZST
+                let polar = take_required(polar, polar_name)?;
+                let azimuth = take_required(azimuth, azimuth_name)?;
+                let distance = take_required(distance, distance_name)?;
                 let center_params = center_params.unwrap_or_default();
 
                 Ok(Position::new_with_params(

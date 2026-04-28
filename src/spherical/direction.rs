@@ -103,6 +103,10 @@ impl<F: ReferenceFrame> Direction<F> {
     /// Creates a direction from raw angle values without canonicalization.
     ///
     /// Compatibility alias for [`new_unchecked`](Self::new_unchecked).
+    #[deprecated(
+        since = "0.6.2",
+        note = "Use new_unchecked (or new_unchecked_with_params) instead"
+    )]
     pub const fn new_raw(polar: Degrees, azimuth: Degrees) -> Self {
         Self::new_unchecked(polar, azimuth)
     }
@@ -202,36 +206,17 @@ impl<F: ReferenceFrame> Direction<F> {
     }
 }
 
-impl<F: ReferenceFrame> std::fmt::Display for Direction<F> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl_quantity_fmt_triplet! {
+    impl[F] for Direction<F>
+    where { F: ReferenceFrame, },
+    fmt_each: {},
+    |this, f, FmtOne| {
         let (polar_name, azimuth_name, _) =
             F::spherical_names().unwrap_or(("\u{03b8}", "\u{03c6}", "r"));
         write!(f, "Frame: {}, {}: ", F::frame_name(), polar_name)?;
-        std::fmt::Display::fmt(&self.polar, f)?;
+        FmtOne::fmt(&this.polar, f)?;
         write!(f, ", {}: ", azimuth_name)?;
-        std::fmt::Display::fmt(&self.azimuth, f)
-    }
-}
-
-impl<F: ReferenceFrame> std::fmt::LowerExp for Direction<F> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let (polar_name, azimuth_name, _) =
-            F::spherical_names().unwrap_or(("\u{03b8}", "\u{03c6}", "r"));
-        write!(f, "Frame: {}, {}: ", F::frame_name(), polar_name)?;
-        std::fmt::LowerExp::fmt(&self.polar, f)?;
-        write!(f, ", {}: ", azimuth_name)?;
-        std::fmt::LowerExp::fmt(&self.azimuth, f)
-    }
-}
-
-impl<F: ReferenceFrame> std::fmt::UpperExp for Direction<F> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let (polar_name, azimuth_name, _) =
-            F::spherical_names().unwrap_or(("\u{03b8}", "\u{03c6}", "r"));
-        write!(f, "Frame: {}, {}: ", F::frame_name(), polar_name)?;
-        std::fmt::UpperExp::fmt(&self.polar, f)?;
-        write!(f, ", {}: ", azimuth_name)?;
-        std::fmt::UpperExp::fmt(&self.azimuth, f)
+        FmtOne::fmt(&this.azimuth, f)
     }
 }
 

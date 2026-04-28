@@ -81,6 +81,19 @@ use std::ops::Mul;
 ///
 /// This type is `#[repr(transparent)]` over `XYZ<f64>`, ensuring no runtime
 /// overhead compared to raw `Vector3<f64>`.
+///
+/// # Renormalization Policy
+///
+/// The `Mul<Direction>` implementation for [`crate::Rotation3`] uses
+/// [`Direction::new_unchecked`] internally and does **not** auto-renormalize
+/// the result. A single rotation preserves the unit-norm invariant to within
+/// machine epsilon, but long composition chains
+/// (`r_n * ... * r_2 * r_1 * dir`) accumulate floating-point error and the
+/// magnitude will drift away from `1.0`. For pipelines that apply many
+/// rotations in sequence (e.g. integrators, repeated frame transforms),
+/// call [`renormalize`](Self::renormalize) or
+/// [`renormalized`](Self::renormalized) periodically to restore the
+/// invariant.
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy)]
 pub struct Direction<F: ReferenceFrame> {
@@ -169,6 +182,41 @@ impl<F: ReferenceFrame> Direction<F> {
     #[inline]
     pub fn new_unchecked(x: f64, y: f64, z: f64) -> Self {
         Self::from_xyz_unchecked(XYZ::new(x, y, z))
+    }
+}
+
+// =============================================================================
+// Renormalization
+// =============================================================================
+
+impl<F: ReferenceFrame> Direction<F> {
+    /// Restores the unit-norm invariant in place.
+    ///
+    /// Divides each component by the current [`magnitude`](XYZ::magnitude).
+    /// If the magnitude is non-finite (`NaN` or infinite) or smaller than
+    /// `f64::EPSILON`, the value is left unchanged rather than panicking
+    /// or producing `NaN`s.
+    ///
+    /// Use this after long chains of `Rotation3 * Direction` operations to
+    /// counteract accumulated floating-point drift.
+    #[inline]
+    pub fn renormalize(&mut self) {
+        let mag = self.xyz.magnitude();
+        if mag.is_finite() && mag > f64::EPSILON {
+            self.xyz = self.xyz.scale(1.0 / mag);
+        }
+    }
+
+    /// By-value variant of [`renormalize`](Self::renormalize).
+    ///
+    /// Returns a renormalized copy of `self`. If the current magnitude is
+    /// non-finite or below `f64::EPSILON`, the original value is returned
+    /// unchanged.
+    #[inline]
+    #[must_use]
+    pub fn renormalized(mut self) -> Self {
+        self.renormalize();
+        self
     }
 }
 
@@ -295,6 +343,8 @@ impl<F: ReferenceFrame, U: LengthUnit> Mul<Quantity<U>> for Direction<F> {
     }
 }
 
+forward_ref_binop! { impl[F: ReferenceFrame, U: LengthUnit] Mul, mul for Direction<F>, Quantity<U> }
+
 impl<F: ReferenceFrame, U: LengthUnit> Mul<Direction<F>> for Quantity<U> {
     type Output = Displacement<F, U>;
 
@@ -303,6 +353,8 @@ impl<F: ReferenceFrame, U: LengthUnit> Mul<Direction<F>> for Quantity<U> {
         dir.scale(self)
     }
 }
+
+forward_ref_binop! { impl[F: ReferenceFrame, U: LengthUnit] Mul, mul for Quantity<U>, Direction<F> }
 
 // =============================================================================
 // Geometric Operations
@@ -370,36 +422,17 @@ impl<F: ReferenceFrame> Direction<F> {
     }
 }
 
-impl<F: ReferenceFrame> std::fmt::Display for Direction<F> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl_quantity_fmt_triplet! {
+    impl[F] for Direction<F>
+    where { F: ReferenceFrame, },
+    fmt_each: {},
+    |this, f, FmtOne| {
         write!(f, "Frame: {}, X: ", F::frame_name())?;
-        std::fmt::Display::fmt(&self.x(), f)?;
+        FmtOne::fmt(&this.x(), f)?;
         write!(f, ", Y: ")?;
-        std::fmt::Display::fmt(&self.y(), f)?;
+        FmtOne::fmt(&this.y(), f)?;
         write!(f, ", Z: ")?;
-        std::fmt::Display::fmt(&self.z(), f)
-    }
-}
-
-impl<F: ReferenceFrame> std::fmt::LowerExp for Direction<F> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Frame: {}, X: ", F::frame_name())?;
-        std::fmt::LowerExp::fmt(&self.x(), f)?;
-        write!(f, ", Y: ")?;
-        std::fmt::LowerExp::fmt(&self.y(), f)?;
-        write!(f, ", Z: ")?;
-        std::fmt::LowerExp::fmt(&self.z(), f)
-    }
-}
-
-impl<F: ReferenceFrame> std::fmt::UpperExp for Direction<F> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Frame: {}, X: ", F::frame_name())?;
-        std::fmt::UpperExp::fmt(&self.x(), f)?;
-        write!(f, ", Y: ")?;
-        std::fmt::UpperExp::fmt(&self.y(), f)?;
-        write!(f, ", Z: ")?;
-        std::fmt::UpperExp::fmt(&self.z(), f)
+        FmtOne::fmt(&this.z(), f)
     }
 }
 
@@ -558,5 +591,105 @@ mod tests {
             core::mem::align_of::<Direction<TestFrame>>(),
             core::mem::align_of::<XYZ<f64>>()
         );
+    }
+
+    #[test]
+    fn test_direction_renormalize_after_rotation_chain() {
+        use crate::Rotation3;
+        use qtty::angular::Radians;
+
+        // Tiny xorshift64* PRNG, deterministic seed (no external dep).
+        struct Xs(u64);
+        impl Xs {
+            fn next_u64(&mut self) -> u64 {
+                let mut x = self.0;
+                x ^= x << 13;
+                x ^= x >> 7;
+                x ^= x << 17;
+                self.0 = x;
+                x.wrapping_mul(0x2545F4914F6CDD1D)
+            }
+            fn next_unit(&mut self) -> f64 {
+                // Map to [0, 1) using top 53 bits.
+                ((self.next_u64() >> 11) as f64) * (1.0 / ((1u64 << 53) as f64))
+            }
+            fn next_signed(&mut self) -> f64 {
+                self.next_unit() * 2.0 - 1.0
+            }
+        }
+
+        let mag_of = |d: &Direction<TestFrame>| {
+            (d.x() * d.x() + d.y() * d.y() + d.z() * d.z()).sqrt()
+        };
+
+        let mut rng = Xs(0xC0FFEE_DEAD_BEEF_u64);
+
+        // Two parallel runs: one without renormalization, one with periodic.
+        let initial = Direction::<TestFrame>::new(1.0, 0.0, 0.0);
+        let mut drifting = initial;
+        let mut periodic = initial;
+
+        const N: usize = 10_000;
+        const PERIOD: usize = 100;
+
+        for i in 1..=N {
+            // Random axis (non-zero) and small angle.
+            let mut ax = rng.next_signed();
+            let mut ay = rng.next_signed();
+            let mut az = rng.next_signed();
+            let an = (ax * ax + ay * ay + az * az).sqrt();
+            if an < 1e-12 {
+                ax = 1.0; ay = 0.0; az = 0.0;
+            } else {
+                ax /= an; ay /= an; az /= an;
+            }
+            // Small angle in (-1e-3, 1e-3) rad to keep many ops geometrically meaningful.
+            let angle = Radians::new(rng.next_signed() * 1e-3);
+            let rot = Rotation3::from_axis_angle([ax, ay, az], angle);
+
+            drifting = rot * drifting;
+            periodic = rot * periodic;
+
+            if i % PERIOD == 0 {
+                // Sanity: drifting hasn't blown up yet.
+                let drift_mag = mag_of(&drifting);
+                assert!(
+                    (drift_mag - 1.0).abs() < 1e-3,
+                    "drift too large at step {i}: {drift_mag}"
+                );
+
+                // Renormalize a *copy* of drifting and confirm it returns to ~1.
+                let renormed = drifting.renormalized();
+                let renormed_mag = mag_of(&renormed);
+                assert!(
+                    (renormed_mag - 1.0).abs() < 1e-15,
+                    "renormalized magnitude not unit at step {i}: {renormed_mag}"
+                );
+
+                // Apply periodic renormalization to the periodic chain in place.
+                periodic.renormalize();
+                let periodic_mag = mag_of(&periodic);
+                assert!(
+                    (periodic_mag - 1.0).abs() < 1e-15,
+                    "periodic chain not unit immediately after renormalize: {periodic_mag}"
+                );
+            }
+        }
+
+        // Final: the periodic chain must remain very close to unit norm.
+        let final_mag = mag_of(&periodic);
+        assert!(
+            (final_mag - 1.0).abs() < 1e-12,
+            "periodic-renormalization chain drifted: {final_mag}"
+        );
+    }
+
+    #[test]
+    fn test_direction_renormalize_leaves_degenerate_unchanged() {
+        // A direction whose stored components are NaN should be left alone
+        // (no panic, no replacement with NaNs from a divide-by-NaN).
+        let mut bad = Direction::<TestFrame>::new_unchecked(f64::NAN, 0.0, 0.0);
+        bad.renormalize();
+        assert!(bad.x().is_nan());
     }
 }

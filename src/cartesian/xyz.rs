@@ -194,6 +194,8 @@ impl Add for XYZ<f64> {
     }
 }
 
+forward_ref_binop! { impl Add, add for XYZ<f64>, XYZ<f64> }
+
 impl Sub for XYZ<f64> {
     type Output = Self;
 
@@ -202,6 +204,8 @@ impl Sub for XYZ<f64> {
         Self(self.0 - other.0)
     }
 }
+
+forward_ref_binop! { impl Sub, sub for XYZ<f64>, XYZ<f64> }
 
 impl Neg for XYZ<f64> {
     type Output = Self;
@@ -212,6 +216,8 @@ impl Neg for XYZ<f64> {
     }
 }
 
+forward_ref_unop! { impl Neg, neg for XYZ<f64> }
+
 impl Mul<f64> for XYZ<f64> {
     type Output = Self;
 
@@ -220,6 +226,8 @@ impl Mul<f64> for XYZ<f64> {
         Self(self.0 * scalar)
     }
 }
+
+forward_ref_binop! { impl Mul, mul for XYZ<f64>, f64 }
 
 impl Mul<XYZ<f64>> for f64 {
     type Output = XYZ<f64>;
@@ -230,11 +238,13 @@ impl Mul<XYZ<f64>> for f64 {
     }
 }
 
+forward_ref_binop! { impl Mul, mul for f64, XYZ<f64> }
+
 // =============================================================================
 // Quantity-aware operations
 // =============================================================================
 
-use qtty::{Quantity, Unit};
+use qtty::{Quantity, Unit, UnitMul};
 
 impl<U: Unit> XYZ<Quantity<U>> {
     /// The zero vector for this unit type.
@@ -251,15 +261,19 @@ impl<U: Unit> XYZ<Quantity<U>> {
         Quantity::new(mag)
     }
 
-    /// Computes the squared magnitude as a raw `f64`.
+    /// Computes the squared magnitude.
     ///
-    /// Returns the dimensionless squared magnitude `|v|²` by extracting raw
-    /// component values before squaring. This intentionally returns `f64`
-    /// rather than `Quantity<U²>` to avoid requiring a squared-unit type
-    /// in the dependency tree. Use [`magnitude`](Self::magnitude) if you
-    /// need the result with a unit.
+    /// Returns the value in the squared unit `U^2` but typed as plain `f64`
+    /// because the `qtty` crate currently has no `U^2` type. Once squared
+    /// units are introduced the typed variant
+    /// [`magnitude_squared`](Self::magnitude_squared) will return
+    /// `Quantity<U^2>` and this `_raw` variant will be deprecated.
+    #[deprecated(
+        since = "0.7.0",
+        note = "qtty now provides squared units; the typed dot/cross/magnitude_squared variants are dimensionally correct. Use them instead."
+    )]
     #[inline]
-    pub fn magnitude_squared(&self) -> f64 {
+    pub fn magnitude_squared_raw(&self) -> f64 {
         let x = self.0[0].value();
         let y = self.0[1].value();
         let z = self.0[2].value();
@@ -295,6 +309,22 @@ impl<U: Unit> XYZ<Quantity<U>> {
     }
 }
 
+impl<U: Unit + UnitMul<U>> XYZ<Quantity<U>> {
+    /// Computes the squared magnitude as a typed quantity in unit `U·U`.
+    ///
+    /// This relies on `qtty`'s squared-unit support: for any `U: UnitMul<U>`
+    /// the output unit is `<U as UnitMul<U>>::Output` (e.g. `Prod<Meter, Meter>`
+    /// for length). If you only need a raw `f64` for ordering or comparison,
+    /// use the deprecated [`magnitude_squared_raw`](Self::magnitude_squared_raw).
+    #[inline]
+    pub fn magnitude_squared(&self) -> Quantity<<U as UnitMul<U>>::Output> {
+        let x = self.0[0].value();
+        let y = self.0[1].value();
+        let z = self.0[2].value();
+        Quantity::new(x * x + y * y + z * z)
+    }
+}
+
 impl<U: Unit> Add for XYZ<Quantity<U>> {
     type Output = Self;
 
@@ -303,6 +333,8 @@ impl<U: Unit> Add for XYZ<Quantity<U>> {
         Self(self.0 + other.0)
     }
 }
+
+forward_ref_binop! { impl[U: Unit] Add, add for XYZ<Quantity<U>>, XYZ<Quantity<U>> }
 
 impl<U: Unit> Sub for XYZ<Quantity<U>> {
     type Output = Self;
@@ -313,6 +345,8 @@ impl<U: Unit> Sub for XYZ<Quantity<U>> {
     }
 }
 
+forward_ref_binop! { impl[U: Unit] Sub, sub for XYZ<Quantity<U>>, XYZ<Quantity<U>> }
+
 impl<U: Unit> Neg for XYZ<Quantity<U>> {
     type Output = Self;
 
@@ -321,6 +355,8 @@ impl<U: Unit> Neg for XYZ<Quantity<U>> {
         Self::new(-self.0[0], -self.0[1], -self.0[2])
     }
 }
+
+forward_ref_unop! { impl[U: Unit] Neg, neg for XYZ<Quantity<U>> }
 
 // =============================================================================
 // Default Implementation
@@ -336,38 +372,17 @@ impl<T: Default> Default for XYZ<T> {
 // Display
 // =============================================================================
 
-impl<T: std::fmt::Display + Copy> std::fmt::Display for XYZ<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl_quantity_fmt_triplet! {
+    impl[T] for XYZ<T>
+    where { T: Copy, },
+    fmt_each: { T, },
+    |this, f, FmtOne| {
         write!(f, "(")?;
-        std::fmt::Display::fmt(&self.x(), f)?;
+        FmtOne::fmt(&this.x(), f)?;
         write!(f, ", ")?;
-        std::fmt::Display::fmt(&self.y(), f)?;
+        FmtOne::fmt(&this.y(), f)?;
         write!(f, ", ")?;
-        std::fmt::Display::fmt(&self.z(), f)?;
-        write!(f, ")")
-    }
-}
-
-impl<T: std::fmt::LowerExp + Copy> std::fmt::LowerExp for XYZ<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(")?;
-        std::fmt::LowerExp::fmt(&self.x(), f)?;
-        write!(f, ", ")?;
-        std::fmt::LowerExp::fmt(&self.y(), f)?;
-        write!(f, ", ")?;
-        std::fmt::LowerExp::fmt(&self.z(), f)?;
-        write!(f, ")")
-    }
-}
-
-impl<T: std::fmt::UpperExp + Copy> std::fmt::UpperExp for XYZ<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(")?;
-        std::fmt::UpperExp::fmt(&self.x(), f)?;
-        write!(f, ", ")?;
-        std::fmt::UpperExp::fmt(&self.y(), f)?;
-        write!(f, ", ")?;
-        std::fmt::UpperExp::fmt(&self.z(), f)?;
+        FmtOne::fmt(&this.z(), f)?;
         write!(f, ")")
     }
 }
@@ -449,8 +464,13 @@ mod tests {
 
         let mag = a.magnitude();
         assert!((mag.value() - 5.0).abs() < f64::EPSILON);
-        let mag_sq = a.magnitude_squared();
+        #[allow(deprecated)]
+        let mag_sq = a.magnitude_squared_raw();
         assert!((mag_sq - 25.0).abs() < f64::EPSILON);
+
+        // Typed magnitude_squared yields Quantity<Prod<Meter, Meter>>
+        let mag_sq_typed: qtty::Quantity<qtty::Prod<Meter, Meter>> = a.magnitude_squared();
+        assert!((mag_sq_typed.value() - 25.0).abs() < f64::EPSILON);
 
         let raw = a.to_raw();
         assert!((raw.x() - 3.0).abs() < f64::EPSILON);

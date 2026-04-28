@@ -112,6 +112,10 @@ where
     /// Constructs a new spherical position with explicit center parameters without canonicalization.
     ///
     /// Compatibility alias for [`new_unchecked_with_params`](Self::new_unchecked_with_params).
+    #[deprecated(
+        since = "0.6.2",
+        note = "Use new_unchecked (or new_unchecked_with_params) instead"
+    )]
     pub const fn new_raw_with_params(
         center_params: C::Params,
         polar: Degrees,
@@ -133,11 +137,8 @@ where
         azimuth: Degrees,
         distance: Quantity<U>,
     ) -> Self {
-        let (polar, azimuth) = if distance.value() < 0.0 {
-            super::canonicalize_polar_azimuth(
-                Degrees::new(-polar.value()),
-                Degrees::new(azimuth.value() + 180.0),
-            )
+        let (polar, azimuth) = if distance < Quantity::new(0.0) {
+            super::canonicalize_polar_azimuth(-polar, azimuth + Degrees::new(180.0))
         } else {
             super::canonicalize_polar_azimuth(polar, azimuth)
         };
@@ -222,6 +223,10 @@ where
     /// Convenience constructor for centers with `Params = ()` without canonicalization.
     ///
     /// Compatibility alias for [`new_unchecked`](Self::new_unchecked).
+    #[deprecated(
+        since = "0.6.2",
+        note = "Use new_unchecked (or new_unchecked_with_params) instead"
+    )]
     pub const fn new_raw(polar: Degrees, azimuth: Degrees, distance: Quantity<U>) -> Self {
         Self::new_unchecked(polar, azimuth, distance)
     }
@@ -243,24 +248,29 @@ where
     /// Euclidean distance to another position **in the same centre & frame**.
     ///
     /// The result is expressed in the *same unit `U`* as the inputs.
+    ///
+    /// Only available when the center has no runtime parameters (`C::Params = ()`).
+    /// For parameterized centers convert to Cartesian and use
+    /// [`Position::try_distance_to`](crate::cartesian::Position::try_distance_to).
     #[must_use]
     pub fn distance_to(&self, other: &Self) -> Quantity<U>
     where
-        U: std::cmp::PartialEq + std::fmt::Debug,
+        C: centers::ReferenceCenter<Params = ()>,
         F: frames::ReferenceFrame,
     {
         self.to_cartesian().distance_to(&other.to_cartesian())
     }
 }
 
-impl<C, F, U> std::fmt::Display for Position<C, F, U>
-where
-    C: centers::ReferenceCenter,
-    F: frames::ReferenceFrame,
-    U: LengthUnit,
-    Quantity<U>: std::fmt::Display,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl_quantity_fmt_triplet! {
+    impl[C, F, U] for Position<C, F, U>
+    where {
+        C: centers::ReferenceCenter,
+        F: frames::ReferenceFrame,
+        U: LengthUnit,
+    },
+    fmt_each: { Quantity<U>, },
+    |this, f, FmtOne| {
         let (polar_name, azimuth_name, distance_name) =
             F::spherical_names().unwrap_or(("\u{03b8}", "\u{03c6}", "r"));
         write!(
@@ -270,61 +280,11 @@ where
             F::frame_name(),
             polar_name
         )?;
-        std::fmt::Display::fmt(&self.polar, f)?;
+        FmtOne::fmt(&this.polar, f)?;
         write!(f, ", {}: ", azimuth_name)?;
-        std::fmt::Display::fmt(&self.azimuth, f)?;
+        FmtOne::fmt(&this.azimuth, f)?;
         write!(f, ", {}: ", distance_name)?;
-        std::fmt::Display::fmt(&self.distance, f)
-    }
-}
-
-impl<C, F, U> std::fmt::LowerExp for Position<C, F, U>
-where
-    C: centers::ReferenceCenter,
-    F: frames::ReferenceFrame,
-    U: LengthUnit,
-    Quantity<U>: std::fmt::LowerExp,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let (polar_name, azimuth_name, distance_name) =
-            F::spherical_names().unwrap_or(("\u{03b8}", "\u{03c6}", "r"));
-        write!(
-            f,
-            "Center: {}, Frame: {}, {}: ",
-            C::center_name(),
-            F::frame_name(),
-            polar_name
-        )?;
-        std::fmt::LowerExp::fmt(&self.polar, f)?;
-        write!(f, ", {}: ", azimuth_name)?;
-        std::fmt::LowerExp::fmt(&self.azimuth, f)?;
-        write!(f, ", {}: ", distance_name)?;
-        std::fmt::LowerExp::fmt(&self.distance, f)
-    }
-}
-
-impl<C, F, U> std::fmt::UpperExp for Position<C, F, U>
-where
-    C: centers::ReferenceCenter,
-    F: frames::ReferenceFrame,
-    U: LengthUnit,
-    Quantity<U>: std::fmt::UpperExp,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let (polar_name, azimuth_name, distance_name) =
-            F::spherical_names().unwrap_or(("\u{03b8}", "\u{03c6}", "r"));
-        write!(
-            f,
-            "Center: {}, Frame: {}, {}: ",
-            C::center_name(),
-            F::frame_name(),
-            polar_name
-        )?;
-        std::fmt::UpperExp::fmt(&self.polar, f)?;
-        write!(f, ", {}: ", azimuth_name)?;
-        std::fmt::UpperExp::fmt(&self.azimuth, f)?;
-        write!(f, ", {}: ", distance_name)?;
-        std::fmt::UpperExp::fmt(&self.distance, f)
+        FmtOne::fmt(&this.distance, f)
     }
 }
 

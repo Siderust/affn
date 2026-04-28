@@ -7,7 +7,7 @@
 
 Affine geometry primitives for strongly-typed coordinate systems.
 
-`affn` is a small, domain-agnostic geometry kernel for scientific and engineering software. It provides:
+`affn` is a domain-agnostic geometry **core** with an optional, feature-gated catalogue of astronomical reference frames (`astro` feature, on by default for convenience). The core provides:
 
 - **Reference centers** (`C`): the origin of a coordinate system (optionally parameterized via `C::Params`)
 - **Reference frames** (`F`): the orientation of axes
@@ -17,6 +17,15 @@ Affine geometry primitives for strongly-typed coordinate systems.
 - **Units**: distances/lengths are carried via `qtty` units at the type level
 
 The goal is to make invalid operations (like adding two positions) fail at compile time.
+
+## Scope
+
+`affn` is split into a domain-agnostic kernel and an optional astronomical catalogue:
+
+- **Kernel (always available, domain-agnostic).** The `algebra`, `cartesian`, `spherical`, `ellipsoidal`, `conic`, `planar`, `ops`, `frames`, `centers`, and `ellipsoid` modules form the geometry core. They define the affine machinery, typed coordinate containers, conic shapes, and the `ReferenceFrame` / `ReferenceCenter` traits, without committing to any particular application domain.
+- **Astronomical catalogue (`astro` feature, default-on).** The `frames::astro` module ships ready-made marker frames such as `ICRS`, `ICRF`, `EME2000`, `GCRS`, `CIRS`, `Galactic`, `EclipticMeanJ2000`, `Horizontal`, `ECEF`, `ITRF`, and the planetary body-fixed frames. These are convenience definitions layered on top of the kernel.
+- **Opt-out.** The astronomical catalogue is opt-out: users who want a leaner build with no astronomical types can disable default features (`affn = { version = "0.6.1", default-features = false }`) and define their own frames using the derive macros.
+- **Why ship them in-crate?** Rust's orphan rules require the derive-generated inherent impls (e.g. `Direction::<ICRS>::new(ra, dec)`, frame-specific spherical constructors via `#[frame(inherent)]`) to live in the same crate as the types they extend (`Direction`, `Position`, …). Splitting the astro frames into a separate downstream crate would lose these ergonomic constructors, so they live behind a feature flag inside `affn` instead.
 
 ## Quick Start
 

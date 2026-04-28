@@ -7,20 +7,8 @@
 //! the [`HasEllipsoid`] trait for associating an ellipsoid with a reference frame,
 //! and predefined ellipsoid constants ([`Wgs84`], [`Grs80`]).
 //!
-//! ## Architectural Rationale
-//!
-//! In geodesy and astrometry:
-//!
-//! - The **Center** represents the physical origin (e.g., geocenter).
-//! - The **Frame** represents the terrestrial reference realization (e.g., ITRF2014).
-//! - The **ellipsoid** is tied to the datum / realization of the frame, not
-//!   to the physical center.
-//!
-//! Therefore the ellipsoid is a property of the Frame.  This allows:
-//!
-//! - Multiple terrestrial realizations with different ellipsoids
-//! - Avoiding proliferation of datum-specific centers
-//! - Future compatibility with dynamic terrestrial frames (e.g., ITRF20xx)
+//! See [`HasEllipsoid`] for the rationale behind attaching the ellipsoid to the
+//! frame rather than the center.
 //!
 //! ## Example
 //!
@@ -98,6 +86,23 @@ pub trait Ellipsoid: Copy + Clone + std::fmt::Debug {
 
 /// Marker trait associating a [`ReferenceFrame`](crate::frames::ReferenceFrame)
 /// with a specific [`Ellipsoid`].
+///
+/// # Architectural Rationale
+///
+/// In geodesy and astrometry:
+///
+/// - The **Center** represents the physical origin (e.g., geocenter).
+/// - The **Frame** represents the terrestrial reference realization (e.g., ITRF2014).
+/// - The **ellipsoid** is tied to the datum / realization of the frame, not
+///   to the physical center.
+///
+/// Therefore the ellipsoid is a property of the Frame.  This allows:
+///
+/// - Multiple terrestrial realizations with different ellipsoids
+/// - Avoiding proliferation of datum-specific centers
+/// - Future compatibility with dynamic terrestrial frames (e.g., ITRF20xx)
+///
+/// # Derivation
 ///
 /// The `#[derive(ReferenceFrame)]` macro generates this impl automatically
 /// when the `ellipsoid` attribute is present:

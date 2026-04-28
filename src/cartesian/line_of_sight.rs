@@ -60,7 +60,7 @@ pub fn line_of_sight<C, F, U>(
     target: &Position<C, F, U>,
 ) -> Direction<F>
 where
-    C: ReferenceCenter,
+    C: ReferenceCenter<Params = ()>,
     F: ReferenceFrame,
     U: LengthUnit,
 {
@@ -117,7 +117,7 @@ pub fn line_of_sight_with_distance<C, F, U>(
     target: &Position<C, F, U>,
 ) -> (Direction<F>, Quantity<U>)
 where
-    C: ReferenceCenter,
+    C: ReferenceCenter<Params = ()>,
     F: ReferenceFrame,
     U: LengthUnit,
 {
@@ -139,7 +139,7 @@ pub fn try_line_of_sight<C, F, U>(
     target: &Position<C, F, U>,
 ) -> Option<Direction<F>>
 where
-    C: ReferenceCenter,
+    C: ReferenceCenter<Params = ()>,
     F: ReferenceFrame,
     U: LengthUnit,
 {

@@ -53,6 +53,10 @@ use std::fmt::Debug;
 
 /// A trait for defining a reference center (coordinate origin).
 ///
+/// Note: geodetic ellipsoids are **not** attached to centers; they are a
+/// property of the frame's datum/realization. See
+/// [`HasEllipsoid`](crate::ellipsoid::HasEllipsoid) for the rationale.
+///
 /// # Associated Types
 ///
 /// - `Params`: Runtime parameters for this center. Use `()` for centers that

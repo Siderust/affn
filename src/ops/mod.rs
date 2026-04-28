@@ -75,6 +75,8 @@ macro_rules! impl_quantity_mul {
             }
         }
 
+        forward_ref_binop! { impl[U: Unit] Mul, mul for $OpType, [Quantity<U>; 3] }
+
         impl<U: Unit> std::ops::Mul<XYZ<Quantity<U>>> for $OpType {
             type Output = XYZ<Quantity<U>>;
 
@@ -83,6 +85,8 @@ macro_rules! impl_quantity_mul {
                 XYZ::from_raw(self.$apply_xyz_fn(rhs.to_raw()))
             }
         }
+
+        forward_ref_binop! { impl[U: Unit] Mul, mul for $OpType, XYZ<Quantity<U>> }
     };
 }
 
@@ -100,6 +104,8 @@ impl<U: Unit> std::ops::Mul<[Quantity<U>; 3]> for Translation3<U> {
     }
 }
 
+forward_ref_binop! { impl[U: Unit] Mul, mul for Translation3<U>, [Quantity<U>; 3] }
+
 impl<U: Unit> std::ops::Mul<XYZ<Quantity<U>>> for Translation3<U> {
     type Output = XYZ<Quantity<U>>;
 
@@ -108,6 +114,8 @@ impl<U: Unit> std::ops::Mul<XYZ<Quantity<U>>> for Translation3<U> {
         XYZ::from_raw(self.apply_xyz(rhs.to_raw()))
     }
 }
+
+forward_ref_binop! { impl[U: Unit] Mul, mul for Translation3<U>, XYZ<Quantity<U>> }
 
 impl<U: Unit> std::ops::Mul<[Quantity<U>; 3]> for Isometry3<U> {
     type Output = [Quantity<U>; 3];
@@ -119,6 +127,8 @@ impl<U: Unit> std::ops::Mul<[Quantity<U>; 3]> for Isometry3<U> {
     }
 }
 
+forward_ref_binop! { impl[U: Unit] Mul, mul for Isometry3<U>, [Quantity<U>; 3] }
+
 impl<U: Unit> std::ops::Mul<XYZ<Quantity<U>>> for Isometry3<U> {
     type Output = XYZ<Quantity<U>>;
 
@@ -127,6 +137,8 @@ impl<U: Unit> std::ops::Mul<XYZ<Quantity<U>>> for Isometry3<U> {
         XYZ::from_raw(self.apply_xyz(rhs.to_raw()))
     }
 }
+
+forward_ref_binop! { impl[U: Unit] Mul, mul for Isometry3<U>, XYZ<Quantity<U>> }
 
 // =============================================================================
 // Coordinate-type impls: Position, Vector, Direction
@@ -158,6 +170,16 @@ macro_rules! impl_position_mul {
                 )
             }
         }
+
+        forward_ref_binop! {
+            impl[C, F, U] Mul, mul for $OpType, Position<C, F, U>
+            where (
+                C: ReferenceCenter,
+                F: ReferenceFrame,
+                U: LengthUnit,
+                C::Params: Copy,
+            )
+        }
     };
 }
 
@@ -186,6 +208,16 @@ where
     }
 }
 
+forward_ref_binop! {
+    impl[C, F, U] Mul, mul for Translation3<U>, Position<C, F, U>
+    where (
+        C: ReferenceCenter,
+        F: ReferenceFrame,
+        U: LengthUnit,
+        C::Params: Copy,
+    )
+}
+
 impl<C, F, U> std::ops::Mul<Position<C, F, U>> for Isometry3<U>
 where
     C: ReferenceCenter,
@@ -205,6 +237,16 @@ where
             Quantity::<U>::new(z),
         )
     }
+}
+
+forward_ref_binop! {
+    impl[C, F, U] Mul, mul for Isometry3<U>, Position<C, F, U>
+    where (
+        C: ReferenceCenter,
+        F: ReferenceFrame,
+        U: LengthUnit,
+        C::Params: Copy,
+    )
 }
 
 /// `Rotation3 * Vector<F, U>` — rotates a free vector, preserving frame and unit.
@@ -229,6 +271,14 @@ where
     }
 }
 
+forward_ref_binop! {
+    impl[F, U] Mul, mul for Rotation3, Vector<F, U>
+    where (
+        F: ReferenceFrame,
+        U: Unit,
+    )
+}
+
 /// `Rotation3 * Direction<F>` — rotates a unit direction, preserving frame.
 ///
 /// Translations do **not** apply to directions; only rotation changes their
@@ -244,3 +294,5 @@ impl<F: ReferenceFrame> std::ops::Mul<Direction<F>> for Rotation3 {
         Direction::new_unchecked(x, y, z)
     }
 }
+
+forward_ref_binop! { impl[F: ReferenceFrame] Mul, mul for Rotation3, Direction<F> }

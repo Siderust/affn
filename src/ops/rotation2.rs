@@ -90,6 +90,8 @@ impl core::ops::Mul for Rotation2 {
     }
 }
 
+forward_ref_binop! { impl Mul, mul for Rotation2, Rotation2 }
+
 impl core::ops::Mul<[f64; 2]> for Rotation2 {
     type Output = [f64; 2];
 
@@ -98,6 +100,8 @@ impl core::ops::Mul<[f64; 2]> for Rotation2 {
         self.apply_array(rhs)
     }
 }
+
+forward_ref_binop! { impl Mul, mul for Rotation2, [f64; 2] }
 
 #[cfg(test)]
 mod tests {

@@ -64,6 +64,31 @@ use std::marker::PhantomData;
 #[path = "position_serde.rs"]
 mod position_serde;
 
+/// Error returned by [`Position::try_from_cartesian`] when the Bowring
+/// iteration fails to converge below the latitude residual threshold
+/// (`1e-14` rad) within the iteration cap.
+#[derive(Debug, Clone, PartialEq)]
+pub struct GeodeticConvergenceError {
+    /// Number of Bowring iterations performed before giving up.
+    pub iterations: u32,
+    /// Absolute latitude residual `(lat_new - lat_prev).abs()` (in radians)
+    /// observed at the last iteration.
+    pub last_residual: f64,
+}
+
+impl std::fmt::Display for GeodeticConvergenceError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "geodetic Bowring iteration failed to converge after {} iterations \
+             (last latitude residual: {:e} rad)",
+            self.iterations, self.last_residual
+        )
+    }
+}
+
+impl std::error::Error for GeodeticConvergenceError {}
+
 /// An ellipsoidal **position** (center + frame + height above ellipsoid).
 ///
 /// This is the fundamental ellipsoidal (geodetic) coordinate type,
@@ -293,6 +318,12 @@ where
     /// Uses the iterative Bowring algorithm (typically 2–3 iterations for
     /// sub-millimetre accuracy).
     ///
+    /// This is an **infallible best-effort wrapper**; prefer
+    /// [`try_from_cartesian`](Self::try_from_cartesian) when convergence
+    /// guarantees matter. If the Bowring iteration does not converge within
+    /// the iteration cap, this method returns the last computed iterate
+    /// without signalling the failure.
+    ///
     /// # Type Parameter
     ///
     /// - `SourceU`: length unit of the input `Position`
@@ -327,23 +358,40 @@ where
     where
         C::Params: Clone,
     {
+        Self::try_from_cartesian(pos).unwrap_or_else(|_| Self::from_cartesian_best_effort(pos))
+    }
+
+    /// Fallible counterpart of [`from_cartesian`](Self::from_cartesian).
+    ///
+    /// Runs the same Bowring iteration, but returns
+    /// [`Err(GeodeticConvergenceError)`](GeodeticConvergenceError) when the
+    /// latitude residual `(lat_new - lat_prev).abs()` still exceeds the
+    /// convergence threshold (`1e-14` rad) after the iteration cap.
+    ///
+    /// # Type Parameter
+    ///
+    /// - `SourceU`: length unit of the input `Position`
+    pub fn try_from_cartesian<SourceU: LengthUnit>(
+        pos: &crate::cartesian::Position<C, F, SourceU>,
+    ) -> Result<Self, GeodeticConvergenceError>
+    where
+        C::Params: Clone,
+    {
+        const MAX_ITERATIONS: u32 = 5;
+        const CONVERGENCE_THRESHOLD: f64 = 1e-14;
+
         let a = <F::Ellipsoid as Ellipsoid>::A;
         let e2 = <F::Ellipsoid>::e2();
         let b = <F::Ellipsoid>::b();
 
-        // Convert input position to metres
         let x = pos.x().to::<Meter>().value();
         let y = pos.y().to::<Meter>().value();
         let z = pos.z().to::<Meter>().value();
 
-        // Longitude is straightforward
         let lon_rad = y.atan2(x);
-
-        // Bowring iterative algorithm for latitude and height
         let p = (x * x + y * y).sqrt();
 
-        // Initial approximation (Bowring 1985)
-        let ep2 = (a * a - b * b) / (b * b); // second eccentricity squared
+        let ep2 = (a * a - b * b) / (b * b);
         let theta = (z * a).atan2(p * b);
         let sin_theta = theta.sin();
         let cos_theta = theta.cos();
@@ -351,33 +399,80 @@ where
         let mut lat = (z + ep2 * b * sin_theta * sin_theta * sin_theta)
             .atan2(p - e2 * a * cos_theta * cos_theta * cos_theta);
 
-        // Iterate (typically 2-3 iterations for sub-mm convergence)
-        for _ in 0..5 {
+        let mut last_residual = f64::INFINITY;
+        let mut iterations: u32 = 0;
+        for _ in 0..MAX_ITERATIONS {
+            iterations += 1;
             let sin_lat = lat.sin();
-            let cos_lat = lat.cos();
-            let n = a / (1.0 - e2 * sin_lat * sin_lat).sqrt();
-            let h = if cos_lat.abs() > 1e-10 {
-                p / cos_lat - n
-            } else {
-                z / sin_lat - n * (1.0 - e2)
+            let new_lat = {
+                let n = a / (1.0 - e2 * sin_lat * sin_lat).sqrt();
+                (z + e2 * n * sin_lat).atan2(p)
             };
-
-            let new_lat = (z + e2 * n * sin_lat).atan2(p);
-            if (new_lat - lat).abs() < 1e-14 {
-                // Converged — compute final height and return
-                let lon_deg = lon_rad.to_degrees();
-                let lat_deg = new_lat.to_degrees();
-                return Self::new_with_params(
-                    pos.center_params().clone(),
-                    Degrees::new(lon_deg),
-                    Degrees::new(lat_deg),
-                    Meters::new(h).to::<U>(),
-                );
-            }
+            last_residual = (new_lat - lat).abs();
             lat = new_lat;
+            if last_residual < CONVERGENCE_THRESHOLD {
+                break;
+            }
         }
 
-        // Final result after max iterations
+        if last_residual >= CONVERGENCE_THRESHOLD {
+            return Err(GeodeticConvergenceError {
+                iterations,
+                last_residual,
+            });
+        }
+
+        let sin_lat = lat.sin();
+        let cos_lat = lat.cos();
+        let n = a / (1.0 - e2 * sin_lat * sin_lat).sqrt();
+        let h = if cos_lat.abs() > 1e-10 {
+            p / cos_lat - n
+        } else {
+            z / sin_lat - n * (1.0 - e2)
+        };
+
+        Ok(Self::new_with_params(
+            pos.center_params().clone(),
+            Degrees::new(lon_rad.to_degrees()),
+            Degrees::new(lat.to_degrees()),
+            Meters::new(h).to::<U>(),
+        ))
+    }
+
+    /// Best-effort fallback used by [`from_cartesian`](Self::from_cartesian)
+    /// when the Bowring iteration does not converge: returns the last iterate
+    /// without signalling the failure (preserves pre-existing behaviour).
+    fn from_cartesian_best_effort<SourceU: LengthUnit>(
+        pos: &crate::cartesian::Position<C, F, SourceU>,
+    ) -> Self
+    where
+        C::Params: Clone,
+    {
+        let a = <F::Ellipsoid as Ellipsoid>::A;
+        let e2 = <F::Ellipsoid>::e2();
+        let b = <F::Ellipsoid>::b();
+
+        let x = pos.x().to::<Meter>().value();
+        let y = pos.y().to::<Meter>().value();
+        let z = pos.z().to::<Meter>().value();
+
+        let lon_rad = y.atan2(x);
+        let p = (x * x + y * y).sqrt();
+
+        let ep2 = (a * a - b * b) / (b * b);
+        let theta = (z * a).atan2(p * b);
+        let sin_theta = theta.sin();
+        let cos_theta = theta.cos();
+
+        let mut lat = (z + ep2 * b * sin_theta * sin_theta * sin_theta)
+            .atan2(p - e2 * a * cos_theta * cos_theta * cos_theta);
+
+        for _ in 0..5 {
+            let sin_lat = lat.sin();
+            let n = a / (1.0 - e2 * sin_lat * sin_lat).sqrt();
+            lat = (z + e2 * n * sin_lat).atan2(p);
+        }
+
         let sin_lat = lat.sin();
         let cos_lat = lat.cos();
         let n = a / (1.0 - e2 * sin_lat * sin_lat).sqrt();
@@ -419,69 +514,26 @@ where
 // Display
 // =============================================================================
 
-impl<C, F, U> std::fmt::Display for Position<C, F, U>
-where
-    C: ReferenceCenter,
-    F: ReferenceFrame,
-    U: LengthUnit,
-    Quantity<U>: std::fmt::Display,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl_quantity_fmt_triplet! {
+    impl[C, F, U] for Position<C, F, U>
+    where {
+        C: ReferenceCenter,
+        F: ReferenceFrame,
+        U: LengthUnit,
+    },
+    fmt_each: { Quantity<U>, },
+    |this, f, FmtOne| {
         write!(
             f,
             "Center: {}, Frame: {}, lon: ",
             C::center_name(),
             F::frame_name()
         )?;
-        std::fmt::Display::fmt(&self.lon, f)?;
+        FmtOne::fmt(&this.lon, f)?;
         write!(f, ", lat: ")?;
-        std::fmt::Display::fmt(&self.lat, f)?;
+        FmtOne::fmt(&this.lat, f)?;
         write!(f, ", h: ")?;
-        std::fmt::Display::fmt(&self.height, f)
-    }
-}
-
-impl<C, F, U> std::fmt::LowerExp for Position<C, F, U>
-where
-    C: ReferenceCenter,
-    F: ReferenceFrame,
-    U: LengthUnit,
-    Quantity<U>: std::fmt::LowerExp,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Center: {}, Frame: {}, lon: ",
-            C::center_name(),
-            F::frame_name()
-        )?;
-        std::fmt::LowerExp::fmt(&self.lon, f)?;
-        write!(f, ", lat: ")?;
-        std::fmt::LowerExp::fmt(&self.lat, f)?;
-        write!(f, ", h: ")?;
-        std::fmt::LowerExp::fmt(&self.height, f)
-    }
-}
-
-impl<C, F, U> std::fmt::UpperExp for Position<C, F, U>
-where
-    C: ReferenceCenter,
-    F: ReferenceFrame,
-    U: LengthUnit,
-    Quantity<U>: std::fmt::UpperExp,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Center: {}, Frame: {}, lon: ",
-            C::center_name(),
-            F::frame_name()
-        )?;
-        std::fmt::UpperExp::fmt(&self.lon, f)?;
-        write!(f, ", lat: ")?;
-        std::fmt::UpperExp::fmt(&self.lat, f)?;
-        write!(f, ", h: ")?;
-        std::fmt::UpperExp::fmt(&self.height, f)
+        FmtOne::fmt(&this.height, f)
     }
 }
 
@@ -598,5 +650,55 @@ mod tests {
         let s_exp = format!("{:.3e}", p);
         let expected_lon_exp = format!("{:.3e}", p.lon);
         assert!(s_exp.contains(&format!("lon: {expected_lon_exp}")));
+    }
+
+    #[derive(Debug, Copy, Clone, ReferenceFrame)]
+    struct TestEllipsoidFrame;
+
+    impl crate::ellipsoid::HasEllipsoid for TestEllipsoidFrame {
+        type Ellipsoid = crate::ellipsoid::Wgs84;
+    }
+
+    #[test]
+    fn try_from_cartesian_round_trip_converges() {
+        let original = Position::<TestCenter, TestEllipsoidFrame, Meter>::new(
+            -17.89 * DEG,
+            28.76 * DEG,
+            2200.0 * M,
+        );
+        let cart = original.to_cartesian::<Meter>();
+        let back =
+            Position::<TestCenter, TestEllipsoidFrame, Meter>::try_from_cartesian(&cart)
+                .expect("Bowring iteration should converge for a well-defined point");
+
+        // Sub-microarcsecond agreement on lon/lat (1 µas ≈ 2.78e-10 deg).
+        let max_angle_err_deg = 1.0e-10;
+        assert!(
+            (back.lon.value() - original.lon.value()).abs() < max_angle_err_deg,
+            "longitude residual {} exceeds tolerance",
+            (back.lon.value() - original.lon.value()).abs()
+        );
+        assert!(
+            (back.lat.value() - original.lat.value()).abs() < max_angle_err_deg,
+            "latitude residual {} exceeds tolerance",
+            (back.lat.value() - original.lat.value()).abs()
+        );
+        // Height should round-trip to sub-millimetre.
+        assert!(
+            (back.height.value() - original.height.value()).abs() < 1.0e-6,
+            "height residual {} m exceeds tolerance",
+            (back.height.value() - original.height.value()).abs()
+        );
+    }
+
+    #[test]
+    fn geodetic_convergence_error_display_mentions_residual() {
+        let err = GeodeticConvergenceError {
+            iterations: 5,
+            last_residual: 1.5e-10,
+        };
+        let msg = format!("{err}");
+        assert!(msg.contains("5"));
+        assert!(msg.contains("1.5e-10") || msg.contains("1.5e-10"));
     }
 }

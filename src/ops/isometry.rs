@@ -160,6 +160,8 @@ impl<U: Unit> std::ops::Mul for Isometry3<U> {
     }
 }
 
+forward_ref_binop! { impl[U: Unit] Mul, mul for Isometry3<U>, Isometry3<U> }
+
 /// Applies an isometry (rotation + translation) to a raw `[f64; 3]` point: `R * p + t`.
 ///
 /// The caller is responsible for ensuring the array values are in the same unit
@@ -172,6 +174,8 @@ impl<U: Unit> std::ops::Mul<[f64; 3]> for Isometry3<U> {
         self.apply_point(rhs)
     }
 }
+
+forward_ref_binop! { impl[U: Unit] Mul, mul for Isometry3<U>, [f64; 3] }
 
 // Mul<[Quantity<U>; 3]>, Mul<XYZ<Quantity<U>>>, and Mul<Position<C,F,U>>
 // are implemented directly in the parent module (ops/mod.rs).

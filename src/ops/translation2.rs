@@ -94,6 +94,8 @@ impl<U: Unit> core::ops::Add for Translation2<U> {
     }
 }
 
+forward_ref_binop! { impl[U: Unit] Add, add for Translation2<U>, Translation2<U> }
+
 impl<U: Unit> core::ops::Neg for Translation2<U> {
     type Output = Self;
 
@@ -103,6 +105,8 @@ impl<U: Unit> core::ops::Neg for Translation2<U> {
     }
 }
 
+forward_ref_unop! { impl[U: Unit] Neg, neg for Translation2<U> }
+
 impl<U: Unit> core::ops::Mul<[f64; 2]> for Translation2<U> {
     type Output = [f64; 2];
 
@@ -111,6 +115,8 @@ impl<U: Unit> core::ops::Mul<[f64; 2]> for Translation2<U> {
         self.apply_array(rhs)
     }
 }
+
+forward_ref_binop! { impl[U: Unit] Mul, mul for Translation2<U>, [f64; 2] }
 
 #[cfg(test)]
 mod tests {

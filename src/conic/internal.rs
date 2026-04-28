@@ -43,7 +43,7 @@ pub(super) fn validate_positive_length<U: LengthUnit>(
     value: Quantity<U>,
     error: ConicValidationError,
 ) -> Result<(), ConicValidationError> {
-    if !value.value().is_finite() || value.value() <= 0.0 {
+    if !value.is_finite() || value <= Quantity::new(0.0) {
         return Err(error);
     }
     Ok(())

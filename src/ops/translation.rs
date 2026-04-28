@@ -174,6 +174,8 @@ impl<U: Unit> std::ops::Add for Translation3<U> {
     }
 }
 
+forward_ref_binop! { impl[U: Unit] Add, add for Translation3<U>, Translation3<U> }
+
 impl<U: Unit> std::ops::Neg for Translation3<U> {
     type Output = Self;
 
@@ -182,6 +184,8 @@ impl<U: Unit> std::ops::Neg for Translation3<U> {
         self.inverse()
     }
 }
+
+forward_ref_unop! { impl[U: Unit] Neg, neg for Translation3<U> }
 
 /// Applies a translation to a raw `[f64; 3]` point: `p + t`.
 ///
@@ -195,6 +199,8 @@ impl<U: Unit> std::ops::Mul<[f64; 3]> for Translation3<U> {
         self.apply_array(rhs)
     }
 }
+
+forward_ref_binop! { impl[U: Unit] Mul, mul for Translation3<U>, [f64; 3] }
 
 // Mul<[Quantity<U>; 3]>, Mul<XYZ<Quantity<U>>>, and Mul<Position<C,F,U>>
 // are implemented directly in the parent module (ops/mod.rs).

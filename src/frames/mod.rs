@@ -39,6 +39,10 @@
 /// represent different ways of orienting a coordinate system (e.g., aligned with
 /// an equator, an orbital plane, a horizon, etc.).
 ///
+/// Geodetic ellipsoids are attached to the **frame**, not the center; see
+/// [`HasEllipsoid`](crate::ellipsoid::HasEllipsoid) for the rationale and the
+/// derive-macro hook.
+///
 /// # Implementing
 ///
 /// Implement this trait for zero-sized marker types that represent different frames:

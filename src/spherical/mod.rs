@@ -29,12 +29,12 @@ pub fn canonicalize_azimuth(angle: qtty::angular::Degrees) -> qtty::angular::Deg
 /// the azimuth by 180°.
 #[inline]
 pub fn canonicalize_polar(angle: qtty::angular::Degrees) -> qtty::angular::Degrees {
+    use qtty::angular::Degrees;
     let wrapped = angle.wrap_signed(); // (-180°, 180°]
-    let v = wrapped.value();
-    if v > 90.0 {
-        qtty::angular::Degrees::new(180.0 - v)
-    } else if v < -90.0 {
-        qtty::angular::Degrees::new(-180.0 - v)
+    if wrapped > Degrees::new(90.0) {
+        Degrees::new(180.0) - wrapped
+    } else if wrapped < Degrees::new(-90.0) {
+        Degrees::new(-180.0) - wrapped
     } else {
         wrapped
     }
@@ -55,20 +55,19 @@ pub fn canonicalize_polar_azimuth(
     use qtty::angular::Degrees;
 
     let wrapped = polar.wrap_signed();
-    let v = wrapped.value();
-    let mut azimuth_deg = azimuth.value();
+    let mut azimuth = azimuth;
 
-    let polar = if v > 90.0 {
-        azimuth_deg += 180.0;
-        Degrees::new(180.0 - v)
-    } else if v < -90.0 {
-        azimuth_deg += 180.0;
-        Degrees::new(-180.0 - v)
+    let polar = if wrapped > Degrees::new(90.0) {
+        azimuth = azimuth + Degrees::new(180.0);
+        Degrees::new(180.0) - wrapped
+    } else if wrapped < Degrees::new(-90.0) {
+        azimuth = azimuth + Degrees::new(180.0);
+        Degrees::new(-180.0) - wrapped
     } else {
         wrapped
     };
 
-    (polar, Degrees::new(azimuth_deg).normalize())
+    (polar, azimuth.normalize())
 }
 
 /// Converts Cartesian unit-vector components (x, y, z) to spherical angles.
