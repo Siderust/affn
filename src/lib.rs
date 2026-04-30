@@ -190,7 +190,7 @@ pub mod prelude {
     pub use crate::ellipsoidal::{GeodeticConvergenceError, Position as EllipsoidalPosition};
 
     // Ellipsoid traits and predefined ellipsoids (always available)
-    pub use crate::ellipsoid::{Ellipsoid, Grs80, HasEllipsoid, Wgs84};
+    pub use crate::ellipsoid::{Ellipsoid, Grs80, HasEllipsoid, Iers2003, Wgs84};
 
     // Feature-gated astronomical frames
     #[cfg(feature = "astro")]

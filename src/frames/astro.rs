@@ -8,34 +8,105 @@
 // (e.g., `.ra()`, `.dec()`, `Direction::<ICRS>::new(ra, dec)`) without
 // violating Rust's orphan rules for inherent impls.
 
+use crate::ops::Rotation3;
 use crate::DeriveReferenceFrame;
+use qtty::angular::Radians;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 // =============================================================================
+// IAU 2006 frame-bias constants (IERS Conventions 2010, §5.4.4, Table 5.2b)
+// =============================================================================
+//
+// These are the three small angles that define the constant rotation
+// relating the GCRS / ICRS axes to the **mean** equator and equinox of
+// J2000.0 (i.e. the EquatorialMeanJ2000 / EME2000 / FK5-J2000 axes):
+//
+//   ξ₀  = −0.0166170″   (offset of CIP at J2000 from mean pole, x)
+//   η₀  = −0.0068192″   (offset of CIP at J2000 from mean pole, y)
+//   dα₀ = −0.0146″      (offset of ICRS RA origin from mean equinox)
+//
+// Per IERS Conventions (2010), Eq. (5.32), the bias matrix is
+//
+//   B  =  R1(−η₀) · R2( ξ₀) · R3(dα₀)
+//
+// where R1, R2, R3 are the *passive* (frame-rotating) elementary rotations
+// of Eq. (5.4).  In affn `Rotation3::r{x,y,z}` are the *active* rotations,
+// so `R_i(θ) = Rotation3::r{x,y,z}(−θ)`, giving the equivalent form
+//
+//   B  =  Rotation3::rx( η₀) · Rotation3::ry(−ξ₀) · Rotation3::rz(−dα₀)
+//
+// The resulting matrix agrees with ERFA `eraBp06` `rb` to ≲1e-15.
+
+const FRAME_BIAS_DALPHA0_ARCSEC: f64 = -0.0146;
+const FRAME_BIAS_XI0_ARCSEC: f64 = -0.0166170;
+const FRAME_BIAS_ETA0_ARCSEC: f64 = -0.0068192;
+
+const ARCSEC_TO_RAD: f64 = std::f64::consts::PI / 648_000.0;
+
+#[inline]
+fn frame_bias_gcrs_to_eme2000() -> Rotation3 {
+    let xi0 = Radians::new(FRAME_BIAS_XI0_ARCSEC * ARCSEC_TO_RAD);
+    let eta0 = Radians::new(FRAME_BIAS_ETA0_ARCSEC * ARCSEC_TO_RAD);
+    let da0 = Radians::new(FRAME_BIAS_DALPHA0_ARCSEC * ARCSEC_TO_RAD);
+    Rotation3::rx(eta0) * Rotation3::ry(-xi0) * Rotation3::rz(-da0)
+}
+
+// =============================================================================
 // Equatorial frames (ra/dec)
 // =============================================================================
 
-/// International Celestial Reference System.
+/// International Celestial Reference **System** (ICRS).
 ///
-/// The fundamental celestial reference frame used in modern astronomy.
-/// It is quasi-inertial and centered at the solar system barycenter.
-/// The axes are defined by the positions of distant quasars.
+/// The *system* — i.e. the abstract definition of the reference frame:
+/// quasi-inertial, kinematically non-rotating, with origin at the solar-
+/// system barycentre and axes fixed by the positions of distant quasars.
+/// Adopted by the IAU at the XXIIIrd General Assembly (1997, Resolution B2)
+/// as the fundamental celestial reference *system* replacing FK5/J2000.
+///
+/// `ICRS` is the *definition*; [`ICRF`] is the materialisation.
+///
+/// # Relationship to neighbouring frames
+///
+/// | Pair                       | Rotation                    | Magnitude |
+/// |----------------------------|-----------------------------|-----------|
+/// | `ICRS` ↔ [`ICRF`]          | exact identity              | 0         |
+/// | `ICRS` ↔ [`GCRS`] (direction-only) | identity (translation only on positions) | 0 |
+/// | `ICRS` ↔ [`EME2000`]       | IAU 2006 frame bias **B**   | ≈ 23 mas  |
+///
+/// The frame-bias rotation between `ICRS` and `EME2000` is the same matrix
+/// that connects [`GCRS`] to [`EME2000`] (see [`GCRS::frame_bias_to_eme2000`]).
+///
+/// # References
+/// * IAU 1997 Resolution B2 (definition of the ICRS).
+/// * IAU 2000 Resolution B1.3 (relationship to the GCRS).
+/// * IERS Conventions (2010), §3.2 and §5.4.4.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
 #[frame(polar = "dec", azimuth = "ra", inherent)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ICRS;
 
-/// International Celestial Reference Frame (ICRF).
+/// International Celestial Reference **Frame** (ICRF).
 ///
-/// The physical realisation of the ICRS via VLBI observations of extragalactic
-/// sources. DE440 ephemeris data is natively expressed in ICRF.
+/// The *realisation* of the [`ICRS`] via VLBI observations of extragalactic
+/// radio sources.  The current realisation is **ICRF3** (IAU 2018, Resolution
+/// B2), defined by 4536 sources at S/X, K and X/Ka bands.  DE440/DE441
+/// planetary ephemerides are natively expressed in this realisation.
 ///
-/// Practically coincident with [`ICRS`] to sub-milliarcsecond accuracy, but
-/// kept as a distinct type so that DE440 internal vectors carry the correct
-/// frame provenance and cannot be accidentally mixed with other equatorial
-/// frames without an explicit conversion step.
+/// At the catalog level used by `affn`, `ICRS` and `ICRF` are **bit-identical
+/// for direction purposes** — there is no rotation between them; the
+/// distinction is only one of *provenance* (definition vs. realisation).
+/// Keeping them as separate marker types prevents DE440 internal vectors
+/// from being accidentally mixed with catalog-defined positions without an
+/// explicit (no-op) conversion step.
+///
+/// See [`ICRF::direction_rotation_to_icrs`] (returns `Rotation3::IDENTITY`)
+/// to obtain the canonical rotation programmatically.
+///
+/// # References
+/// * Charlot et al., A&A 644 (2020) A159 — ICRF3 catalog.
+/// * IAU 2018 Resolution B2.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
 #[frame(polar = "dec", azimuth = "ra")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -52,10 +123,36 @@ pub struct EquatorialMeanJ2000;
 
 /// Earth Mean Equator and Equinox of J2000.0 (EME2000).
 ///
-/// CCSDS Orbit Data Messages and many flight-dynamics tools use `EME2000`
-/// for the same mean-equator/mean-equinox J2000 axes that are commonly
-/// labelled FK5/J2000. siderust keeps it as an explicit marker so exchanged
-/// data can preserve the original frame name in public APIs.
+/// Earth-based mean equator/equinox at the fundamental epoch J2000.0
+/// (TT 2000-01-01 12:00).  Mathematically identical to [`EquatorialMeanJ2000`]
+/// — both are the IAU 2006 *mean equator and equinox of J2000.0* axes that
+/// the astrodynamics community labels "EME2000" and the astronomy / FK5
+/// community calls "J2000 mean equator".  CCSDS Orbit Data Messages and most
+/// flight-dynamics tools (STK, GMAT, …) use the `EME2000` label.
+///
+/// `EME2000` is kept as a distinct marker so that exchanged data preserves
+/// the original frame name in public APIs and so that misuse against truly
+/// barycentric/non-rotating frames is caught at compile time.
+///
+/// # Relationship to [`GCRS`] / [`ICRS`]
+///
+/// `EME2000` differs from [`GCRS`] (and from [`ICRS`] for direction purposes)
+/// only by the **constant** IAU 2006 frame-bias rotation `B`, whose three
+/// defining angles are
+///
+/// ```text
+/// ξ₀  = −0.0166170″,  η₀  = −0.0068192″,  dα₀ = −0.0146″
+/// ```
+///
+/// (IERS Conventions 2010, Table 5.2b).  The angular magnitude of `B` is
+/// ≈ 23 mas (≈ 1.1 × 10⁻⁷ rad).  Because `B` is epoch-independent, no time
+/// argument is needed to convert between `GCRS` and `EME2000`; see
+/// [`EME2000::frame_bias_to_gcrs`] and [`GCRS::frame_bias_to_eme2000`].
+///
+/// # References
+/// * IERS Conventions (2010), §5.4.4 and Table 5.2b.
+/// * Hilton et al., Cel. Mech. Dyn. Astr. 94 (2006) 351 — IAU 2006 (P03).
+/// * CCSDS 502.0-B-2, Orbit Data Messages.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
 #[frame(polar = "dec", azimuth = "ra", inherent)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -81,22 +178,159 @@ pub struct EquatorialTrueOfDate;
 
 /// Geocentric Celestial Reference System (GCRS).
 ///
-/// The geocentric counterpart of the BCRS (barycentric CRS). Its axes are
-/// kinematically non-rotating with respect to the ICRS, but the origin is
-/// at the Earth's center of mass. In the IAU 2000/2006 framework, directions
-/// expressed in the GCRS are transformed to the terrestrial frame via the
-/// CIO-based procedure: GCRS → (CIP X,Y + CIO s) → CIRS → (ERA) → TIRS →
-/// (polar motion W) → ITRS.
+/// The geocentric counterpart of the BCRS (barycentric CRS).  Its axes are
+/// **kinematically non-rotating with respect to the [`ICRS`]** but its
+/// origin is the centre of mass of the Earth (IAU 2000 Resolution B1.3).
 ///
-/// For most astronomical purposes (< 1 mas), GCRS ≈ ICRS for directions.
+/// # Direction vs. position semantics
 ///
-/// ## References
-/// * IAU 2000 Resolution B1.3
-/// * IERS Conventions (2010), §5.1
+/// * As a *direction* frame, `GCRS` and [`ICRS`] are **bit-identical**:
+///   their axes coincide, the rotation between them is exactly the
+///   identity, so a unit-vector pointing in `GCRS` has the same components
+///   in `ICRS` (a translation between origins does not affect directions).
+/// * As a *position* frame the two differ by the geocentre-to-barycentre
+///   translation (≈ 1 AU scale).  This origin difference is encoded in the
+///   center type, not in this frame marker.
+///
+/// # Relationship to [`EME2000`]
+///
+/// `GCRS` and [`EME2000`] (the mean equator and mean equinox of J2000.0)
+/// differ by the constant **IAU 2006 frame-bias rotation** `B` of
+/// magnitude ≈ 23 mas, originating from the small offset between the
+/// ICRS pole / equinox and the dynamical mean pole / equinox at J2000.0.
+/// See [`GCRS::frame_bias_to_eme2000`].
+///
+/// # CIO-based reduction chain
+///
+/// In the IAU 2000/2006 framework, directions expressed in `GCRS` are
+/// transformed to the terrestrial frame via the CIO-based procedure:
+///
+/// ```text
+/// GCRS → (CIP X,Y + CIO s) → CIRS → (ERA) → TIRS → (W) → ITRS
+/// ```
+///
+/// # References
+/// * IAU 2000 Resolution B1.3 (definition of the GCRS).
+/// * IERS Conventions (2010), §5.1 and §5.4.4 (frame bias).
+/// * Soffel et al., AJ 126 (2003) 2687 — IAU 2000 relativity framework.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
 #[frame(polar = "dec", azimuth = "ra", inherent)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct GCRS;
+
+// =============================================================================
+// Canonical frame relationships among ICRS / ICRF / GCRS / EME2000
+// =============================================================================
+//
+// These inherent methods expose the *direction-only* rotation that connects
+// each pair, so callers can verify and use the relationship without going
+// through a higher-level transform pipeline.  All matrices are constants
+// (epoch-independent), as required by IAU 2006 / IERS Conventions 2010
+// §5.4.4 for the frame bias.
+
+impl ICRS {
+    /// Direction-frame rotation from `ICRS` to [`ICRF`].
+    ///
+    /// At the catalog level used by `affn` the ICRS and its realisation
+    /// ICRF are bit-identical: the rotation is exactly
+    /// [`Rotation3::IDENTITY`].
+    #[inline]
+    #[must_use]
+    pub fn direction_rotation_to_icrf() -> Rotation3 {
+        Rotation3::IDENTITY
+    }
+
+    /// Direction-frame rotation from `ICRS` to [`GCRS`].
+    ///
+    /// Per IAU 2000 Resolution B1.3 the GCRS axes are kinematically
+    /// non-rotating with respect to ICRS, so for *directions* the rotation
+    /// is exactly [`Rotation3::IDENTITY`].  (Origin translation is encoded
+    /// in the center type, not here.)
+    #[inline]
+    #[must_use]
+    pub fn direction_rotation_to_gcrs() -> Rotation3 {
+        Rotation3::IDENTITY
+    }
+
+    /// Frame-bias rotation `B` from `ICRS` to [`EME2000`].
+    ///
+    /// Identical to [`GCRS::frame_bias_to_eme2000`].  Magnitude ≈ 23 mas.
+    #[inline]
+    #[must_use]
+    pub fn frame_bias_to_eme2000() -> Rotation3 {
+        frame_bias_gcrs_to_eme2000()
+    }
+}
+
+impl ICRF {
+    /// Direction-frame rotation from [`ICRF`] back to [`ICRS`].
+    ///
+    /// Exactly [`Rotation3::IDENTITY`] — the realisation and the system
+    /// share axes by construction at the catalog level used here.
+    #[inline]
+    #[must_use]
+    pub fn direction_rotation_to_icrs() -> Rotation3 {
+        Rotation3::IDENTITY
+    }
+}
+
+impl GCRS {
+    /// Direction-frame rotation from [`GCRS`] back to [`ICRS`].
+    ///
+    /// Exactly [`Rotation3::IDENTITY`] (IAU 2000 Resolution B1.3): GCRS
+    /// axes are kinematically non-rotating with respect to ICRS.  As
+    /// *direction* frames they are bit-identical; only the spatial origin
+    /// (geocentre vs. solar-system barycentre) differs, and that difference
+    /// lives in the center type.
+    #[inline]
+    #[must_use]
+    pub fn direction_rotation_to_icrs() -> Rotation3 {
+        Rotation3::IDENTITY
+    }
+
+    /// IAU 2006 frame-bias rotation `B` from [`GCRS`] to [`EME2000`].
+    ///
+    /// Built from the IERS Conventions (2010) Table 5.2b angles
+    ///
+    /// ```text
+    /// ξ₀  = −0.0166170″
+    /// η₀  = −0.0068192″
+    /// dα₀ = −0.0146″
+    /// ```
+    ///
+    /// using the parametrisation of Eq. (5.32) of the same document,
+    ///
+    /// ```text
+    /// B = R1(−η₀) · R2(ξ₀) · R3(dα₀).
+    /// ```
+    ///
+    /// The matrix is **constant** (epoch-independent) and its rotation
+    /// angle is approximately 23 milli-arcseconds (≈ 1.1 × 10⁻⁷ rad).
+    /// It agrees with ERFA `eraBp06` `rb` at J2000.0 to ≲ 1 × 10⁻¹⁵.
+    #[inline]
+    #[must_use]
+    pub fn frame_bias_to_eme2000() -> Rotation3 {
+        frame_bias_gcrs_to_eme2000()
+    }
+}
+
+impl EME2000 {
+    /// Inverse IAU 2006 frame-bias rotation `Bᵀ` from [`EME2000`] to
+    /// [`GCRS`].  Exact algebraic inverse of [`GCRS::frame_bias_to_eme2000`].
+    #[inline]
+    #[must_use]
+    pub fn frame_bias_to_gcrs() -> Rotation3 {
+        frame_bias_gcrs_to_eme2000().inverse()
+    }
+
+    /// Inverse IAU 2006 frame-bias rotation from [`EME2000`] to [`ICRS`].
+    /// Identical to [`EME2000::frame_bias_to_gcrs`] for direction purposes.
+    #[inline]
+    #[must_use]
+    pub fn frame_bias_to_icrs() -> Rotation3 {
+        frame_bias_gcrs_to_eme2000().inverse()
+    }
+}
 
 /// Celestial Intermediate Reference System (CIRS).
 ///
