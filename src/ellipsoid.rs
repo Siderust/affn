@@ -5,7 +5,7 @@
 //!
 //! Provides the [`Ellipsoid`] trait for defining geodetic reference ellipsoids,
 //! the [`HasEllipsoid`] trait for associating an ellipsoid with a reference frame,
-//! and predefined ellipsoid constants ([`Wgs84`], [`Grs80`]).
+//! and predefined ellipsoid constants ([`Wgs84`], [`Grs80`], [`Iers2003`]).
 //!
 //! See [`HasEllipsoid`] for the rationale behind attaching the ellipsoid to the
 //! frame rather than the center.
@@ -176,6 +176,31 @@ impl Ellipsoid for Grs80 {
     const F: f64 = 1.0 / 298.257_222_101;
 }
 
+/// IERS 2003 reference ellipsoid (per IERS Conventions 2010, Table 1.1).
+///
+/// Adopted by the IERS for its conventional terrestrial system. The
+/// semi-major axis is slightly smaller than that of WGS 84 / GRS 80,
+/// reflecting the "zero-tide" definition recommended for geodynamics.
+///
+/// | Parameter | Value |
+/// |-----------|-------|
+/// | Semi-major axis (*a*) | 6 378 136.6 m |
+/// | Flattening (*f*) | 1 / 298.256 42 |
+///
+/// # References
+///
+/// * G. Petit and B. Luzum (eds.), *IERS Conventions (2010)*, IERS Technical
+///   Note 36, Table 1.1.
+/// * <https://www.iers.org/IERS/EN/Publications/TechnicalNotes/tn36.html>
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Iers2003;
+
+impl Ellipsoid for Iers2003 {
+    const A: f64 = 6_378_136.6;
+    const F: f64 = 1.0 / 298.256_42;
+}
+
 // =============================================================================
 // Tests
 // =============================================================================
@@ -213,5 +238,42 @@ mod tests {
         // b = a(1 - f)
         let expected = Wgs84::A * (1.0 - Wgs84::F);
         assert!((Wgs84::b() - expected).abs() < 1e-10);
+    }
+
+    #[test]
+    fn iers2003_constants() {
+        assert!((Iers2003::A - 6_378_136.6).abs() < 1e-6);
+        assert!((Iers2003::F - 1.0 / 298.256_42).abs() < 1e-15);
+    }
+
+    #[test]
+    fn grs80_shares_a_with_wgs84() {
+        assert_eq!(Grs80::A, Wgs84::A);
+        assert_eq!(Grs80::A, 6_378_137.0);
+    }
+
+    #[test]
+    fn wgs84_grs80_inv_flattening_difference() {
+        // 1/f differs by ~1.46e-6 between WGS84 and GRS80.
+        let inv_wgs84 = 1.0 / Wgs84::F;
+        let inv_grs80 = 1.0 / Grs80::F;
+        let diff = inv_wgs84 - inv_grs80;
+        assert!(
+            (diff - 1.462e-6).abs() < 1e-8,
+            "expected ~1.46e-6, got {diff}"
+        );
+    }
+
+    #[test]
+    fn all_ellipsoids_invariants() {
+        fn check<E: Ellipsoid>() {
+            assert!(E::A > 0.0, "a must be positive");
+            assert!(E::F > 0.0 && E::F < 1.0, "0 < f < 1");
+            let expected_b = E::A * (1.0 - E::F);
+            assert!((E::b() - expected_b).abs() < 1e-9);
+        }
+        check::<Wgs84>();
+        check::<Grs80>();
+        check::<Iers2003>();
     }
 }
