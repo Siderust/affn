@@ -367,9 +367,8 @@ fn periapsis_new_unchecked_stores_values() {
 
 #[test]
 fn periapsis_to_semi_major_axis_elliptic() {
-    // q = 0.5 AU, e = 0.5 → a = q / |1-e| = 0.5/0.5 = 1.0 AU
-    use qtty::AU;
-    let p = PeriapsisParam::try_new(0.5 * AU, 0.5).unwrap();
+    // q = 0.5 m, e = 0.5 → a = q / |1-e| = 0.5/0.5 = 1.0 m
+    let p = PeriapsisParam::try_new(0.5 * M, 0.5).unwrap();
     let sma = p.to_semi_major_axis().unwrap();
     assert!((sma.semi_major_axis().value() - 1.0).abs() < 1e-10);
 }

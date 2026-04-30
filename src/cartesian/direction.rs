@@ -50,7 +50,7 @@
 //! assert!((dir.z() - 2.0/3.0).abs() < 1e-12);
 //!
 //! // Scale to create a Vector
-//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
 //! let vec = dir.scale(10.0 * M);
 //! ```
 
@@ -273,7 +273,7 @@ impl<F: ReferenceFrame> Direction<F> {
     /// ```rust
     /// use affn::cartesian::Direction;
     /// use affn::frames::ReferenceFrame;
-    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
     ///
     /// #[derive(Debug, Copy, Clone)]
     /// struct WorldFrame;
