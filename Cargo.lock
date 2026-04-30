@@ -567,6 +567,7 @@ dependencies = [
 [[package]]
 name = "qtty"
 version = "0.6.1"
+source = "git+https://github.com/Siderust/qtty?branch=main#be9ff9a45150b111526daf4bcd0491c2a47f5fcf"
 dependencies = [
  "qtty-core",
  "qtty-derive",
@@ -575,6 +576,7 @@ dependencies = [
 [[package]]
 name = "qtty-core"
 version = "0.6.1"
+source = "git+https://github.com/Siderust/qtty?branch=main#be9ff9a45150b111526daf4bcd0491c2a47f5fcf"
 dependencies = [
  "libm",
  "qtty-derive",
@@ -585,6 +587,7 @@ dependencies = [
 [[package]]
 name = "qtty-derive"
 version = "0.6.1"
+source = "git+https://github.com/Siderust/qtty?branch=main#be9ff9a45150b111526daf4bcd0491c2a47f5fcf"
 dependencies = [
  "proc-macro2",
  "quote",
