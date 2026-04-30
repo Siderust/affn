@@ -68,7 +68,8 @@ fn main() {
     assert!((d.z() - d_back.z()).abs() < eps);
 
     // Spherical position
-    let sp = SphericalPosition::<Origin, World, Meter>::new_raw(45.0 * DEG, 30.0 * DEG, 100.0 * M);
+    let sp =
+        SphericalPosition::<Origin, World, Meter>::new_unchecked(45.0 * DEG, 30.0 * DEG, 100.0 * M);
     let sp_json = serde_json::to_string(&sp).expect("serialize spherical position");
     let sp_back: SphericalPosition<Origin, World, Meter> =
         serde_json::from_str(&sp_json).expect("deserialize spherical position");
@@ -77,7 +78,7 @@ fn main() {
     assert_eq!(sp.distance, sp_back.distance);
 
     // Spherical direction
-    let sd = SphericalDirection::<World>::new_raw(10.0 * DEG, 350.0 * DEG);
+    let sd = SphericalDirection::<World>::new_unchecked(10.0 * DEG, 350.0 * DEG);
     let sd_json = serde_json::to_string_pretty(&sd).expect("serialize spherical direction");
     let sd_back: SphericalDirection<World> =
         serde_json::from_str(&sd_json).expect("deserialize spherical direction");

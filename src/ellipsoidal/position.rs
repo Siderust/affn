@@ -667,9 +667,8 @@ mod tests {
             2200.0 * M,
         );
         let cart = original.to_cartesian::<Meter>();
-        let back =
-            Position::<TestCenter, TestEllipsoidFrame, Meter>::try_from_cartesian(&cart)
-                .expect("Bowring iteration should converge for a well-defined point");
+        let back = Position::<TestCenter, TestEllipsoidFrame, Meter>::try_from_cartesian(&cart)
+            .expect("Bowring iteration should converge for a well-defined point");
 
         // Sub-microarcsecond agreement on lon/lat (1 µas ≈ 2.78e-10 deg).
         let max_angle_err_deg = 1.0e-10;

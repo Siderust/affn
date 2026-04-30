@@ -206,7 +206,7 @@ fn test_cartesian_position_origin_serde() {
 
 #[test]
 fn test_spherical_direction_serde_roundtrip() {
-    let dir = SphericalDirection::<TestFrame>::new_raw(45.0 * DEG, 90.0 * DEG);
+    let dir = SphericalDirection::<TestFrame>::new_unchecked(45.0 * DEG, 90.0 * DEG);
 
     let json = serde_json::to_string(&dir).expect("serialize SphericalDirection");
     let deserialized: SphericalDirection<TestFrame> =
@@ -218,8 +218,8 @@ fn test_spherical_direction_serde_roundtrip() {
 
 #[test]
 fn test_spherical_direction_poles_serde() {
-    let north_pole = SphericalDirection::<TestFrame>::new_raw(90.0 * DEG, 0.0 * DEG);
-    let south_pole = SphericalDirection::<TestFrame>::new_raw(-90.0 * DEG, 0.0 * DEG);
+    let north_pole = SphericalDirection::<TestFrame>::new_unchecked(90.0 * DEG, 0.0 * DEG);
+    let south_pole = SphericalDirection::<TestFrame>::new_unchecked(-90.0 * DEG, 0.0 * DEG);
 
     for dir in [north_pole, south_pole] {
         let json = serde_json::to_string(&dir).expect("serialize pole");
@@ -235,7 +235,7 @@ fn test_spherical_direction_poles_serde() {
 fn test_spherical_direction_equator_serde() {
     // Test points on the equator at various azimuths
     for azimuth in [0.0, 90.0, 180.0, 270.0, 359.9] {
-        let dir = SphericalDirection::<TestFrame>::new_raw(0.0 * DEG, azimuth * DEG);
+        let dir = SphericalDirection::<TestFrame>::new_unchecked(0.0 * DEG, azimuth * DEG);
 
         let json = serde_json::to_string(&dir).expect("serialize equator point");
         let deserialized: SphericalDirection<TestFrame> =
@@ -252,7 +252,7 @@ fn test_spherical_direction_equator_serde() {
 
 #[test]
 fn test_spherical_position_serde_roundtrip() {
-    let pos = SphericalPosition::<TestCenter, TestFrame, Kilometer>::new_raw(
+    let pos = SphericalPosition::<TestCenter, TestFrame, Kilometer>::new_unchecked(
         45.0 * DEG,
         90.0 * DEG,
         1000.0 * KM,
@@ -274,13 +274,12 @@ fn test_spherical_position_with_params_serde_roundtrip() {
         y: 2.0,
         z: 3.0,
     };
-    let pos =
-        SphericalPosition::<ParameterizedCenter, TestFrame, AstronomicalUnit>::new_raw_with_params(
-            params.clone(),
-            30.0 * DEG,
-            60.0 * DEG,
-            1.5 * AU,
-        );
+    let pos = SphericalPosition::<ParameterizedCenter, TestFrame, AstronomicalUnit>::new_unchecked_with_params(
+        params.clone(),
+        30.0 * DEG,
+        60.0 * DEG,
+        1.5 * AU,
+    );
 
     let json = serde_json::to_string(&pos).expect("serialize SphericalPosition with params");
     let deserialized: SphericalPosition<ParameterizedCenter, TestFrame, AstronomicalUnit> =

@@ -453,6 +453,7 @@ mod tests {
     /// operator (`Vector + Vector`) and unary operator (`-Vector`) must
     /// produce identical results to the by-value form.
     #[test]
+    #[allow(clippy::op_ref)]
     fn ref_ops_uniformity_smoke() {
         let a = DispAu::new(1.0, 2.0, 3.0);
         let b = DispAu::new(4.0, 5.0, 6.0);
