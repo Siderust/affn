@@ -46,7 +46,10 @@ impl fmt::Display for ConicValidationError {
             }
             Self::InvalidOrientation => write!(f, "orientation angles must be finite"),
             Self::OutOfRange { field, value } => {
-                write!(f, "orientation angle `{field}` is out of canonical range: {value}°")
+                write!(
+                    f,
+                    "orientation angle `{field}` is out of canonical range: {value}°"
+                )
             }
         }
     }

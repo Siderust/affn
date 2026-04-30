@@ -157,10 +157,34 @@ fn frame_bias_off_diagonal_signs_match_iers_convention() {
     // (See `siderust/.../bias.rs::bias_off_diagonal_signs_match_erfa`.)
     let b = GCRS::frame_bias_to_eme2000();
     let m = b.as_matrix();
-    assert!(m[0][1] < 0.0, "rb[0][1] should be negative, got {}", m[0][1]);
-    assert!(m[1][0] > 0.0, "rb[1][0] should be positive, got {}", m[1][0]);
-    assert!(m[0][2] > 0.0, "rb[0][2] should be positive, got {}", m[0][2]);
-    assert!(m[2][0] < 0.0, "rb[2][0] should be negative, got {}", m[2][0]);
-    assert!(m[1][2] > 0.0, "rb[1][2] should be positive, got {}", m[1][2]);
-    assert!(m[2][1] < 0.0, "rb[2][1] should be negative, got {}", m[2][1]);
+    assert!(
+        m[0][1] < 0.0,
+        "rb[0][1] should be negative, got {}",
+        m[0][1]
+    );
+    assert!(
+        m[1][0] > 0.0,
+        "rb[1][0] should be positive, got {}",
+        m[1][0]
+    );
+    assert!(
+        m[0][2] > 0.0,
+        "rb[0][2] should be positive, got {}",
+        m[0][2]
+    );
+    assert!(
+        m[2][0] < 0.0,
+        "rb[2][0] should be negative, got {}",
+        m[2][0]
+    );
+    assert!(
+        m[1][2] > 0.0,
+        "rb[1][2] should be positive, got {}",
+        m[1][2]
+    );
+    assert!(
+        m[2][1] < 0.0,
+        "rb[2][1] should be negative, got {}",
+        m[2][1]
+    );
 }
