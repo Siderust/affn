@@ -30,7 +30,7 @@ use qtty::Quantity;
 /// use affn::cartesian::{line_of_sight, Position, Direction};
 /// use affn::frames::ReferenceFrame;
 /// use affn::centers::ReferenceCenter;
-/// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+/// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
 ///
 /// #[derive(Debug, Copy, Clone)]
 /// struct WorldFrame;
@@ -84,7 +84,7 @@ where
 /// use affn::cartesian::{line_of_sight_with_distance, Position};
 /// use affn::frames::ReferenceFrame;
 /// use affn::centers::ReferenceCenter;
-/// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+/// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
 ///
 /// #[derive(Debug, Copy, Clone)]
 /// struct WorldFrame;

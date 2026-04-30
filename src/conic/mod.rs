@@ -65,7 +65,7 @@
 //!     OrientedConic, PeriapsisParam,
 //! };
 //! use affn::frames::ReferenceFrame;
-//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
 //!
 //! #[derive(Debug, Copy, Clone, PartialEq)]
 //! struct Inertial;

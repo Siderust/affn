@@ -29,7 +29,7 @@
 //! use affn::ellipsoidal::Position;
 //! use affn::frames::ReferenceFrame;
 //! use affn::centers::ReferenceCenter;
-//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
 //!
 //! #[derive(Debug, Copy, Clone)]
 //! struct Geocentric;
@@ -263,7 +263,7 @@ where
     /// ```rust
     /// use affn::ellipsoidal::Position;
     /// use affn::centers::ReferenceCenter;
-    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
     ///
     /// #[derive(Debug, Copy, Clone)]
     /// struct Geocentric;
@@ -333,7 +333,7 @@ where
     /// ```rust
     /// use affn::ellipsoidal::Position;
     /// use affn::centers::ReferenceCenter;
-    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
     ///
     /// #[derive(Debug, Copy, Clone)]
     /// struct Geocentric;

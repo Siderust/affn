@@ -145,11 +145,15 @@ impl Translation3 {
     /// # Example
     /// ```
     /// use affn::ops::Translation3;
-    /// use qtty::units::*; use qtty::{Quantity, AU};
-    /// use qtty::length::AstronomicalUnits;
+    /// use qtty::units::Meter;
+    /// use qtty::Quantity;
     ///
-    /// let t = Translation3::from_quantities([1.0 * AU, 0.5 * AU, -0.3 * AU]);
-    /// // t is Translation3<AstronomicalUnit>
+    /// let t = Translation3::from_quantities([
+    ///     Quantity::<Meter>::new(1.0),
+    ///     Quantity::<Meter>::new(0.5),
+    ///     Quantity::<Meter>::new(-0.3),
+    /// ]);
+    /// // t is Translation3<Meter>
     /// assert!((t.v[0] - 1.0).abs() < 1e-12);
     /// ```
     #[inline]
@@ -223,7 +227,7 @@ mod tests {
         );
     }
 
-    use qtty::units::{AstronomicalUnit, Kilometer, Meter};
+    use qtty::units::{Kilometer, Meter};
 
     #[test]
     fn test_translation_zero() {
@@ -322,12 +326,12 @@ mod tests {
     fn test_translation_from_quantities() {
         use qtty::Quantity;
         let q = [
-            Quantity::<AstronomicalUnit>::new(1.0),
-            Quantity::<AstronomicalUnit>::new(0.5),
-            Quantity::<AstronomicalUnit>::new(-0.3),
+            Quantity::<Meter>::new(1.0),
+            Quantity::<Meter>::new(0.5),
+            Quantity::<Meter>::new(-0.3),
         ];
         let t = Translation3::from_quantities(q);
-        // t is now Translation3<AstronomicalUnit>
+        // t is now Translation3<Meter>
         assert!((t.v[0] - 1.0).abs() < EPSILON);
         assert!((t.v[1] - 0.5).abs() < EPSILON);
         assert!((t.v[2] - (-0.3)).abs() < EPSILON);
@@ -345,15 +349,9 @@ mod tests {
 
     #[test]
     fn test_translation_to_unit() {
-        // 1 AU ≈ 1.495978707e11 m
-        let t_au = Translation3::from_quantities([1.0 * qtty::AU, 0.0 * qtty::AU, 0.0 * qtty::AU]);
-        let t_km: Translation3<Kilometer> = t_au.to_unit();
-        // 1 AU = 149_597_870.7 km
-        assert!(
-            (t_km.v[0] - 149_597_870.7).abs() < 1.0,
-            "AU→km conversion: got {}",
-            t_km.v[0]
-        );
+        let t_m = Translation3::<Meter>::new(1500.0, 0.0, 0.0);
+        let t_km: Translation3<Kilometer> = t_m.to_unit();
+        assert!((t_km.v[0] - 1.5).abs() < EPSILON);
     }
 
     #[test]
