@@ -58,10 +58,10 @@ pub fn canonicalize_polar_azimuth(
     let mut azimuth = azimuth;
 
     let polar = if wrapped > Degrees::new(90.0) {
-        azimuth = azimuth + Degrees::new(180.0);
+        azimuth += Degrees::new(180.0);
         Degrees::new(180.0) - wrapped
     } else if wrapped < Degrees::new(-90.0) {
-        azimuth = azimuth + Degrees::new(180.0);
+        azimuth += Degrees::new(180.0);
         Degrees::new(-180.0) - wrapped
     } else {
         wrapped

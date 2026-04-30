@@ -26,7 +26,8 @@
 //! ```rust
 //! use affn::cartesian::{Vector, Displacement, Velocity};
 //! use affn::frames::ReferenceFrame;
-//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+//! use qtty::units::{Meter, Second};
+//! use qtty::Per;
 //!
 //! // Define a custom frame (astronomy frames are defined in downstream crates)
 //! #[derive(Debug, Copy, Clone)]
@@ -36,14 +37,14 @@
 //! }
 //!
 //! // Displacement with length unit
-//! let displacement = Displacement::<MyFrame, AstronomicalUnit>::new(1.0, 2.0, 3.0);
+//! let _displacement = Displacement::<MyFrame, Meter>::new(1.0, 2.0, 3.0);
 //!
 //! // Velocity with velocity unit
-//! type AuPerDay = Per<AstronomicalUnit, Day>;
-//! let velocity = Velocity::<MyFrame, AuPerDay>::new(0.01, 0.02, 0.0);
+//! type MPerS = Per<Meter, Second>;
+//! let velocity = Velocity::<MyFrame, MPerS>::new(0.01, 0.02, 0.0);
 //!
 //! // Both are just Vector<F, U> with different units
-//! let v: Vector<MyFrame, AuPerDay> = velocity;
+//! let _v: Vector<MyFrame, MPerS> = velocity;
 //! ```
 
 use super::xyz::XYZ;
@@ -297,7 +298,7 @@ impl<F: ReferenceFrame, U: LengthUnit> Vector<F, U> {
     /// ```rust
     /// use affn::cartesian::Displacement;
     /// use affn::frames::ReferenceFrame;
-    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+    /// use qtty::units::Meter;
     ///
     /// #[derive(Debug, Copy, Clone)]
     /// struct MyFrame;
@@ -305,7 +306,7 @@ impl<F: ReferenceFrame, U: LengthUnit> Vector<F, U> {
     ///     fn frame_name() -> &'static str { "MyFrame" }
     /// }
     ///
-    /// let v = Displacement::<MyFrame, AstronomicalUnit>::new(3.0, 4.0, 0.0);
+    /// let v = Displacement::<MyFrame, Meter>::new(3.0, 4.0, 0.0);
     /// let dir = v.normalize().expect("non-zero vector");
     /// // dir is now a unit Direction<MyFrame>
     /// ```
@@ -422,21 +423,21 @@ mod tests {
     use super::*;
     // Import the derive
     use crate::DeriveReferenceFrame as ReferenceFrame;
-    use qtty::units::{AstronomicalUnit, Day, Kilometer, Meter};
+    use qtty::units::{Kilometer, Meter, Second};
     use qtty::{Per, Quantity};
 
     // Define a test frame using the macro
     #[derive(Debug, Copy, Clone, ReferenceFrame)]
     struct TestFrame;
 
-    type DispAu = Displacement<TestFrame, AstronomicalUnit>;
-    type AuPerDay = Per<AstronomicalUnit, Day>;
-    type VelAuDay = Velocity<TestFrame, AuPerDay>;
+    type DispM = Displacement<TestFrame, Meter>;
+    type MPerS = Per<Meter, Second>;
+    type VelMPerS = Velocity<TestFrame, MPerS>;
 
     #[test]
     fn test_vector_add_sub() {
-        let a = DispAu::new(1.0, 2.0, 3.0);
-        let b = DispAu::new(4.0, 5.0, 6.0);
+        let a = DispM::new(1.0, 2.0, 3.0);
+        let b = DispM::new(4.0, 5.0, 6.0);
 
         let sum = a + b;
         assert!((sum.x().value() - 5.0).abs() < 1e-12);
@@ -453,17 +454,18 @@ mod tests {
     /// operator (`Vector + Vector`) and unary operator (`-Vector`) must
     /// produce identical results to the by-value form.
     #[test]
+    #[allow(clippy::op_ref)]
     fn ref_ops_uniformity_smoke() {
-        let a = DispAu::new(1.0, 2.0, 3.0);
-        let b = DispAu::new(4.0, 5.0, 6.0);
-        let expected = DispAu::new(5.0, 7.0, 9.0);
+        let a = DispM::new(1.0, 2.0, 3.0);
+        let b = DispM::new(4.0, 5.0, 6.0);
+        let expected = DispM::new(5.0, 7.0, 9.0);
 
         let by_value = a + b;
         let lhs_ref = &a + b;
         let rhs_ref = a + &b;
         let both_ref = &a + &b;
 
-        let check = |got: DispAu| {
+        let check = |got: DispM| {
             assert!((got.x().value() - expected.x().value()).abs() < 1e-12);
             assert!((got.y().value() - expected.y().value()).abs() < 1e-12);
             assert!((got.z().value() - expected.z().value()).abs() < 1e-12);
@@ -483,13 +485,13 @@ mod tests {
 
     #[test]
     fn test_vector_magnitude() {
-        let v = DispAu::new(3.0, 4.0, 0.0);
+        let v = DispM::new(3.0, 4.0, 0.0);
         assert!((v.magnitude().value() - 5.0).abs() < 1e-12);
     }
 
     #[test]
     fn test_displacement_normalize() {
-        let v = DispAu::new(3.0, 4.0, 0.0);
+        let v = DispM::new(3.0, 4.0, 0.0);
         let dir = v.normalize().expect("non-zero displacement");
         let norm = (dir.x() * dir.x() + dir.y() * dir.y() + dir.z() * dir.z()).sqrt();
         assert!((norm - 1.0).abs() < 1e-12);
@@ -497,21 +499,21 @@ mod tests {
 
     #[test]
     fn test_zero_displacement_normalize() {
-        let zero = DispAu::ZERO;
+        let zero = DispM::ZERO;
         assert!(zero.normalize().is_none());
     }
 
     #[test]
     fn test_velocity_add_sub() {
-        let v1 = VelAuDay::new(
-            Quantity::<AuPerDay>::new(1.0),
-            Quantity::<AuPerDay>::new(2.0),
-            Quantity::<AuPerDay>::new(3.0),
+        let v1 = VelMPerS::new(
+            Quantity::<MPerS>::new(1.0),
+            Quantity::<MPerS>::new(2.0),
+            Quantity::<MPerS>::new(3.0),
         );
-        let v2 = VelAuDay::new(
-            Quantity::<AuPerDay>::new(0.5),
-            Quantity::<AuPerDay>::new(1.0),
-            Quantity::<AuPerDay>::new(1.5),
+        let v2 = VelMPerS::new(
+            Quantity::<MPerS>::new(0.5),
+            Quantity::<MPerS>::new(1.0),
+            Quantity::<MPerS>::new(1.5),
         );
 
         let sum = v1 + v2;
@@ -527,30 +529,30 @@ mod tests {
 
     #[test]
     fn test_velocity_magnitude() {
-        let v = VelAuDay::new(
-            Quantity::<AuPerDay>::new(3.0),
-            Quantity::<AuPerDay>::new(4.0),
-            Quantity::<AuPerDay>::new(0.0),
+        let v = VelMPerS::new(
+            Quantity::<MPerS>::new(3.0),
+            Quantity::<MPerS>::new(4.0),
+            Quantity::<MPerS>::new(0.0),
         );
         assert!((v.magnitude().value() - 5.0).abs() < 1e-12);
     }
 
     #[test]
     fn test_vector_misc_ops() {
-        let v = DispAu::new(1.0, 2.0, 3.0);
+        let v = DispM::new(1.0, 2.0, 3.0);
         let scaled = v.scale(2.0);
-        assert_eq!(scaled, DispAu::new(2.0, 4.0, 6.0));
+        assert_eq!(scaled, DispM::new(2.0, 4.0, 6.0));
 
         let neg = v.negate();
         assert!((neg.x().value() + 1.0).abs() < 1e-12);
         assert!((neg.y().value() + 2.0).abs() < 1e-12);
 
         #[allow(deprecated)]
-        let dot = v.dot_raw(&DispAu::new(0.0, 1.0, 0.0));
+        let dot = v.dot_raw(&DispM::new(0.0, 1.0, 0.0));
         assert!((dot - 2.0).abs() < 1e-12);
 
         #[allow(deprecated)]
-        let cross = v.cross_raw(&DispAu::new(0.0, 1.0, 0.0));
+        let cross = v.cross_raw(&DispM::new(0.0, 1.0, 0.0));
         assert!((cross.x().value() + 3.0).abs() < 1e-12);
         assert!(cross.y().value().abs() < 1e-12);
         assert!((cross.z().value() - 1.0).abs() < 1e-12);
@@ -559,10 +561,10 @@ mod tests {
         let magnitude_sq = v.magnitude_squared_raw();
         assert!((magnitude_sq - 14.0).abs() < 1e-12);
 
-        let from_vec3 = DispAu::from_vec3(nalgebra::Vector3::new(
-            Quantity::<AstronomicalUnit>::new(1.0),
-            Quantity::<AstronomicalUnit>::new(2.0),
-            Quantity::<AstronomicalUnit>::new(3.0),
+        let from_vec3 = DispM::from_vec3(nalgebra::Vector3::new(
+            Quantity::<Meter>::new(1.0),
+            Quantity::<Meter>::new(2.0),
+            Quantity::<Meter>::new(3.0),
         ));
         assert_eq!(from_vec3, v);
 
@@ -625,41 +627,41 @@ mod tests {
 
     #[test]
     fn test_vector_to_unit_roundtrip() {
-        let v_au = DispAu::new(1.0, -2.0, 0.5);
-        let v_km: Displacement<TestFrame, Kilometer> = v_au.to_unit();
-        let back: DispAu = v_km.to_unit();
+        let v_m = DispM::new(1.0, -2.0, 0.5);
+        let v_km: Displacement<TestFrame, Kilometer> = v_m.to_unit();
+        let back: DispM = v_km.to_unit();
 
-        assert!((back.x().value() - v_au.x().value()).abs() < 1e-12);
-        assert!((back.y().value() - v_au.y().value()).abs() < 1e-12);
-        assert!((back.z().value() - v_au.z().value()).abs() < 1e-12);
+        assert!((back.x().value() - v_m.x().value()).abs() < 1e-12);
+        assert!((back.y().value() - v_m.y().value()).abs() < 1e-12);
+        assert!((back.z().value() - v_m.z().value()).abs() < 1e-12);
     }
 
     #[test]
     fn test_velocity_to_unit_roundtrip() {
-        type KmPerDay = Per<Kilometer, Day>;
+        type KmPerS = Per<Kilometer, Second>;
 
-        let v_au_day = VelAuDay::new(
-            Quantity::<AuPerDay>::new(0.01),
-            Quantity::<AuPerDay>::new(-0.02),
-            Quantity::<AuPerDay>::new(0.03),
+        let v_m_s = VelMPerS::new(
+            Quantity::<MPerS>::new(0.01),
+            Quantity::<MPerS>::new(-0.02),
+            Quantity::<MPerS>::new(0.03),
         );
-        let v_km_day: Velocity<TestFrame, KmPerDay> = v_au_day.to_unit();
-        let back: VelAuDay = v_km_day.to_unit();
+        let v_km_s: Velocity<TestFrame, KmPerS> = v_m_s.to_unit();
+        let back: VelMPerS = v_km_s.to_unit();
 
-        assert!((back.x().value() - v_au_day.x().value()).abs() < 1e-12);
-        assert!((back.y().value() - v_au_day.y().value()).abs() < 1e-12);
-        assert!((back.z().value() - v_au_day.z().value()).abs() < 1e-12);
+        assert!((back.x().value() - v_m_s.x().value()).abs() < 1e-12);
+        assert!((back.y().value() - v_m_s.y().value()).abs() < 1e-12);
+        assert!((back.z().value() - v_m_s.z().value()).abs() < 1e-12);
     }
 
     #[test]
     fn vector_has_xyz_layout() {
         assert_eq!(
-            core::mem::size_of::<DispAu>(),
-            core::mem::size_of::<XYZ<Quantity<AstronomicalUnit>>>()
+            core::mem::size_of::<DispM>(),
+            core::mem::size_of::<XYZ<Quantity<Meter>>>()
         );
         assert_eq!(
-            core::mem::align_of::<DispAu>(),
-            core::mem::align_of::<XYZ<Quantity<AstronomicalUnit>>>()
+            core::mem::align_of::<DispM>(),
+            core::mem::align_of::<XYZ<Quantity<Meter>>>()
         );
     }
 }

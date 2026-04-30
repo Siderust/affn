@@ -36,6 +36,6 @@ harness = false
 
 
 [patch.crates-io]
-qtty = { path = "../qtty/qtty" }
-qtty-core = { path = "../qtty/qtty-core" }
-qtty-derive = { path = "../qtty/qtty-derive" }
+qtty = { git = "https://github.com/Siderust/qtty", branch = "main" }
+qtty-core = { git = "https://github.com/Siderust/qtty", branch = "main" }
+qtty-derive = { git = "https://github.com/Siderust/qtty", branch = "main" }

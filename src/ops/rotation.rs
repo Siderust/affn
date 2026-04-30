@@ -729,13 +729,13 @@ mod tests {
 
     #[test]
     fn test_rotation_mul_quantity_preserves_unit() {
-        use qtty::units::AstronomicalUnit;
+        use qtty::units::Kilometer;
         use qtty::Quantity;
         let r = Rotation3::rz(Radians::new(FRAC_PI_2));
         let v = [
-            Quantity::<AstronomicalUnit>::new(3.0),
-            Quantity::<AstronomicalUnit>::new(0.0),
-            Quantity::<AstronomicalUnit>::new(0.0),
+            Quantity::<Kilometer>::new(3.0),
+            Quantity::<Kilometer>::new(0.0),
+            Quantity::<Kilometer>::new(0.0),
         ];
         let result = r * v;
         assert!((result[0].value()).abs() < EPSILON);
@@ -883,7 +883,7 @@ mod tests {
             DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame,
         };
 
-        use qtty::units::{AstronomicalUnit, Meter};
+        use qtty::units::{Kilometer, Meter};
 
         #[allow(unused_imports)]
         use qtty::angular::{Degrees, Radians};
@@ -896,7 +896,7 @@ mod tests {
         #[derive(Debug, Copy, Clone, ReferenceCenter)]
         struct Origin;
 
-        type Pos = crate::cartesian::Position<Origin, FrameA, AstronomicalUnit>;
+        type Pos = crate::cartesian::Position<Origin, FrameA, Kilometer>;
         type Vec3 = crate::cartesian::Vector<FrameA, Meter>;
         type Dir = crate::cartesian::Direction<FrameA>;
 
@@ -926,7 +926,7 @@ mod tests {
             let r = Rotation3::rz(Radians::new(FRAC_PI_2));
             let pos_a = Pos::new(1.0, 0.0, 0.0);
             // Rotate and reinterpret to FrameB
-            let pos_b: crate::cartesian::Position<Origin, FrameB, AstronomicalUnit> =
+            let pos_b: crate::cartesian::Position<Origin, FrameB, Kilometer> =
                 (r * pos_a).reinterpret_frame::<FrameB>();
             assert!((pos_b.x().value()).abs() < EPSILON);
             assert!((pos_b.y().value() - 1.0).abs() < EPSILON);

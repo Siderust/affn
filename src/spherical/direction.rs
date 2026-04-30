@@ -31,7 +31,7 @@
 //! ```rust
 //! use affn::spherical::Direction;
 //! use affn::frames::ReferenceFrame;
-//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
 //!
 //! #[derive(Debug, Copy, Clone)]
 //! struct WorldFrame;
@@ -122,7 +122,7 @@ impl<F: ReferenceFrame> Direction<F> {
     /// use affn::spherical::Direction;
     /// use affn::frames::ReferenceFrame;
     /// use affn::centers::ReferenceCenter;
-    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
     ///
     /// #[derive(Debug, Copy, Clone)]
     /// struct WorldFrame;

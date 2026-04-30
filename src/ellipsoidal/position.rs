@@ -29,7 +29,7 @@
 //! use affn::ellipsoidal::Position;
 //! use affn::frames::ReferenceFrame;
 //! use affn::centers::ReferenceCenter;
-//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
 //!
 //! #[derive(Debug, Copy, Clone)]
 //! struct Geocentric;
@@ -263,7 +263,7 @@ where
     /// ```rust
     /// use affn::ellipsoidal::Position;
     /// use affn::centers::ReferenceCenter;
-    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
     ///
     /// #[derive(Debug, Copy, Clone)]
     /// struct Geocentric;
@@ -333,7 +333,7 @@ where
     /// ```rust
     /// use affn::ellipsoidal::Position;
     /// use affn::centers::ReferenceCenter;
-    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
     ///
     /// #[derive(Debug, Copy, Clone)]
     /// struct Geocentric;
@@ -667,9 +667,8 @@ mod tests {
             2200.0 * M,
         );
         let cart = original.to_cartesian::<Meter>();
-        let back =
-            Position::<TestCenter, TestEllipsoidFrame, Meter>::try_from_cartesian(&cart)
-                .expect("Bowring iteration should converge for a well-defined point");
+        let back = Position::<TestCenter, TestEllipsoidFrame, Meter>::try_from_cartesian(&cart)
+            .expect("Bowring iteration should converge for a well-defined point");
 
         // Sub-microarcsecond agreement on lon/lat (1 µas ≈ 2.78e-10 deg).
         let max_angle_err_deg = 1.0e-10;

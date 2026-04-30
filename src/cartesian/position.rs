@@ -34,7 +34,7 @@
 //! use affn::cartesian::{Position, Displacement};
 //! use affn::centers::ReferenceCenter;
 //! use affn::frames::ReferenceFrame;
-//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+//! use qtty::units::Meter;
 //!
 //! // Define custom center and frame (astronomy types are in downstream crates)
 //! #[derive(Debug, Copy, Clone)]
@@ -51,11 +51,11 @@
 //! }
 //!
 //! // Two positions in the custom coordinate system
-//! let pos1 = Position::<MyCenter, MyFrame, AstronomicalUnit>::new(1.0, 0.0, 0.0);
-//! let pos2 = Position::<MyCenter, MyFrame, AstronomicalUnit>::new(1.5, 0.0, 0.0);
+//! let pos1 = Position::<MyCenter, MyFrame, Meter>::new(1.0, 0.0, 0.0);
+//! let pos2 = Position::<MyCenter, MyFrame, Meter>::new(1.5, 0.0, 0.0);
 //!
 //! // Displacement between positions
-//! let displacement: Displacement<MyFrame, AstronomicalUnit> = pos2 - pos1;
+//! let displacement: Displacement<MyFrame, Meter> = pos2 - pos1;
 //! assert!((displacement.x().value() - 0.5).abs() < 1e-12);
 //!
 //! // Translate pos1 by the displacement to get pos2
@@ -216,7 +216,7 @@ where
     /// use affn::cartesian::Position;
     /// use affn::frames::ReferenceFrame;
     /// use affn::centers::ReferenceCenter;
-    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+    /// use qtty::units::Meter;
     ///
     /// #[derive(Debug, Copy, Clone)]
     /// struct WorldFrame;
@@ -600,7 +600,7 @@ mod tests {
     use qtty::angular::{Degrees, Radians};
     #[allow(unused_imports)]
     use qtty::length::{Kilometers, Meters};
-    use qtty::units::{AstronomicalUnit, Kilometer, Meter};
+    use qtty::units::{Kilometer, Meter};
     use qtty::M;
     // Define test-specific frame and center
     #[derive(Debug, Copy, Clone, ReferenceFrame)]
@@ -867,13 +867,13 @@ mod tests {
 
     #[test]
     fn test_position_to_unit_roundtrip() {
-        let p_au = Position::<TestCenter, TestFrame, AstronomicalUnit>::new(1.0, -0.5, 2.25);
-        let p_km: Position<TestCenter, TestFrame, Kilometer> = p_au.to_unit();
-        let back: Position<TestCenter, TestFrame, AstronomicalUnit> = p_km.to_unit();
+        let p_m = Position::<TestCenter, TestFrame, Meter>::new(1.0, -0.5, 2.25);
+        let p_km: Position<TestCenter, TestFrame, Kilometer> = p_m.to_unit();
+        let back: Position<TestCenter, TestFrame, Meter> = p_km.to_unit();
 
-        assert!((back.x().value() - p_au.x().value()).abs() < 1e-12);
-        assert!((back.y().value() - p_au.y().value()).abs() < 1e-12);
-        assert!((back.z().value() - p_au.z().value()).abs() < 1e-12);
+        assert!((back.x().value() - p_m.x().value()).abs() < 1e-12);
+        assert!((back.y().value() - p_m.y().value()).abs() < 1e-12);
+        assert!((back.z().value() - p_m.z().value()).abs() < 1e-12);
     }
 
     #[test]

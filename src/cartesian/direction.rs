@@ -50,7 +50,7 @@
 //! assert!((dir.z() - 2.0/3.0).abs() < 1e-12);
 //!
 //! // Scale to create a Vector
-//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
 //! let vec = dir.scale(10.0 * M);
 //! ```
 
@@ -273,7 +273,7 @@ impl<F: ReferenceFrame> Direction<F> {
     /// ```rust
     /// use affn::cartesian::Direction;
     /// use affn::frames::ReferenceFrame;
-    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC, AU, LY}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+    /// use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
     ///
     /// #[derive(Debug, Copy, Clone)]
     /// struct WorldFrame;
@@ -618,11 +618,10 @@ mod tests {
             }
         }
 
-        let mag_of = |d: &Direction<TestFrame>| {
-            (d.x() * d.x() + d.y() * d.y() + d.z() * d.z()).sqrt()
-        };
+        let mag_of =
+            |d: &Direction<TestFrame>| (d.x() * d.x() + d.y() * d.y() + d.z() * d.z()).sqrt();
 
-        let mut rng = Xs(0xC0FFEE_DEAD_BEEF_u64);
+        let mut rng = Xs(0x00C0_FFEE_DEAD_BEEF_u64);
 
         // Two parallel runs: one without renormalization, one with periodic.
         let initial = Direction::<TestFrame>::new(1.0, 0.0, 0.0);
@@ -639,9 +638,13 @@ mod tests {
             let mut az = rng.next_signed();
             let an = (ax * ax + ay * ay + az * az).sqrt();
             if an < 1e-12 {
-                ax = 1.0; ay = 0.0; az = 0.0;
+                ax = 1.0;
+                ay = 0.0;
+                az = 0.0;
             } else {
-                ax /= an; ay /= an; az /= an;
+                ax /= an;
+                ay /= an;
+                az /= an;
             }
             // Small angle in (-1e-3, 1e-3) rad to keep many ops geometrically meaningful.
             let angle = Radians::new(rng.next_signed() * 1e-3);
