@@ -24,7 +24,7 @@ The goal is to make invalid operations (like adding two positions) fail at compi
 
 - **Kernel (always available, domain-agnostic).** The `algebra`, `cartesian`, `spherical`, `ellipsoidal`, `conic`, `planar`, `ops`, `frames`, `centers`, and `ellipsoid` modules form the geometry core. They define the affine machinery, typed coordinate containers, conic shapes, and the `ReferenceFrame` / `ReferenceCenter` traits, without committing to any particular application domain.
 - **Astronomical catalogue (`astro` feature, default-on).** The `frames::astro` module ships ready-made marker frames such as `ICRS`, `ICRF`, `EME2000`, `GCRS`, `CIRS`, `Galactic`, `EclipticMeanJ2000`, `Horizontal`, `ECEF`, `ITRF`, and the planetary body-fixed frames. These are convenience definitions layered on top of the kernel.
-- **Opt-out.** The astronomical catalogue is opt-out: users who want a leaner build with no astronomical types can disable default features (`affn = { version = "0.6.1", default-features = false }`) and define their own frames using the derive macros.
+- **Opt-out.** The astronomical catalogue is opt-out: users who want a leaner build with no astronomical types can disable default features (`affn = { version = "0.6.2", default-features = false }`) and define their own frames using the derive macros.
 - **Why ship them in-crate?** Rust's orphan rules require the derive-generated inherent impls (e.g. `Direction::<ICRS>::new(ra, dec)`, frame-specific spherical constructors via `#[frame(inherent)]`) to live in the same crate as the types they extend (`Direction`, `Position`, …). Splitting the astro frames into a separate downstream crate would lose these ergonomic constructors, so they live behind a feature flag inside `affn` instead.
 
 ## Quick Start
@@ -33,8 +33,8 @@ Add the dependency:
 
 ```toml
 [dependencies]
-affn = "0.6.1"
-qtty = "0.6.1"
+affn = "0.6.2"
+qtty = "0.7.0"
 ```
 
 Define a center + frame and do basic affine algebra:
@@ -275,8 +275,8 @@ Enable the `astro` feature to use the built-in astronomy and geodesy marker fram
 
 ```toml
 [dependencies]
-affn = { version = "0.6.1", features = ["astro"] }
-qtty = "0.6.1"
+affn = { version = "0.6.2", features = ["astro"] }
+qtty = "0.7.0"
 ```
 
 Available built-ins include:
@@ -304,8 +304,8 @@ Enable it in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-affn = { version = "0.6.1", features = ["serde"] }
-qtty = "0.6.1"
+affn = { version = "0.6.2", features = ["serde"] }
+qtty = "0.7.0"
 ```
 
 This feature also forwards serialization support to dependencies where needed (e.g. `qtty/serde`, and nalgebra's `serde-serialize`).

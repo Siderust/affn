@@ -6,8 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2 - 2026-05-04]
+
 ### Changed
 - `Position::Sub`, `&Position - &Position`, and `Position::distance_to` now emit a structured panic message including the center type name (`std::any::type_name::<C>()`) and a debug print of both `center_params` values, and explicitly point users to the fallible `Position::checked_sub` / `Position::try_distance_to` alternatives. The panicking variant is scheduled to require `C::Params = ()` in affn 0.7; this 0.6 release only improves diagnostics and does not change any signatures or trait bounds.
+- Updated the public `qtty` dependency to `0.7.0`.
+
 
 ## [0.6.1 - 2026-04-25]
 
