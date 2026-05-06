@@ -261,25 +261,6 @@ impl<U: Unit> XYZ<Quantity<U>> {
         Quantity::new(mag)
     }
 
-    /// Computes the squared magnitude.
-    ///
-    /// Returns the value in the squared unit `U^2` but typed as plain `f64`
-    /// because the `qtty` crate currently has no `U^2` type. Once squared
-    /// units are introduced the typed variant
-    /// [`magnitude_squared`](Self::magnitude_squared) will return
-    /// `Quantity<U^2>` and this `_raw` variant will be deprecated.
-    #[deprecated(
-        since = "0.7.0",
-        note = "qtty now provides squared units; the typed dot/cross/magnitude_squared variants are dimensionally correct. Use them instead."
-    )]
-    #[inline]
-    pub fn magnitude_squared_raw(&self) -> f64 {
-        let x = self.0[0].value();
-        let y = self.0[1].value();
-        let z = self.0[2].value();
-        x * x + y * y + z * z
-    }
-
     /// Extracts raw f64 values as an XYZ<f64>.
     #[inline]
     pub fn to_raw(&self) -> XYZ<f64> {
@@ -464,9 +445,8 @@ mod tests {
 
         let mag = a.magnitude();
         assert!((mag.value() - 5.0).abs() < f64::EPSILON);
-        #[allow(deprecated)]
-        let mag_sq = a.magnitude_squared_raw();
-        assert!((mag_sq - 25.0).abs() < f64::EPSILON);
+        let mag_sq = a.magnitude_squared();
+        assert!((mag_sq.value() - 25.0).abs() < f64::EPSILON);
 
         // Typed magnitude_squared yields Quantity<Prod<Meter, Meter>>
         let mag_sq_typed: qtty::Quantity<qtty::Prod<Meter, Meter>> = a.magnitude_squared();

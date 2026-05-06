@@ -100,17 +100,6 @@ impl<F: ReferenceFrame> Direction<F> {
         }
     }
 
-    /// Creates a direction from raw angle values without canonicalization.
-    ///
-    /// Compatibility alias for [`new_unchecked`](Self::new_unchecked).
-    #[deprecated(
-        since = "0.6.2",
-        note = "Use new_unchecked (or new_unchecked_with_params) instead"
-    )]
-    pub const fn new_raw(polar: Degrees, azimuth: Degrees) -> Self {
-        Self::new_unchecked(polar, azimuth)
-    }
-
     /// Promotes this direction to a full Position with the supplied radial magnitude.
     ///
     /// # Type Parameters

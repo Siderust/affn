@@ -62,24 +62,6 @@ impl Rotation3 {
         Self { m }
     }
 
-    /// Creates a rotation matrix from raw row-major data without validation.
-    ///
-    /// This is the historical constructor name and is kept for API stability.
-    /// Prefer [`try_from_matrix`](Self::try_from_matrix) for untrusted matrices.
-    ///
-    /// # Preconditions
-    ///
-    /// `m` must be finite, orthogonal, and have determinant `+1`.
-    #[inline]
-    #[must_use]
-    #[deprecated(
-        since = "0.6.2",
-        note = "Use try_from_matrix (validates) or from_matrix_unchecked (no validation)"
-    )]
-    pub const fn from_matrix(m: [[f64; 3]; 3]) -> Self {
-        Self::from_matrix_unchecked(m)
-    }
-
     /// Creates a rotation matrix from raw row-major data, validating orthogonality.
     ///
     /// Returns `None` if `m` is not a proper rotation matrix (i.e., `Mᵀ·M` is not
