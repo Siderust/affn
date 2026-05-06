@@ -187,58 +187,10 @@ impl<F: ReferenceFrame, U: Unit> Vector<F, U> {
         self.xyz.magnitude()
     }
 
-    /// Computes the squared magnitude (avoids sqrt, useful for comparisons).
-    ///
-    /// Returns the value in the squared unit `U^2` but typed as plain `f64`
-    /// because the `qtty` crate currently has no `U^2` type. Once squared
-    /// units are introduced the typed variant
-    /// [`magnitude_squared`](Self::magnitude_squared) will return
-    /// `Quantity<U^2>` and this `_raw` variant will be deprecated.
-    #[deprecated(
-        since = "0.7.0",
-        note = "qtty now provides squared units; the typed dot/cross/magnitude_squared variants are dimensionally correct. Use them instead."
-    )]
-    #[inline]
-    pub fn magnitude_squared_raw(&self) -> f64 {
-        #[allow(deprecated)]
-        self.xyz.magnitude_squared_raw()
-    }
-
     /// Scales the vector by a scalar factor.
     #[inline]
     pub fn scale(&self, factor: f64) -> Self {
         Self::from_xyz(XYZ::from_raw(self.xyz.to_raw().scale(factor)))
-    }
-
-    /// Computes the dot product with another vector.
-    ///
-    /// Returns the value in the squared unit `U^2` but typed as plain `f64`
-    /// because the `qtty` crate currently has no `U^2` type. Once squared
-    /// units are introduced the typed variant [`dot`](Self::dot) will
-    /// return `Quantity<U^2>` and this `_raw` variant will be deprecated.
-    #[deprecated(
-        since = "0.7.0",
-        note = "qtty now provides squared units; the typed dot/cross/magnitude_squared variants are dimensionally correct. Use them instead."
-    )]
-    #[inline]
-    pub fn dot_raw(&self, other: &Self) -> f64 {
-        self.xyz.to_raw().dot(&other.xyz.to_raw())
-    }
-
-    /// Computes the cross product with another vector.
-    ///
-    /// Returns the value in the squared unit `U^2` but typed as `Vector<F, U>`
-    /// because the `qtty` crate currently has no `U^2` type. Once squared
-    /// units are introduced the typed variant [`cross`](Self::cross) will
-    /// return a vector in `Quantity<U^2>` and this `_raw` variant will be
-    /// deprecated.
-    #[deprecated(
-        since = "0.7.0",
-        note = "qtty now provides squared units; the typed dot/cross/magnitude_squared variants are dimensionally correct. Use them instead."
-    )]
-    #[inline]
-    pub fn cross_raw(&self, other: &Self) -> Self {
-        Self::from_xyz(XYZ::from_raw(self.xyz.to_raw().cross(&other.xyz.to_raw())))
     }
 
     /// Returns the negation of this vector.
@@ -547,19 +499,16 @@ mod tests {
         assert!((neg.x().value() + 1.0).abs() < 1e-12);
         assert!((neg.y().value() + 2.0).abs() < 1e-12);
 
-        #[allow(deprecated)]
-        let dot = v.dot_raw(&DispM::new(0.0, 1.0, 0.0));
-        assert!((dot - 2.0).abs() < 1e-12);
+        let dot = v.dot(&DispM::new(0.0, 1.0, 0.0));
+        assert!((dot.value() - 2.0).abs() < 1e-12);
 
-        #[allow(deprecated)]
-        let cross = v.cross_raw(&DispM::new(0.0, 1.0, 0.0));
+        let cross = v.cross(&DispM::new(0.0, 1.0, 0.0));
         assert!((cross.x().value() + 3.0).abs() < 1e-12);
         assert!(cross.y().value().abs() < 1e-12);
         assert!((cross.z().value() - 1.0).abs() < 1e-12);
 
-        #[allow(deprecated)]
-        let magnitude_sq = v.magnitude_squared_raw();
-        assert!((magnitude_sq - 14.0).abs() < 1e-12);
+        let magnitude_sq = v.magnitude_squared();
+        assert!((magnitude_sq.value() - 14.0).abs() < 1e-12);
 
         let from_vec3 = DispM::from_vec3(nalgebra::Vector3::new(
             Quantity::<Meter>::new(1.0),

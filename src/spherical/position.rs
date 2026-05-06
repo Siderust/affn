@@ -109,22 +109,6 @@ where
         }
     }
 
-    /// Constructs a new spherical position with explicit center parameters without canonicalization.
-    ///
-    /// Compatibility alias for [`new_unchecked_with_params`](Self::new_unchecked_with_params).
-    #[deprecated(
-        since = "0.6.2",
-        note = "Use new_unchecked (or new_unchecked_with_params) instead"
-    )]
-    pub const fn new_raw_with_params(
-        center_params: C::Params,
-        polar: Degrees,
-        azimuth: Degrees,
-        distance: Quantity<U>,
-    ) -> Self {
-        Self::new_unchecked_with_params(center_params, polar, azimuth, distance)
-    }
-
     /// Constructs a new spherical position with explicit center parameters, canonicalizing inputs.
     ///
     /// - `polar` is folded into `[-90°, +90°]`.
@@ -218,17 +202,6 @@ where
     /// canonicalize automatically and are preferred where available.
     pub const fn new_unchecked(polar: Degrees, azimuth: Degrees, distance: Quantity<U>) -> Self {
         Self::new_unchecked_with_params((), polar, azimuth, distance)
-    }
-
-    /// Convenience constructor for centers with `Params = ()` without canonicalization.
-    ///
-    /// Compatibility alias for [`new_unchecked`](Self::new_unchecked).
-    #[deprecated(
-        since = "0.6.2",
-        note = "Use new_unchecked (or new_unchecked_with_params) instead"
-    )]
-    pub const fn new_raw(polar: Degrees, azimuth: Degrees, distance: Quantity<U>) -> Self {
-        Self::new_unchecked(polar, azimuth, distance)
     }
 
     /// The *origin* of this coordinate system (all angles 0, radius 0). AKA Null Vector.

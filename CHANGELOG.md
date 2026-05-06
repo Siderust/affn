@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- **BREAKING:** Removed deprecated `Rotation3::from_matrix` (use `from_matrix_unchecked` or `try_from_matrix`).
+- **BREAKING:** Removed deprecated `SphericalPosition::new_raw` and `new_raw_with_params` (use `new_unchecked` or `new_unchecked_with_params`).
+- **BREAKING:** Removed deprecated `SphericalDirection::new_raw` (use `new_unchecked`).
+- **BREAKING:** Removed deprecated `Vector::magnitude_squared_raw`, `dot_raw`, `cross_raw` (use typed `magnitude_squared`, `dot`, `cross`).
+- **BREAKING:** Removed deprecated `XYZ::magnitude_squared_raw` (use typed `magnitude_squared`).
+
 ## [0.6.2 - 2026-05-04]
 
 ### Changed
