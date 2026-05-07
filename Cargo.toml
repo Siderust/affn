@@ -16,7 +16,7 @@ categories = ["science", "mathematics"]
 name = "affn"
 
 [features]
-default = ["astro"]
+default = []
 serde = ["dep:serde", "qtty/serde"]
 astro = ["qtty/astro"]
 
