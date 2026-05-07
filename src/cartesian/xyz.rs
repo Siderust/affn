@@ -1,11 +1,11 @@
 //! # XYZ: Shared Storage for Cartesian Types
 //!
 //! This module provides the internal `XYZ<T>` type, a thin `#[repr(transparent)]`
-//! wrapper around `nalgebra::Vector3<T>`.
+//! wrapper around a `[T; 3]` array.
 //!
 //! ## Purpose
 //!
-//! `XYZ<T>` centralizes all component-wise mathematical operations in one place:
+//! `XYZ<T>` centralises all component-wise mathematical operations in one place:
 //! - Addition, subtraction, scaling
 //! - Dot product, magnitude, normalization
 //!
@@ -15,11 +15,11 @@
 //!
 //! ## Design Notes
 //!
-//! - Uses `#[repr(transparent)]` for zero-cost ABI compatibility with `Vector3<T>`
+//! - Uses `#[repr(transparent)]` for zero-cost ABI compatibility with `[T; 3]`
 //! - All operations are `#[inline]` for optimal performance
 //! - Generic over the component type `T` (typically `f64` or `Quantity<U>`)
+//! - No external linear-algebra dependencies; all arithmetic is hand-coded
 
-use nalgebra::Vector3;
 use std::ops::{Add, Mul, Neg, Sub};
 
 #[cfg(feature = "serde")]
@@ -27,22 +27,15 @@ use serde::{Deserialize, Serialize};
 
 /// Internal shared storage for 3D Cartesian coordinates.
 ///
-/// This is a thin wrapper around `nalgebra::Vector3<T>` that provides
-/// centralized implementations of component-wise operations.
+/// This is a thin wrapper around `[T; 3]` that provides centralised
+/// implementations of component-wise operations.
 ///
 /// # Type Parameter
 /// - `T`: The component type (e.g., `f64`, `Quantity<U>`)
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(
-    feature = "serde",
-    serde(bound(
-        serialize = "T: Serialize + Clone + PartialEq + std::fmt::Debug + 'static",
-        deserialize = "T: Deserialize<'de> + Clone + PartialEq + std::fmt::Debug + 'static"
-    ))
-)]
 #[repr(transparent)]
-pub struct XYZ<T>(pub(crate) Vector3<T>);
+pub struct XYZ<T>(pub(crate) [T; 3]);
 
 // =============================================================================
 // Constructors
@@ -52,24 +45,24 @@ impl<T> XYZ<T> {
     /// Creates a new XYZ from individual components.
     #[inline]
     pub const fn new(x: T, y: T, z: T) -> Self {
-        Self(Vector3::new(x, y, z))
+        Self([x, y, z])
     }
 
-    /// Creates an XYZ from a nalgebra Vector3.
+    /// Creates an XYZ from a `[T; 3]` array.
     #[inline]
-    pub const fn from_vec3(vec: Vector3<T>) -> Self {
-        Self(vec)
+    pub const fn from_array(arr: [T; 3]) -> Self {
+        Self(arr)
     }
 
-    /// Returns the underlying nalgebra Vector3.
+    /// Returns a reference to the underlying `[T; 3]` array.
     #[inline]
-    pub const fn as_vec3(&self) -> &Vector3<T> {
+    pub const fn as_array(&self) -> &[T; 3] {
         &self.0
     }
 
-    /// Consumes self and returns the underlying Vector3.
+    /// Consumes self and returns the underlying `[T; 3]` array.
     #[inline]
-    pub fn into_vec3(self) -> Vector3<T> {
+    pub fn into_array(self) -> [T; 3] {
         self.0
     }
 }
@@ -115,25 +108,29 @@ impl XYZ<f64> {
     /// Computes the Euclidean magnitude (length) of the vector.
     #[inline]
     pub fn magnitude(&self) -> f64 {
-        self.0.magnitude()
+        let [x, y, z] = self.0;
+        (x * x + y * y + z * z).sqrt()
     }
 
     /// Computes the squared magnitude (avoids sqrt).
     #[inline]
     pub fn magnitude_squared(&self) -> f64 {
-        self.0.magnitude_squared()
+        let [x, y, z] = self.0;
+        x * x + y * y + z * z
     }
 
     /// Computes the dot product with another vector.
     #[inline]
     pub fn dot(&self, other: &Self) -> f64 {
-        self.0.dot(&other.0)
+        self.0[0] * other.0[0] + self.0[1] * other.0[1] + self.0[2] * other.0[2]
     }
 
     /// Computes the cross product with another vector.
     #[inline]
     pub fn cross(&self, other: &Self) -> Self {
-        Self(self.0.cross(&other.0))
+        let [ax, ay, az] = self.0;
+        let [bx, by, bz] = other.0;
+        Self([ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx])
     }
 
     /// Returns a normalized (unit length) version, or None if magnitude is zero.
@@ -143,7 +140,7 @@ impl XYZ<f64> {
         if mag.abs() < f64::EPSILON {
             None
         } else {
-            Some(Self(self.0 / mag))
+            Some(Self([self.0[0] / mag, self.0[1] / mag, self.0[2] / mag]))
         }
     }
 
@@ -153,31 +150,32 @@ impl XYZ<f64> {
     /// Caller must ensure the vector is non-zero.
     #[inline]
     pub fn normalize_unchecked(&self) -> Self {
-        Self(self.0.normalize())
+        let mag = self.magnitude();
+        Self([self.0[0] / mag, self.0[1] / mag, self.0[2] / mag])
     }
 
     /// Scales the vector by a scalar factor.
     #[inline]
     pub fn scale(&self, factor: f64) -> Self {
-        Self(self.0 * factor)
+        Self([self.0[0] * factor, self.0[1] * factor, self.0[2] * factor])
     }
 
     /// Component-wise addition.
     #[inline]
     pub fn add(&self, other: &Self) -> Self {
-        Self(self.0 + other.0)
+        Self([self.0[0] + other.0[0], self.0[1] + other.0[1], self.0[2] + other.0[2]])
     }
 
     /// Component-wise subtraction.
     #[inline]
     pub fn sub(&self, other: &Self) -> Self {
-        Self(self.0 - other.0)
+        Self([self.0[0] - other.0[0], self.0[1] - other.0[1], self.0[2] - other.0[2]])
     }
 
     /// Negates all components.
     #[inline]
     pub fn neg(&self) -> Self {
-        Self(-self.0)
+        Self([-self.0[0], -self.0[1], -self.0[2]])
     }
 }
 
@@ -190,7 +188,7 @@ impl Add for XYZ<f64> {
 
     #[inline]
     fn add(self, other: Self) -> Self::Output {
-        Self(self.0 + other.0)
+        Self([self.0[0] + other.0[0], self.0[1] + other.0[1], self.0[2] + other.0[2]])
     }
 }
 
@@ -201,7 +199,7 @@ impl Sub for XYZ<f64> {
 
     #[inline]
     fn sub(self, other: Self) -> Self::Output {
-        Self(self.0 - other.0)
+        Self([self.0[0] - other.0[0], self.0[1] - other.0[1], self.0[2] - other.0[2]])
     }
 }
 
@@ -212,7 +210,7 @@ impl Neg for XYZ<f64> {
 
     #[inline]
     fn neg(self) -> Self::Output {
-        Self(-self.0)
+        Self([-self.0[0], -self.0[1], -self.0[2]])
     }
 }
 
@@ -223,7 +221,7 @@ impl Mul<f64> for XYZ<f64> {
 
     #[inline]
     fn mul(self, scalar: f64) -> Self::Output {
-        Self(self.0 * scalar)
+        Self([self.0[0] * scalar, self.0[1] * scalar, self.0[2] * scalar])
     }
 }
 
@@ -234,7 +232,7 @@ impl Mul<XYZ<f64>> for f64 {
 
     #[inline]
     fn mul(self, xyz: XYZ<f64>) -> Self::Output {
-        XYZ(xyz.0 * self)
+        XYZ([xyz.0[0] * self, xyz.0[1] * self, xyz.0[2] * self])
     }
 }
 
@@ -257,8 +255,10 @@ impl<U: Unit> XYZ<Quantity<U>> {
     /// Computes the Euclidean magnitude in the same unit.
     #[inline]
     pub fn magnitude(&self) -> Quantity<U> {
-        let mag = Vector3::new(self.0[0].value(), self.0[1].value(), self.0[2].value()).magnitude();
-        Quantity::new(mag)
+        let x = self.0[0].value();
+        let y = self.0[1].value();
+        let z = self.0[2].value();
+        Quantity::new((x * x + y * y + z * z).sqrt())
     }
 
     /// Extracts raw f64 values as an XYZ<f64>.
@@ -280,13 +280,13 @@ impl<U: Unit> XYZ<Quantity<U>> {
     /// Component-wise addition.
     #[inline]
     pub fn add(&self, other: &Self) -> Self {
-        Self(self.0 + other.0)
+        Self([self.0[0] + other.0[0], self.0[1] + other.0[1], self.0[2] + other.0[2]])
     }
 
     /// Component-wise subtraction.
     #[inline]
     pub fn sub(&self, other: &Self) -> Self {
-        Self(self.0 - other.0)
+        Self([self.0[0] - other.0[0], self.0[1] - other.0[1], self.0[2] - other.0[2]])
     }
 }
 
@@ -311,7 +311,7 @@ impl<U: Unit> Add for XYZ<Quantity<U>> {
 
     #[inline]
     fn add(self, other: Self) -> Self::Output {
-        Self(self.0 + other.0)
+        Self([self.0[0] + other.0[0], self.0[1] + other.0[1], self.0[2] + other.0[2]])
     }
 }
 
@@ -322,7 +322,7 @@ impl<U: Unit> Sub for XYZ<Quantity<U>> {
 
     #[inline]
     fn sub(self, other: Self) -> Self::Output {
-        Self(self.0 - other.0)
+        Self([self.0[0] - other.0[0], self.0[1] - other.0[1], self.0[2] - other.0[2]])
     }
 }
 
@@ -345,7 +345,7 @@ forward_ref_unop! { impl[U: Unit] Neg, neg for XYZ<Quantity<U>> }
 
 impl<T: Default> Default for XYZ<T> {
     fn default() -> Self {
-        Self(Vector3::new(T::default(), T::default(), T::default()))
+        Self([T::default(), T::default(), T::default()])
     }
 }
 
@@ -462,16 +462,16 @@ mod tests {
     }
 
     #[test]
-    fn test_xyz_vec3_roundtrip() {
-        let vec3: nalgebra::Vector3<f64> = nalgebra::Vector3::new(1.0, 2.0, 3.0);
-        let xyz: XYZ<f64> = XYZ::from_vec3(vec3);
+    fn test_xyz_array_roundtrip() {
+        let arr: [f64; 3] = [1.0, 2.0, 3.0];
+        let xyz: XYZ<f64> = XYZ::from_array(arr);
         assert!((xyz.x() - 1.0).abs() < f64::EPSILON);
 
-        let as_vec3 = xyz.as_vec3();
-        assert!((as_vec3[2] - 3.0).abs() < f64::EPSILON);
+        let as_arr = xyz.as_array();
+        assert!((as_arr[2] - 3.0).abs() < f64::EPSILON);
 
-        let into_vec3 = xyz.into_vec3();
-        assert!((into_vec3[1] - 2.0).abs() < f64::EPSILON);
+        let into_arr = xyz.into_array();
+        assert!((into_arr[1] - 2.0).abs() < f64::EPSILON);
     }
 
     #[test]

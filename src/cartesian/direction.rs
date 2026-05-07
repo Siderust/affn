@@ -150,10 +150,10 @@ impl<F: ReferenceFrame> Direction<F> {
         Self::new(x, y, z)
     }
 
-    /// Creates a direction from a nalgebra Vector3, normalizing.
+    /// Creates a direction from a `[f64; 3]` array, normalizing to unit length.
     #[inline]
-    pub fn from_vec3(vec: nalgebra::Vector3<f64>) -> Self {
-        Self::new(vec.x, vec.y, vec.z)
+    pub fn from_array(v: [f64; 3]) -> Self {
+        Self::new(v[0], v[1], v[2])
     }
 }
 
@@ -243,10 +243,10 @@ impl<F: ReferenceFrame> Direction<F> {
         self.xyz.z()
     }
 
-    /// Returns the underlying nalgebra Vector3.
+    /// Returns the components as a `[f64; 3]` array.
     #[inline]
-    pub fn as_vec3(&self) -> nalgebra::Vector3<f64> {
-        *self.xyz.as_vec3()
+    pub fn as_array(&self) -> [f64; 3] {
+        *self.xyz.as_array()
     }
 
     /// Reinterprets this direction as belonging to a different reference frame.
@@ -526,14 +526,14 @@ mod tests {
     #[test]
     fn test_direction_helpers_and_accessors() {
         let dir = Direction::<TestFrame>::normalize(0.0, 3.0, 4.0);
-        let vec3 = dir.as_vec3();
-        assert!((vec3.x - 0.0).abs() < 1e-12);
-        assert!((vec3.y - 0.6).abs() < 1e-12);
-        assert!((vec3.z - 0.8).abs() < 1e-12);
+        let arr = dir.as_array();
+        assert!((arr[0] - 0.0).abs() < 1e-12);
+        assert!((arr[1] - 0.6).abs() < 1e-12);
+        assert!((arr[2] - 0.8).abs() < 1e-12);
 
-        let from_vec3 = Direction::<TestFrame>::from_vec3(nalgebra::Vector3::new(0.0, 3.0, 4.0));
-        assert!((from_vec3.y() - 0.6).abs() < 1e-12);
-        assert!((from_vec3.z() - 0.8).abs() < 1e-12);
+        let from_arr = Direction::<TestFrame>::from_array([0.0, 3.0, 4.0]);
+        assert!((from_arr.y() - 0.6).abs() < 1e-12);
+        assert!((from_arr.z() - 0.8).abs() < 1e-12);
 
         let unchecked = Direction::<TestFrame>::new_unchecked(1.0, 0.0, 0.0);
         assert!((unchecked.x() - 1.0).abs() < 1e-12);

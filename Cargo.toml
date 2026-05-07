@@ -17,12 +17,11 @@ name = "affn"
 
 [features]
 default = ["astro"]
-serde = ["dep:serde", "qtty/serde", "nalgebra/serde-serialize"]
+serde = ["dep:serde", "qtty/serde"]
 astro = ["qtty/astro"]
 
 [dependencies]
 affn-derive = { version = "0.1.5", path = "affn-derive" }
-nalgebra = "0.34.2"
 qtty = "0.7.0"
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
 
