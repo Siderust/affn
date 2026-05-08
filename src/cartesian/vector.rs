@@ -49,11 +49,12 @@
 
 use super::xyz::XYZ;
 use crate::frames::ReferenceFrame;
+use qtty::dimensionless::Ratio;
 use qtty::length::LengthUnit;
 use qtty::{Quantity, Unit, UnitMul};
 
 use std::marker::PhantomData;
-use std::ops::{Add, Neg, Sub};
+use std::ops::{Add, Div, Neg, Sub};
 
 /// A free vector in 3D Cartesian coordinates.
 ///
@@ -92,11 +93,11 @@ impl<F: ReferenceFrame, U: Unit> Vector<F, U> {
         }
     }
 
-    /// Creates a vector from a nalgebra Vector3.
+    /// Creates a vector from a `[Quantity<U>; 3]` array.
     #[inline]
-    pub fn from_vec3(vec3: nalgebra::Vector3<Quantity<U>>) -> Self {
+    pub fn from_array(arr: [Quantity<U>; 3]) -> Self {
         Self {
-            xyz: XYZ::from_vec3(vec3),
+            xyz: XYZ::from_array(arr),
             _frame: PhantomData,
         }
     }
@@ -144,10 +145,10 @@ impl<F: ReferenceFrame, U: Unit> Vector<F, U> {
         self.xyz.z()
     }
 
-    /// Returns the underlying nalgebra Vector3.
+    /// Returns a reference to the underlying `[Quantity<U>; 3]` array.
     #[inline]
-    pub fn as_vec3(&self) -> &nalgebra::Vector3<Quantity<U>> {
-        self.xyz.as_vec3()
+    pub fn as_array(&self) -> &[Quantity<U>; 3] {
+        self.xyz.as_array()
     }
 
     /// Converts this vector to another unit of the same dimension.
@@ -318,6 +319,28 @@ impl<F: ReferenceFrame, U: Unit> Neg for Vector<F, U> {
 }
 
 forward_ref_unop! { impl[F: ReferenceFrame, U: Unit] Neg, neg for Vector<F, U> }
+
+// =============================================================================
+// Scalar Division: Vector<F, U> / Quantity<U> → Vector<F, Ratio>
+// =============================================================================
+
+impl<F: ReferenceFrame, U: Unit> Div<Quantity<U>> for Vector<F, U> {
+    type Output = Vector<F, Ratio>;
+
+    /// Divides each component by a scalar with the same unit, producing a
+    /// dimensionless velocity vector (e.g. β = v/c for aberration).
+    #[inline]
+    fn div(self, rhs: Quantity<U>) -> Vector<F, Ratio> {
+        let c = rhs.value();
+        Vector::<F, Ratio>::new(
+            Quantity::new(self.x().value() / c),
+            Quantity::new(self.y().value() / c),
+            Quantity::new(self.z().value() / c),
+        )
+    }
+}
+
+forward_ref_binop! { impl[F: ReferenceFrame, U: Unit] Div, div for Vector<F, U>, Quantity<U> }
 
 // =============================================================================
 // PartialEq
@@ -510,12 +533,12 @@ mod tests {
         let magnitude_sq = v.magnitude_squared();
         assert!((magnitude_sq.value() - 14.0).abs() < 1e-12);
 
-        let from_vec3 = DispM::from_vec3(nalgebra::Vector3::new(
+        let from_arr = DispM::from_array([
             Quantity::<Meter>::new(1.0),
             Quantity::<Meter>::new(2.0),
             Quantity::<Meter>::new(3.0),
-        ));
-        assert_eq!(from_vec3, v);
+        ]);
+        assert_eq!(from_arr, v);
 
         let dir = v.normalize_unchecked();
         let norm = (dir.x() * dir.x() + dir.y() * dir.y() + dir.z() * dir.z()).sqrt();
@@ -557,10 +580,10 @@ mod tests {
     #[test]
     fn test_vector_display_and_accessors() {
         let v = Displacement::<TestFrame, Meter>::new(1.0, 2.0, 3.0);
-        let vec3 = v.as_vec3();
-        assert!((vec3[0].value() - 1.0).abs() < 1e-12);
-        assert!((vec3[1].value() - 2.0).abs() < 1e-12);
-        assert!((vec3[2].value() - 3.0).abs() < 1e-12);
+        let arr = v.as_array();
+        assert!((arr[0].value() - 1.0).abs() < 1e-12);
+        assert!((arr[1].value() - 2.0).abs() < 1e-12);
+        assert!((arr[2].value() - 3.0).abs() < 1e-12);
 
         let text = v.to_string();
         assert!(text.contains("Vector<TestFrame>"));

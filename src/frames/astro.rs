@@ -37,7 +37,7 @@ use serde::{Deserialize, Serialize};
 //
 //   B  =  Rotation3::rx( η₀) · Rotation3::ry(−ξ₀) · Rotation3::rz(−dα₀)
 //
-// The resulting matrix agrees with ERFA `eraBp06` `rb` to ≲1e-15.
+// The resulting matrix agrees with SOFA `iauBp06` `rb` to ≲1e-15.
 
 const FRAME_BIAS_DALPHA0_ARCSEC: f64 = -0.0146;
 const FRAME_BIAS_XI0_ARCSEC: f64 = -0.0166170;
@@ -306,7 +306,7 @@ impl GCRS {
     ///
     /// The matrix is **constant** (epoch-independent) and its rotation
     /// angle is approximately 23 milli-arcseconds (≈ 1.1 × 10⁻⁷ rad).
-    /// It agrees with ERFA `eraBp06` `rb` at J2000.0 to ≲ 1 × 10⁻¹⁵.
+    /// It agrees with SOFA `iauBp06` `rb` at J2000.0 to ≲ 1 × 10⁻¹⁵.
     #[inline]
     #[must_use]
     pub fn frame_bias_to_eme2000() -> Rotation3 {

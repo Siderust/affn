@@ -427,7 +427,7 @@ impl Rotation3 {
     /// Constructs the Fukushima-Williams rotation `Rx(a) · Rz(b) · Rx(c) · Rz(d)` directly.
     ///
     /// This is the standard form for IAU 2006 precession and precession-nutation
-    /// matrices. In the SOFA/ERFA convention (translated to standard rotations):
+    /// matrices. In the SOFA convention (translated to standard rotations):
     ///
     /// ```text
     /// P = Rx(ε_A) · Rz(ψ̄) · Rx(−φ̄) · Rz(−γ̄)

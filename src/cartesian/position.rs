@@ -165,11 +165,11 @@ impl<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> Position<C, F, U> {
         }
     }
 
-    /// Creates a position from a nalgebra Vector3 with explicit center parameters.
+    /// Creates a position from a `[Quantity<U>; 3]` array with explicit center parameters.
     #[inline]
-    pub fn from_vec3(center_params: C::Params, vec3: nalgebra::Vector3<Quantity<U>>) -> Self {
+    pub fn from_array(center_params: C::Params, arr: [Quantity<U>; 3]) -> Self {
         Self {
-            xyz: XYZ::from_vec3(vec3),
+            xyz: XYZ::from_array(arr),
             center_params,
             _frame: PhantomData,
         }
@@ -238,10 +238,10 @@ where
         Self::new_with_params((), x, y, z)
     }
 
-    /// Creates a position from a nalgebra Vector3 for centers with `Params = ()`.
+    /// Creates a position from a `[Quantity<U>; 3]` array for centers with `Params = ()`.
     #[inline]
-    pub fn from_vec3_origin(vec3: nalgebra::Vector3<Quantity<U>>) -> Self {
-        Self::from_vec3((), vec3)
+    pub fn from_array_origin(arr: [Quantity<U>; 3]) -> Self {
+        Self::from_array((), arr)
     }
 
     /// The origin of this coordinate system (all coordinates zero).
@@ -276,10 +276,10 @@ impl<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> Position<C, F, U> {
         self.xyz.z()
     }
 
-    /// Returns the underlying nalgebra Vector3.
+    /// Returns a reference to the underlying `[Quantity<U>; 3]` array.
     #[inline]
-    pub fn as_vec3(&self) -> &nalgebra::Vector3<Quantity<U>> {
-        self.xyz.as_vec3()
+    pub fn as_array(&self) -> &[Quantity<U>; 3] {
+        self.xyz.as_array()
     }
 
     /// Converts this position to another length unit.
@@ -520,7 +520,7 @@ where
     fn add(self, displacement: Displacement<F, U>) -> Self::Output {
         Self::from_xyz_with_params(
             self.center_params.clone(),
-            self.xyz + XYZ::from_vec3(*displacement.as_vec3()),
+            self.xyz + XYZ::from_array(*displacement.as_array()),
         )
     }
 }
@@ -538,7 +538,7 @@ where
     fn sub(self, displacement: Displacement<F, U>) -> Self::Output {
         Self::from_xyz_with_params(
             self.center_params.clone(),
-            self.xyz - XYZ::from_vec3(*displacement.as_vec3()),
+            self.xyz - XYZ::from_array(*displacement.as_array()),
         )
     }
 }
@@ -672,7 +672,7 @@ mod tests {
     }
 
     #[test]
-    fn test_position_with_params_and_from_vec3() {
+    fn test_position_with_params_and_from_array() {
         let params = TestParams { id: 42 };
         let pos = Position::<ParamCenter, TestFrame, Meter>::new_with_params(
             params.clone(),
@@ -682,17 +682,17 @@ mod tests {
         );
         assert_eq!(pos.center_params(), &params);
 
-        let vec3 = nalgebra::Vector3::new(1.0 * M, 2.0 * M, 3.0 * M);
-        let pos_from_vec =
-            Position::<ParamCenter, TestFrame, Meter>::from_vec3(params.clone(), vec3);
-        assert_eq!(pos_from_vec.center_params(), &params);
-        assert!((pos_from_vec.z().value() - 3.0).abs() < 1e-12);
+        let arr = [1.0 * M, 2.0 * M, 3.0 * M];
+        let pos_from_arr =
+            Position::<ParamCenter, TestFrame, Meter>::from_array(params.clone(), arr);
+        assert_eq!(pos_from_arr.center_params(), &params);
+        assert!((pos_from_arr.z().value() - 3.0).abs() < 1e-12);
     }
 
     #[test]
-    fn test_position_from_vec3_origin_and_center() {
-        let vec3 = nalgebra::Vector3::new(1.0 * M, 2.0 * M, 3.0 * M);
-        let pos = Position::<TestCenter, TestFrame, Meter>::from_vec3_origin(vec3);
+    fn test_position_from_array_origin_and_center() {
+        let arr = [1.0 * M, 2.0 * M, 3.0 * M];
+        let pos = Position::<TestCenter, TestFrame, Meter>::from_array_origin(arr);
         assert!((pos.x().value() - 1.0).abs() < 1e-12);
 
         let origin = Position::<TestCenter, TestFrame, Meter>::CENTER;
@@ -736,7 +736,7 @@ mod tests {
     fn test_position_const_vec3_and_display() {
         let pos =
             Position::<TestCenter, TestFrame, Meter>::new_const((), 1.0 * M, 2.0 * M, 3.0 * M);
-        let vec3 = pos.as_vec3();
+        let vec3 = pos.as_array();
         assert!((vec3[0].value() - 1.0).abs() < 1e-12);
         assert!((vec3[1].value() - 2.0).abs() < 1e-12);
         assert!((vec3[2].value() - 3.0).abs() < 1e-12);

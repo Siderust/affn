@@ -16,14 +16,13 @@ categories = ["science", "mathematics"]
 name = "affn"
 
 [features]
-default = ["astro"]
-serde = ["dep:serde", "qtty/serde", "nalgebra/serde-serialize"]
+default = []
+serde = ["dep:serde", "qtty/serde"]
 astro = ["qtty/astro"]
 
 [dependencies]
 affn-derive = { version = "0.1.5", path = "affn-derive" }
-nalgebra = "0.34.2"
-qtty = "0.7.0"
+qtty = { git = "https://github.com/Siderust/qtty.git", branch = "main" }
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
 
 [dev-dependencies]

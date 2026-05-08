@@ -150,11 +150,11 @@ fn icrs_and_gcrs_share_the_same_frame_bias_to_eme2000() {
 
 #[test]
 fn frame_bias_off_diagonal_signs_match_iers_convention() {
-    // IERS / ERFA convention for the IAU 2006 bias rb at J2000.0:
+    // IERS / SOFA convention for the IAU 2006 bias rb at J2000.0:
     //   rb[0][1] < 0, rb[1][0] > 0,
     //   rb[0][2] > 0, rb[2][0] < 0,
     //   rb[1][2] > 0, rb[2][1] < 0.
-    // (See `siderust/.../bias.rs::bias_off_diagonal_signs_match_erfa`.)
+    // (See `siderust/.../bias.rs::bias_off_diagonal_signs_match_sofa`.)
     let b = GCRS::frame_bias_to_eme2000();
     let m = b.as_matrix();
     assert!(
