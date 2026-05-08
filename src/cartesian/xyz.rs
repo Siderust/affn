@@ -163,13 +163,21 @@ impl XYZ<f64> {
     /// Component-wise addition.
     #[inline]
     pub fn add(&self, other: &Self) -> Self {
-        Self([self.0[0] + other.0[0], self.0[1] + other.0[1], self.0[2] + other.0[2]])
+        Self([
+            self.0[0] + other.0[0],
+            self.0[1] + other.0[1],
+            self.0[2] + other.0[2],
+        ])
     }
 
     /// Component-wise subtraction.
     #[inline]
     pub fn sub(&self, other: &Self) -> Self {
-        Self([self.0[0] - other.0[0], self.0[1] - other.0[1], self.0[2] - other.0[2]])
+        Self([
+            self.0[0] - other.0[0],
+            self.0[1] - other.0[1],
+            self.0[2] - other.0[2],
+        ])
     }
 
     /// Negates all components.
@@ -188,7 +196,11 @@ impl Add for XYZ<f64> {
 
     #[inline]
     fn add(self, other: Self) -> Self::Output {
-        Self([self.0[0] + other.0[0], self.0[1] + other.0[1], self.0[2] + other.0[2]])
+        Self([
+            self.0[0] + other.0[0],
+            self.0[1] + other.0[1],
+            self.0[2] + other.0[2],
+        ])
     }
 }
 
@@ -199,7 +211,11 @@ impl Sub for XYZ<f64> {
 
     #[inline]
     fn sub(self, other: Self) -> Self::Output {
-        Self([self.0[0] - other.0[0], self.0[1] - other.0[1], self.0[2] - other.0[2]])
+        Self([
+            self.0[0] - other.0[0],
+            self.0[1] - other.0[1],
+            self.0[2] - other.0[2],
+        ])
     }
 }
 
@@ -280,13 +296,21 @@ impl<U: Unit> XYZ<Quantity<U>> {
     /// Component-wise addition.
     #[inline]
     pub fn add(&self, other: &Self) -> Self {
-        Self([self.0[0] + other.0[0], self.0[1] + other.0[1], self.0[2] + other.0[2]])
+        Self([
+            self.0[0] + other.0[0],
+            self.0[1] + other.0[1],
+            self.0[2] + other.0[2],
+        ])
     }
 
     /// Component-wise subtraction.
     #[inline]
     pub fn sub(&self, other: &Self) -> Self {
-        Self([self.0[0] - other.0[0], self.0[1] - other.0[1], self.0[2] - other.0[2]])
+        Self([
+            self.0[0] - other.0[0],
+            self.0[1] - other.0[1],
+            self.0[2] - other.0[2],
+        ])
     }
 }
 
@@ -311,7 +335,11 @@ impl<U: Unit> Add for XYZ<Quantity<U>> {
 
     #[inline]
     fn add(self, other: Self) -> Self::Output {
-        Self([self.0[0] + other.0[0], self.0[1] + other.0[1], self.0[2] + other.0[2]])
+        Self([
+            self.0[0] + other.0[0],
+            self.0[1] + other.0[1],
+            self.0[2] + other.0[2],
+        ])
     }
 }
 
@@ -322,7 +350,11 @@ impl<U: Unit> Sub for XYZ<Quantity<U>> {
 
     #[inline]
     fn sub(self, other: Self) -> Self::Output {
-        Self([self.0[0] - other.0[0], self.0[1] - other.0[1], self.0[2] - other.0[2]])
+        Self([
+            self.0[0] - other.0[0],
+            self.0[1] - other.0[1],
+            self.0[2] - other.0[2],
+        ])
     }
 }
 

@@ -49,11 +49,12 @@
 
 use super::xyz::XYZ;
 use crate::frames::ReferenceFrame;
+use qtty::dimensionless::Ratio;
 use qtty::length::LengthUnit;
 use qtty::{Quantity, Unit, UnitMul};
 
 use std::marker::PhantomData;
-use std::ops::{Add, Neg, Sub};
+use std::ops::{Add, Div, Neg, Sub};
 
 /// A free vector in 3D Cartesian coordinates.
 ///
@@ -318,6 +319,28 @@ impl<F: ReferenceFrame, U: Unit> Neg for Vector<F, U> {
 }
 
 forward_ref_unop! { impl[F: ReferenceFrame, U: Unit] Neg, neg for Vector<F, U> }
+
+// =============================================================================
+// Scalar Division: Vector<F, U> / Quantity<U> → Vector<F, Ratio>
+// =============================================================================
+
+impl<F: ReferenceFrame, U: Unit> Div<Quantity<U>> for Vector<F, U> {
+    type Output = Vector<F, Ratio>;
+
+    /// Divides each component by a scalar with the same unit, producing a
+    /// dimensionless velocity vector (e.g. β = v/c for aberration).
+    #[inline]
+    fn div(self, rhs: Quantity<U>) -> Vector<F, Ratio> {
+        let c = rhs.value();
+        Vector::<F, Ratio>::new(
+            Quantity::new(self.x().value() / c),
+            Quantity::new(self.y().value() / c),
+            Quantity::new(self.z().value() / c),
+        )
+    }
+}
+
+forward_ref_binop! { impl[F: ReferenceFrame, U: Unit] Div, div for Vector<F, U>, Quantity<U> }
 
 // =============================================================================
 // PartialEq
