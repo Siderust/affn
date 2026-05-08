@@ -341,8 +341,7 @@ dependencies = [
 [[package]]
 name = "qtty"
 version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61587536c9c9ec95845b7e5ddbac8afb06ce94ea10fc2728543db3f7bc0a2bc6"
+source = "git+https://github.com/Siderust/qtty.git?branch=main#e0d29bf701cc6b05bf259db240ec6423ae8a7969"
 dependencies = [
  "qtty-core",
  "qtty-derive",
@@ -351,8 +350,7 @@ dependencies = [
 [[package]]
 name = "qtty-core"
 version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b01d8237a224bea98fcd76fed95ceff6dcca63f613948ef08ecdfeb7e5e398e"
+source = "git+https://github.com/Siderust/qtty.git?branch=main#e0d29bf701cc6b05bf259db240ec6423ae8a7969"
 dependencies = [
  "libm",
  "qtty-derive",
@@ -363,8 +361,7 @@ dependencies = [
 [[package]]
 name = "qtty-derive"
 version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d4df57ba07bf5109d76487c62a92b0d0ae13e94711cd37f0302bfa886cb44c3"
+source = "git+https://github.com/Siderust/qtty.git?branch=main#e0d29bf701cc6b05bf259db240ec6423ae8a7969"
 dependencies = [
  "proc-macro2",
  "quote",

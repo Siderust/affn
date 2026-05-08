@@ -22,7 +22,7 @@ astro = ["qtty/astro"]
 
 [dependencies]
 affn-derive = { version = "0.1.5", path = "affn-derive" }
-qtty = "0.7.0"
+qtty = { git = "https://github.com/Siderust/qtty.git", branch = "main" }
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
 
 [dev-dependencies]
