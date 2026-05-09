@@ -21,7 +21,7 @@ serde = ["dep:serde", "qtty/serde"]
 astro = ["qtty/astro"]
 
 [dependencies]
-affn-derive = { version = "0.1.5", path = "affn-derive" }
+affn-derive = { version = "0.7.0", path = "affn-derive" }
 qtty = "0.7.1"
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
 
