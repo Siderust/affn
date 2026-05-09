@@ -33,8 +33,8 @@ Add the dependency:
 
 ```toml
 [dependencies]
-affn = "0.6.2"
-qtty = "0.7.0"
+affn = "0.7.0"
+qtty = "0.7.1"
 ```
 
 Define a center + frame and do basic affine algebra:
@@ -304,8 +304,8 @@ Enable it in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-affn = { version = "0.6.2", features = ["serde"] }
-qtty = "0.7.0"
+affn = { version = "0.6¡7.0", features = ["serde"] }
+qtty = "0.7.1"
 ```
 
 This feature also forwards serialization support to dependencies where needed, such as `qtty/serde`.
