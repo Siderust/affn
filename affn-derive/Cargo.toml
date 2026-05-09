@@ -1,6 +1,6 @@
 [package]
 name = "affn-derive"
-version = "0.1.5"
+version = "0.7.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "Derive macros for affn: ReferenceFrame and ReferenceCenter"
@@ -13,6 +13,6 @@ categories = ["science", "mathematics"]
 proc-macro = true
 
 [dependencies]
-syn = { version = "2.0", features = ["full", "extra-traits"] }
-quote = "1.0"
+syn = { version = "2.0.117", features = ["full", "extra-traits"] }
+quote = "1.0.45"
 proc-macro2 = "1.0"
