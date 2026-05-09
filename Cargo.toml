@@ -2,7 +2,7 @@
 
 [package]
 name = "affn"
-version = "0.6.2"
+version = "0.7.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "Affine geometry primitives: strongly-typed coordinate systems, reference frames, and centers for scientific computing."
@@ -22,7 +22,7 @@ astro = ["qtty/astro"]
 
 [dependencies]
 affn-derive = { version = "0.1.5", path = "affn-derive" }
-qtty = { git = "https://github.com/Siderust/qtty.git", branch = "main" }
+qtty = "0.7.1"
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
 
 [dev-dependencies]
