@@ -123,6 +123,9 @@ pub mod planar;
 #[cfg(feature = "serde")]
 pub(crate) mod serde_utils;
 
+// Frame-tagged 3×3 matrix primitives
+pub mod matrix3;
+
 // Re-export derive macros from affn-derive
 // Named with Derive prefix to avoid conflicts with trait names
 pub use affn_derive::{
@@ -142,8 +145,7 @@ pub use cartesian::{
     CenterParamsMismatchError, Direction as CartesianDirection, Displacement, Position, Vector,
     Velocity,
 };
-pub use conic::{
-    ClassifiedPeriapsisParam, ClassifiedSemiMajorAxisParam, ConicKind, ConicOrientation,
+pub use conic::{    ClassifiedPeriapsisParam, ClassifiedSemiMajorAxisParam, ConicKind, ConicOrientation,
     ConicShape, ConicValidationError, Elliptic, EllipticPeriapsis, EllipticSemiMajorAxis,
     Hyperbolic, HyperbolicPeriapsis, HyperbolicSemiMajorAxis, KindMarker, NonParabolicKindMarker,
     OrientedConic, Parabolic, ParabolicPeriapsis, PeriapsisParam, SemiMajorAxisParam,
