@@ -564,6 +564,22 @@ forward_ref_binop! {
 }
 
 // =============================================================================
+// PartialEq
+// =============================================================================
+
+impl<C, F, U> PartialEq for Position<C, F, U>
+where
+    C: ReferenceCenter,
+    C::Params: PartialEq,
+    F: ReferenceFrame,
+    U: LengthUnit,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.xyz == other.xyz && self.center_params == other.center_params
+    }
+}
+
+// =============================================================================
 // Display
 // =============================================================================
 
