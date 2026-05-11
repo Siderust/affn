@@ -126,6 +126,9 @@ pub(crate) mod serde_utils;
 // Frame-tagged 3×3 matrix primitives
 pub mod matrix3;
 
+// Frame-tagged 6×6 matrix and block-diagonal rotation helper
+pub mod matrix6;
+
 // Re-export derive macros from affn-derive
 // Named with Derive prefix to avoid conflicts with trait names
 pub use affn_derive::{
