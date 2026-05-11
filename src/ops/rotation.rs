@@ -1,7 +1,7 @@
 //! 3x3 rotation matrix operator.
 
-use crate::cartesian::Vector;
 use crate::cartesian::xyz::XYZ;
+use crate::cartesian::Vector;
 use crate::frames::ReferenceFrame;
 use qtty::angular::Radians;
 use qtty::Unit;

@@ -81,7 +81,10 @@ impl<F, T: Copy + Default> FrameMatrix3<F, T> {
     /// Wrap a raw row-major 3×3 array as a matrix in frame `F`.
     #[inline]
     pub fn from_array(data: [[T; 3]; 3]) -> Self {
-        Self { data, _frame: PhantomData }
+        Self {
+            data,
+            _frame: PhantomData,
+        }
     }
 
     /// Zero matrix in frame `F`.
@@ -99,9 +102,9 @@ impl<F, T: Copy + Default> FrameMatrix3<F, T> {
     /// Transpose of this matrix.
     pub fn transpose(&self) -> Self {
         let mut out = [[T::default(); 3]; 3];
-        for i in 0..3 {
-            for j in 0..3 {
-                out[i][j] = self.data[j][i];
+        for (i, row) in out.iter_mut().enumerate() {
+            for (j, slot) in row.iter_mut().enumerate() {
+                *slot = self.data[j][i];
             }
         }
         Self::from_array(out)
@@ -113,7 +116,10 @@ impl<F, T: Copy + Default> FrameMatrix3<F, T> {
     /// means; the type system cannot verify this.
     #[inline]
     pub fn relabel<G>(self) -> FrameMatrix3<G, T> {
-        FrameMatrix3 { data: self.data, _frame: PhantomData }
+        FrameMatrix3 {
+            data: self.data,
+            _frame: PhantomData,
+        }
     }
 }
 
@@ -121,8 +127,8 @@ impl<F> FrameMatrix3<F> {
     /// 3×3 identity matrix in frame `F`.
     pub fn identity() -> Self {
         let mut d = [[0.0_f64; 3]; 3];
-        for i in 0..3 {
-            d[i][i] = 1.0;
+        for (i, row) in d.iter_mut().enumerate() {
+            row[i] = 1.0;
         }
         Self::from_array(d)
     }
@@ -138,27 +144,25 @@ impl<F> FrameMatrix3<F> {
         let rm = r.as_matrix();
         // tmp = R · self
         let mut tmp = [[0.0_f64; 3]; 3];
-        for i in 0..3 {
-            for k in 0..3 {
-                let rik = rm[i][k];
+        for (i, tmp_row) in tmp.iter_mut().enumerate() {
+            for (k, &rik) in rm[i].iter().enumerate() {
                 if rik == 0.0 {
                     continue;
                 }
-                for j in 0..3 {
-                    tmp[i][j] += rik * self.data[k][j];
+                for (j, tmp_elt) in tmp_row.iter_mut().enumerate() {
+                    *tmp_elt += rik * self.data[k][j];
                 }
             }
         }
         // result = tmp · Rᵀ  (Rᵀ[k][j] = R[j][k])
         let mut res = [[0.0_f64; 3]; 3];
-        for i in 0..3 {
-            for k in 0..3 {
-                let tik = tmp[i][k];
+        for (i, res_row) in res.iter_mut().enumerate() {
+            for (k, &tik) in tmp[i].iter().enumerate() {
                 if tik == 0.0 {
                     continue;
                 }
-                for j in 0..3 {
-                    res[i][j] += tik * rm[j][k];
+                for (j, res_elt) in res_row.iter_mut().enumerate() {
+                    *res_elt += tik * rm[j][k];
                 }
             }
         }
@@ -193,7 +197,10 @@ impl<F, T: Copy + Default> SymmetricFrameMatrix3<F, T> {
         for i in 0..3 {
             data[i][i] = diag[i];
         }
-        Self { data, _frame: PhantomData }
+        Self {
+            data,
+            _frame: PhantomData,
+        }
     }
 
     /// Construct from the upper triangle (rows ≤ cols, including diagonal).
@@ -208,7 +215,10 @@ impl<F, T: Copy + Default> SymmetricFrameMatrix3<F, T> {
                 out[j][i] = upper[i][j];
             }
         }
-        Self { data: out, _frame: PhantomData }
+        Self {
+            data: out,
+            _frame: PhantomData,
+        }
     }
 
     /// Borrow the underlying row-major 3×3 array.
@@ -226,13 +236,19 @@ impl<F, T: Copy + Default> SymmetricFrameMatrix3<F, T> {
     /// Transpose of a symmetric matrix is the matrix itself.
     #[inline]
     pub fn transpose(&self) -> Self {
-        Self { data: self.data, _frame: PhantomData }
+        Self {
+            data: self.data,
+            _frame: PhantomData,
+        }
     }
 
     /// Re-tag the matrix as belonging to frame `G`, without changing data.
     #[inline]
     pub fn relabel<G>(self) -> SymmetricFrameMatrix3<G, T> {
-        SymmetricFrameMatrix3 { data: self.data, _frame: PhantomData }
+        SymmetricFrameMatrix3 {
+            data: self.data,
+            _frame: PhantomData,
+        }
     }
 }
 
@@ -252,38 +268,39 @@ impl<F> SymmetricFrameMatrix3<F> {
         let rm = r.as_matrix();
         // tmp = R · self
         let mut tmp = [[0.0_f64; 3]; 3];
-        for i in 0..3 {
-            for k in 0..3 {
-                let rik = rm[i][k];
+        for (i, tmp_row) in tmp.iter_mut().enumerate() {
+            for (k, &rik) in rm[i].iter().enumerate() {
                 if rik == 0.0 {
                     continue;
                 }
-                for j in 0..3 {
-                    tmp[i][j] += rik * self.data[k][j];
+                for (j, tmp_elt) in tmp_row.iter_mut().enumerate() {
+                    *tmp_elt += rik * self.data[k][j];
                 }
             }
         }
         // raw = tmp · Rᵀ
         let mut raw = [[0.0_f64; 3]; 3];
-        for i in 0..3 {
-            for k in 0..3 {
-                let tik = tmp[i][k];
+        for (i, raw_row) in raw.iter_mut().enumerate() {
+            for (k, &tik) in tmp[i].iter().enumerate() {
                 if tik == 0.0 {
                     continue;
                 }
-                for j in 0..3 {
-                    raw[i][j] += tik * rm[j][k];
+                for (j, raw_elt) in raw_row.iter_mut().enumerate() {
+                    *raw_elt += tik * rm[j][k];
                 }
             }
         }
         // Symmetrize to guard against floating-point drift.
         let mut data = [[0.0_f64; 3]; 3];
-        for i in 0..3 {
-            for j in 0..3 {
-                data[i][j] = 0.5 * (raw[i][j] + raw[j][i]);
+        for (i, row) in data.iter_mut().enumerate() {
+            for (j, slot) in row.iter_mut().enumerate() {
+                *slot = 0.5 * (raw[i][j] + raw[j][i]);
             }
         }
-        SymmetricFrameMatrix3 { data, _frame: PhantomData }
+        SymmetricFrameMatrix3 {
+            data,
+            _frame: PhantomData,
+        }
     }
 }
 
@@ -298,13 +315,17 @@ mod tests {
     #[derive(Debug, Copy, Clone)]
     struct F1;
     impl crate::frames::ReferenceFrame for F1 {
-        fn frame_name() -> &'static str { "F1" }
+        fn frame_name() -> &'static str {
+            "F1"
+        }
     }
 
     #[derive(Debug, Copy, Clone)]
     struct F2;
     impl crate::frames::ReferenceFrame for F2 {
-        fn frame_name() -> &'static str { "F2" }
+        fn frame_name() -> &'static str {
+            "F2"
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -331,10 +352,10 @@ mod tests {
     #[test]
     fn frame_matrix3_identity() {
         let m = FrameMatrix3::<F1>::identity();
-        for i in 0..3 {
-            for j in 0..3 {
+        for (i, row) in m.as_array().iter().enumerate() {
+            for (j, value) in row.iter().enumerate() {
                 let expected = if i == j { 1.0 } else { 0.0 };
-                assert_eq!(m.as_array()[i][j], expected);
+                assert_eq!(*value, expected);
             }
         }
     }
@@ -344,9 +365,9 @@ mod tests {
         let data = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]];
         let m = FrameMatrix3::<F1>::from_array(data);
         let t = m.transpose();
-        for i in 0..3 {
-            for j in 0..3 {
-                assert_eq!(t.as_array()[i][j], data[j][i]);
+        for (i, row) in t.as_array().iter().enumerate() {
+            for (j, value) in row.iter().enumerate() {
+                assert_eq!(*value, data[j][i]);
             }
         }
     }
@@ -364,9 +385,9 @@ mod tests {
         let data = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]];
         let m = FrameMatrix3::<F1>::from_array(data);
         let rotated: FrameMatrix3<F2> = m.rotated_by(&Rotation3::IDENTITY);
-        for i in 0..3 {
-            for j in 0..3 {
-                assert!((rotated.as_array()[i][j] - data[i][j]).abs() < 1e-14);
+        for (i, row) in rotated.as_array().iter().enumerate() {
+            for (j, value) in row.iter().enumerate() {
+                assert!((*value - data[i][j]).abs() < 1e-14);
             }
         }
     }
@@ -393,10 +414,10 @@ mod tests {
         let m = SymmetricFrameMatrix3::<F1>::from_diagonal([1.0, 2.0, 3.0]);
         assert_eq!(m.diagonal(), [1.0, 2.0, 3.0]);
         // Off-diagonal must be zero.
-        for i in 0..3 {
-            for j in 0..3 {
+        for (i, row) in m.as_array().iter().enumerate() {
+            for (j, value) in row.iter().enumerate() {
                 if i != j {
-                    assert_eq!(m.as_array()[i][j], 0.0);
+                    assert_eq!(*value, 0.0);
                 }
             }
         }
@@ -453,14 +474,20 @@ mod tests {
         let rotated: SymmetricFrameMatrix3<F2> = m.rotated_by(&r);
         let a = rotated.as_array();
         // Check symmetry.
-        for i in 0..3 {
-            for j in 0..3 {
-                assert!((a[i][j] - a[j][i]).abs() < 1e-13, "a[{i}][{j}] != a[{j}][{i}]");
+        for (i, row) in a.iter().enumerate() {
+            for (j, value) in row.iter().enumerate() {
+                assert!(
+                    (*value - a[j][i]).abs() < 1e-13,
+                    "a[{i}][{j}] != a[{j}][{i}]"
+                );
             }
         }
         // Trace is invariant under rotation similarity.
         let trace_in = 4.0 + 9.0 + 1.0;
         let trace_out = a[0][0] + a[1][1] + a[2][2];
-        assert!((trace_out - trace_in).abs() < 1e-12, "trace changed: {trace_out} != {trace_in}");
+        assert!(
+            (trace_out - trace_in).abs() < 1e-12,
+            "trace changed: {trace_out} != {trace_in}"
+        );
     }
 }

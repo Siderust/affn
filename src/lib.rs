@@ -145,7 +145,8 @@ pub use cartesian::{
     CenterParamsMismatchError, Direction as CartesianDirection, Displacement, Position, Vector,
     Velocity,
 };
-pub use conic::{    ClassifiedPeriapsisParam, ClassifiedSemiMajorAxisParam, ConicKind, ConicOrientation,
+pub use conic::{
+    ClassifiedPeriapsisParam, ClassifiedSemiMajorAxisParam, ConicKind, ConicOrientation,
     ConicShape, ConicValidationError, Elliptic, EllipticPeriapsis, EllipticSemiMajorAxis,
     Hyperbolic, HyperbolicPeriapsis, HyperbolicSemiMajorAxis, KindMarker, NonParabolicKindMarker,
     OrientedConic, Parabolic, ParabolicPeriapsis, PeriapsisParam, SemiMajorAxisParam,
