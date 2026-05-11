@@ -1,7 +1,10 @@
 //! 3x3 rotation matrix operator.
 
 use crate::cartesian::xyz::XYZ;
+use crate::cartesian::Vector;
+use crate::frames::ReferenceFrame;
 use qtty::angular::Radians;
+use qtty::Unit;
 
 /// A 3x3 rotation matrix for orientation transforms.
 ///
@@ -304,6 +307,44 @@ impl Rotation3 {
     pub fn apply_xyz(&self, xyz: XYZ<f64>) -> XYZ<f64> {
         let [x, y, z] = self.apply_array([xyz.x(), xyz.y(), xyz.z()]);
         XYZ::new(x, y, z)
+    }
+
+    /// Applies this rotation to a typed [`Vector`], changing its reference frame.
+    ///
+    /// Rotates the vector's components and re-tags the result with frame `F2`.
+    /// The unit `U` is unchanged. This is a zero-overhead operation: the matrix
+    /// multiplication uses the same path as [`apply_array`], with a frame tag
+    /// change at compile time.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use affn::{Rotation3, cartesian::Displacement};
+    /// use affn::frames::ReferenceFrame;
+    /// use qtty::unit::Kilometer;
+    /// use std::f64::consts::FRAC_PI_2;
+    ///
+    /// #[derive(Debug, Copy, Clone)] struct FrameA;
+    /// #[derive(Debug, Copy, Clone)] struct FrameB;
+    /// impl ReferenceFrame for FrameA { fn frame_name() -> &'static str { "A" } }
+    /// impl ReferenceFrame for FrameB { fn frame_name() -> &'static str { "B" } }
+    ///
+    /// let rot = Rotation3::rz(qtty::angular::Radians::new(FRAC_PI_2));
+    /// let v = Displacement::<FrameA, Kilometer>::new(1.0, 0.0, 0.0);
+    /// let rotated: Displacement<FrameB, Kilometer> = rot.apply_vec(v);
+    /// assert!((rotated.x().value() - 0.0).abs() < 1e-10);
+    /// assert!((rotated.y().value() - 1.0).abs() < 1e-10);
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn apply_vec<F1, F2, U>(&self, v: Vector<F1, U>) -> Vector<F2, U>
+    where
+        F1: ReferenceFrame,
+        F2: ReferenceFrame,
+        U: Unit,
+    {
+        let [x, y, z] = self.apply_array([v.x().value(), v.y().value(), v.z().value()]);
+        Vector::new(x, y, z)
     }
 
     /// Returns the underlying matrix as a row-major array.

@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [unreleased]
+
+### Added
+- New frame-tagged 3×3 matrix primitives in `affn::matrix3`: `FrameMatrix3<F, T>` for general matrices and `SymmetricFrameMatrix3<F, T>` for symmetry-preserving covariance-style blocks.
+- Rotation similarity helpers on the new matrix types: `rotated_by::<G>(&Rotation3)` for frame-changing `R · M · Rᵀ` transforms, with numerical re-symmetrization for `SymmetricFrameMatrix3`.
+- `Rotation3::apply_vec<F1, F2, U>` for rotating typed `Vector`/`Displacement` values while preserving units and retagging the output frame.
+
+### Changed
+- `Position<C, F, U>` now implements `PartialEq`, comparing both Cartesian coordinates and `center_params` so affine points only compare equal when they represent the same location relative to the same parameterized center state.
+
 ## [0.7.0 - 2026-05-09]
 
 ### Removed
