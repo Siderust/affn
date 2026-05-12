@@ -145,8 +145,8 @@ pub use ops::{Isometry3, Rotation3, Translation3};
 
 // Re-export concrete Position/Direction types for standalone usage
 pub use cartesian::{
-    CenterParamsMismatchError, Direction as CartesianDirection, Displacement, Position, Vector,
-    Velocity,
+    Acceleration, CenterParamsMismatchError, Direction as CartesianDirection, Displacement, Force,
+    Position, Vector, Velocity,
 };
 pub use conic::{
     ClassifiedPeriapsisParam, ClassifiedSemiMajorAxisParam, ConicKind, ConicOrientation,
@@ -178,7 +178,8 @@ pub mod prelude {
 
     // Core coordinate types
     pub use crate::cartesian::{
-        Direction as CartesianDirection, Displacement, Position, Vector, Velocity,
+        Acceleration, Direction as CartesianDirection, Displacement, Force, Position, Vector,
+        Velocity,
     };
     pub use crate::conic::{
         ClassifiedPeriapsisParam, ClassifiedSemiMajorAxisParam, ConicKind, ConicOrientation,

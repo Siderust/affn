@@ -389,6 +389,20 @@ pub type Displacement<F, U> = Vector<F, U>;
 /// Velocities represent rates of change of position.
 pub type Velocity<F, U> = Vector<F, U>;
 
+/// An acceleration vector (free vector with acceleration unit).
+///
+/// This is a semantic alias for [`Vector<F, U>`] where `U` is an acceleration
+/// unit (e.g. `Per<Per<Kilometer, Second>, Second>`).
+/// Accelerations represent the second time-derivative of position.
+pub type Acceleration<F, U> = Vector<F, U>;
+
+/// A force vector (free vector with force unit).
+///
+/// This is a semantic alias for [`Vector<F, U>`] where `U` is a force unit
+/// (e.g. `Newton`, `Kilonewton`).
+/// Forces represent the physical cause of acceleration via Newton's second law.
+pub type Force<F, U> = Vector<F, U>;
+
 // =============================================================================
 // Tests
 // =============================================================================
