@@ -417,9 +417,9 @@ mod tests {
     #[test]
     fn frame_matrix6_from_to_array_round_trip() {
         let mut data = [[0.0_f64; 6]; 6];
-        for i in 0..6 {
-            for j in 0..6 {
-                data[i][j] = (i * 6 + j) as f64;
+        for (i, row) in data.iter_mut().enumerate() {
+            for (j, elt) in row.iter_mut().enumerate() {
+                *elt = (i * 6 + j) as f64;
             }
         }
         let m = FrameMatrix6::<F1>::from_array(data);
@@ -429,10 +429,10 @@ mod tests {
     #[test]
     fn frame_matrix6_identity() {
         let eye = FrameMatrix6::<F1>::identity();
-        for i in 0..6 {
-            for j in 0..6 {
+        for (i, row) in eye.as_array().iter().enumerate() {
+            for (j, &val) in row.iter().enumerate() {
                 let expected = if i == j { 1.0 } else { 0.0 };
-                assert_eq!(eye.as_array()[i][j], expected);
+                assert_eq!(val, expected);
             }
         }
     }
@@ -460,10 +460,10 @@ mod tests {
     fn frame_matrix6_mul_identity() {
         let eye = FrameMatrix6::<F1>::identity();
         let result = eye * eye;
-        for i in 0..6 {
-            for j in 0..6 {
+        for (i, row) in result.as_array().iter().enumerate() {
+            for (j, &val) in row.iter().enumerate() {
                 let expected = if i == j { 1.0 } else { 0.0 };
-                assert!((result.as_array()[i][j] - expected).abs() < 1e-14);
+                assert!((val - expected).abs() < 1e-14);
             }
         }
     }
@@ -496,9 +496,9 @@ mod tests {
         let br = FrameMatrix3::<F1>::identity();
         let m6 = FrameMatrix6::from_blocks(tl, tr, bl, br);
         let m6t = m6.transpose();
-        for i in 0..6 {
-            for j in 0..6 {
-                assert!((m6t.as_array()[i][j] - m6.as_array()[j][i]).abs() < 1e-15);
+        for (i, row_t) in m6t.as_array().iter().enumerate() {
+            for (j, &v) in row_t.iter().enumerate() {
+                assert!((v - m6.as_array()[j][i]).abs() < 1e-15);
             }
         }
     }
@@ -521,11 +521,12 @@ mod tests {
         let rv = FrameMatrix3::<F1>::zero();
         let vv = SymmetricFrameMatrix3::<F1>::from_diagonal([0.01, 0.04, 0.09]);
         let (rr2, rv2, vv2) = rot6.apply_to_symmetric_blocks::<F2>(&rr, &rv, &vv);
-        for i in 0..3 {
-            assert!((rr2.as_array()[i][i] - rr.as_array()[i][i]).abs() < 1e-15);
+        for (i, rr2_row) in rr2.as_array().iter().enumerate() {
+            assert!((rr2_row[i] - rr.as_array()[i][i]).abs() < 1e-15);
             assert!((vv2.as_array()[i][i] - vv.as_array()[i][i]).abs() < 1e-15);
-            for j in 0..3 {
-                assert!((rv2.as_array()[i][j]).abs() < 1e-15);
+            for (j, &val) in rv2.as_array()[i].iter().enumerate() {
+                let _ = j; // preserve index binding for clarity
+                assert!(val.abs() < 1e-15);
             }
         }
     }
@@ -555,25 +556,32 @@ mod tests {
         let (rr2, rv2, vv2) = rot_fwd.apply_to_symmetric_blocks::<F2>(&rr, &rv, &vv);
         let (rr3, rv3, vv3) = rot_bwd.apply_to_symmetric_blocks::<F1>(&rr2, &rv2, &vv2);
 
-        for i in 0..3 {
-            for j in 0..3 {
+        for (i, rr_row) in rr3.as_array().iter().enumerate() {
+            for (j, &rr_val) in rr_row.iter().enumerate() {
+                let expected_rr = rr.as_array()[i][j];
                 assert!(
-                    (rr3.as_array()[i][j] - rr.as_array()[i][j]).abs() < 1e-12,
+                    (rr_val - expected_rr).abs() < 1e-12,
                     "rr round-trip failed at [{i}][{j}]: {} != {}",
-                    rr3.as_array()[i][j],
-                    rr.as_array()[i][j]
+                    rr_val,
+                    expected_rr
                 );
+            }
+            for (j, &rv_val) in rv3.as_array()[i].iter().enumerate() {
+                let expected_rv = rv.as_array()[i][j];
                 assert!(
-                    (rv3.as_array()[i][j] - rv.as_array()[i][j]).abs() < 1e-12,
+                    (rv_val - expected_rv).abs() < 1e-12,
                     "rv round-trip failed at [{i}][{j}]: {} != {}",
-                    rv3.as_array()[i][j],
-                    rv.as_array()[i][j]
+                    rv_val,
+                    expected_rv
                 );
+            }
+            for (j, &vv_val) in vv3.as_array()[i].iter().enumerate() {
+                let expected_vv = vv.as_array()[i][j];
                 assert!(
-                    (vv3.as_array()[i][j] - vv.as_array()[i][j]).abs() < 1e-12,
+                    (vv_val - expected_vv).abs() < 1e-12,
                     "vv round-trip failed at [{i}][{j}]: {} != {}",
-                    vv3.as_array()[i][j],
-                    vv.as_array()[i][j]
+                    vv_val,
+                    expected_vv
                 );
             }
         }
@@ -587,13 +595,13 @@ mod tests {
         let eye6 = FrameMatrix6::<F1>::identity();
         let result: FrameMatrix6<F2> = rot6.apply_to_state_matrix(&eye6);
         // The similarity of the identity block is still the identity block
-        for i in 0..6 {
-            for j in 0..6 {
+        for (i, row) in result.as_array().iter().enumerate() {
+            for (j, &val) in row.iter().enumerate() {
                 let expected = if i == j { 1.0 } else { 0.0 };
                 assert!(
-                    (result.as_array()[i][j] - expected).abs() < 1e-13,
+                    (val - expected).abs() < 1e-13,
                     "T*I6*T^T mismatch at [{i}][{j}]: {} != {expected}",
-                    result.as_array()[i][j]
+                    val
                 );
             }
         }
