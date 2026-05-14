@@ -47,6 +47,24 @@
 //! assert_eq!(MyCenter::center_name(), "MyCenter");
 //! ```
 //!
+//! Typos in derive attributes are compile errors:
+//!
+//! ```compile_fail
+//! use affn::prelude::*;
+//!
+//! #[derive(Debug, Copy, Clone, ReferenceFrame)]
+//! #[frame(azimth = "Equatorial")] // typo: should be "name"
+//! struct BadFrame;
+//! ```
+//!
+//! ```compile_fail
+//! use affn::prelude::*;
+//!
+//! #[derive(Debug, Copy, Clone, ReferenceCenter)]
+//! #[center(nme = "Earth")] // typo: should be "name"
+//! struct BadCenter;
+//! ```
+//!
 //! ## Algebraic Rules
 //!
 //! The type system enforces mathematical correctness:

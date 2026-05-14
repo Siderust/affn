@@ -69,40 +69,61 @@ pub(crate) fn parse_center_attributes(input: &DeriveInput) -> syn::Result<Center
             )?;
 
             for meta in nested {
-                if let Meta::NameValue(nv) = meta {
-                    if nv.path.is_ident("name") {
-                        if let Expr::Lit(expr_lit) = &nv.value {
-                            if let Lit::Str(lit_str) = &expr_lit.lit {
-                                attrs.name = Some(lit_str.value());
+                match &meta {
+                    Meta::NameValue(nv) => {
+                        if nv.path.is_ident("name") {
+                            if let Expr::Lit(expr_lit) = &nv.value {
+                                if let Lit::Str(lit_str) = &expr_lit.lit {
+                                    attrs.name = Some(lit_str.value());
+                                    continue;
+                                }
+                            }
+                            return Err(syn::Error::new_spanned(
+                                &nv.value,
+                                "expected string literal for `name`",
+                            ));
+                        } else if nv.path.is_ident("params") {
+                            if let Expr::Path(expr_path) = &nv.value {
+                                attrs.params = Some(Type::Path(syn::TypePath {
+                                    qself: None,
+                                    path: expr_path.path.clone(),
+                                }));
                                 continue;
                             }
-                        }
-                        return Err(syn::Error::new_spanned(
-                            &nv.value,
-                            "expected string literal for `name`",
-                        ));
-                    } else if nv.path.is_ident("params") {
-                        if let Expr::Path(expr_path) = &nv.value {
-                            attrs.params = Some(Type::Path(syn::TypePath {
-                                qself: None,
-                                path: expr_path.path.clone(),
-                            }));
-                            continue;
-                        }
-                        return Err(syn::Error::new_spanned(
-                            &nv.value,
-                            "expected type for `params`",
-                        ));
-                    } else if nv.path.is_ident("affine") {
-                        if let Expr::Lit(expr_lit) = &nv.value {
-                            if let Lit::Bool(lit_bool) = &expr_lit.lit {
-                                attrs.affine = lit_bool.value();
-                                continue;
+                            return Err(syn::Error::new_spanned(
+                                &nv.value,
+                                "expected type for `params`",
+                            ));
+                        } else if nv.path.is_ident("affine") {
+                            if let Expr::Lit(expr_lit) = &nv.value {
+                                if let Lit::Bool(lit_bool) = &expr_lit.lit {
+                                    attrs.affine = lit_bool.value();
+                                    continue;
+                                }
                             }
+                            return Err(syn::Error::new_spanned(
+                                &nv.value,
+                                "expected boolean for `affine`",
+                            ));
+                        } else {
+                            return Err(syn::Error::new_spanned(
+                                &nv.path,
+                                format!(
+                                    "unknown `center` attribute `{}`; \
+                                     known attributes are: name, params, affine",
+                                    nv.path
+                                        .get_ident()
+                                        .map(|id| id.to_string())
+                                        .unwrap_or_else(|| "<unknown>".into())
+                                ),
+                            ));
                         }
+                    }
+                    _ => {
                         return Err(syn::Error::new_spanned(
-                            &nv.value,
-                            "expected boolean for `affine`",
+                            &meta,
+                            "unknown `center` attribute; expected a name=value attribute \
+                             such as `name = \"...\"`, `params = MyType`, or `affine = true`",
                         ));
                     }
                 }
