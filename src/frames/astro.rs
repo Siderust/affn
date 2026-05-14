@@ -10,48 +10,9 @@
 
 use crate::ops::Rotation3;
 use crate::DeriveReferenceFrame;
-use qtty::angular::Radians;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
-// =============================================================================
-// IAU 2006 frame-bias constants (IERS Conventions 2010, §5.4.4, Table 5.2b)
-// =============================================================================
-//
-// These are the three small angles that define the constant rotation
-// relating the GCRS / ICRS axes to the **mean** equator and equinox of
-// J2000.0 (i.e. the EquatorialMeanJ2000 / EME2000 / FK5-J2000 axes):
-//
-//   ξ₀  = −0.0166170″   (offset of CIP at J2000 from mean pole, x)
-//   η₀  = −0.0068192″   (offset of CIP at J2000 from mean pole, y)
-//   dα₀ = −0.0146″      (offset of ICRS RA origin from mean equinox)
-//
-// Per IERS Conventions (2010), Eq. (5.32), the bias matrix is
-//
-//   B  =  R1(−η₀) · R2( ξ₀) · R3(dα₀)
-//
-// where R1, R2, R3 are the *passive* (frame-rotating) elementary rotations
-// of Eq. (5.4).  In affn `Rotation3::r{x,y,z}` are the *active* rotations,
-// so `R_i(θ) = Rotation3::r{x,y,z}(−θ)`, giving the equivalent form
-//
-//   B  =  Rotation3::rx( η₀) · Rotation3::ry(−ξ₀) · Rotation3::rz(−dα₀)
-//
-// The resulting matrix agrees with SOFA `iauBp06` `rb` to ≲1e-15.
-
-const FRAME_BIAS_DALPHA0_ARCSEC: f64 = -0.0146;
-const FRAME_BIAS_XI0_ARCSEC: f64 = -0.0166170;
-const FRAME_BIAS_ETA0_ARCSEC: f64 = -0.0068192;
-
-const ARCSEC_TO_RAD: f64 = std::f64::consts::PI / 648_000.0;
-
-#[inline]
-fn frame_bias_gcrs_to_eme2000() -> Rotation3 {
-    let xi0 = Radians::new(FRAME_BIAS_XI0_ARCSEC * ARCSEC_TO_RAD);
-    let eta0 = Radians::new(FRAME_BIAS_ETA0_ARCSEC * ARCSEC_TO_RAD);
-    let da0 = Radians::new(FRAME_BIAS_DALPHA0_ARCSEC * ARCSEC_TO_RAD);
-    Rotation3::rx(eta0) * Rotation3::ry(-xi0) * Rotation3::rz(-da0)
-}
 
 // =============================================================================
 // Equatorial frames (ra/dec)
@@ -76,7 +37,8 @@ fn frame_bias_gcrs_to_eme2000() -> Rotation3 {
 /// | `ICRS` ↔ [`EME2000`]       | IAU 2006 frame bias **B**   | ≈ 23 mas  |
 ///
 /// The frame-bias rotation between `ICRS` and `EME2000` is the same matrix
-/// that connects [`GCRS`] to [`EME2000`] (see [`GCRS::frame_bias_to_eme2000`]).
+/// that connects [`GCRS`] to [`EME2000`].  The bias constants and
+/// transform methods live in `siderust::astro::frame_bias`.
 ///
 /// # References
 /// * IAU 1997 Resolution B2 (definition of the ICRS).
@@ -146,8 +108,8 @@ pub struct EquatorialMeanJ2000;
 ///
 /// (IERS Conventions 2010, Table 5.2b).  The angular magnitude of `B` is
 /// ≈ 23 mas (≈ 1.1 × 10⁻⁷ rad).  Because `B` is epoch-independent, no time
-/// argument is needed to convert between `GCRS` and `EME2000`; see
-/// [`EME2000::frame_bias_to_gcrs`] and [`GCRS::frame_bias_to_eme2000`].
+/// argument is needed to convert between `GCRS` and `EME2000`.  The bias
+/// constants and transform methods live in `siderust::astro::frame_bias`.
 ///
 /// # References
 /// * IERS Conventions (2010), §5.4.4 and Table 5.2b.
@@ -198,7 +160,7 @@ pub struct EquatorialTrueOfDate;
 /// differ by the constant **IAU 2006 frame-bias rotation** `B` of
 /// magnitude ≈ 23 mas, originating from the small offset between the
 /// ICRS pole / equinox and the dynamical mean pole / equinox at J2000.0.
-/// See [`GCRS::frame_bias_to_eme2000`].
+/// The bias constants and transform methods live in `siderust::astro::frame_bias`.
 ///
 /// # CIO-based reduction chain
 ///
@@ -222,11 +184,9 @@ pub struct GCRS;
 // Canonical frame relationships among ICRS / ICRF / GCRS / EME2000
 // =============================================================================
 //
-// These inherent methods expose the *direction-only* rotation that connects
-// each pair, so callers can verify and use the relationship without going
-// through a higher-level transform pipeline.  All matrices are constants
-// (epoch-independent), as required by IAU 2006 / IERS Conventions 2010
-// §5.4.4 for the frame bias.
+// These inherent methods expose the *direction-only* (identity) rotation that
+// connects each pair.  Frame-bias methods (GCRS ↔ EME2000, ICRS ↔ EME2000)
+// are domain-specific and live in `siderust::astro::frame_bias`.
 
 impl ICRS {
     /// Direction-frame rotation from `ICRS` to [`ICRF`].
@@ -250,15 +210,6 @@ impl ICRS {
     #[must_use]
     pub fn direction_rotation_to_gcrs() -> Rotation3 {
         Rotation3::IDENTITY
-    }
-
-    /// Frame-bias rotation `B` from `ICRS` to [`EME2000`].
-    ///
-    /// Identical to [`GCRS::frame_bias_to_eme2000`].  Magnitude ≈ 23 mas.
-    #[inline]
-    #[must_use]
-    pub fn frame_bias_to_eme2000() -> Rotation3 {
-        frame_bias_gcrs_to_eme2000()
     }
 }
 
@@ -286,49 +237,6 @@ impl GCRS {
     #[must_use]
     pub fn direction_rotation_to_icrs() -> Rotation3 {
         Rotation3::IDENTITY
-    }
-
-    /// IAU 2006 frame-bias rotation `B` from [`GCRS`] to [`EME2000`].
-    ///
-    /// Built from the IERS Conventions (2010) Table 5.2b angles
-    ///
-    /// ```text
-    /// ξ₀  = −0.0166170″
-    /// η₀  = −0.0068192″
-    /// dα₀ = −0.0146″
-    /// ```
-    ///
-    /// using the parametrisation of Eq. (5.32) of the same document,
-    ///
-    /// ```text
-    /// B = R1(−η₀) · R2(ξ₀) · R3(dα₀).
-    /// ```
-    ///
-    /// The matrix is **constant** (epoch-independent) and its rotation
-    /// angle is approximately 23 milli-arcseconds (≈ 1.1 × 10⁻⁷ rad).
-    /// It agrees with SOFA `iauBp06` `rb` at J2000.0 to ≲ 1 × 10⁻¹⁵.
-    #[inline]
-    #[must_use]
-    pub fn frame_bias_to_eme2000() -> Rotation3 {
-        frame_bias_gcrs_to_eme2000()
-    }
-}
-
-impl EME2000 {
-    /// Inverse IAU 2006 frame-bias rotation `Bᵀ` from [`EME2000`] to
-    /// [`GCRS`].  Exact algebraic inverse of [`GCRS::frame_bias_to_eme2000`].
-    #[inline]
-    #[must_use]
-    pub fn frame_bias_to_gcrs() -> Rotation3 {
-        frame_bias_gcrs_to_eme2000().inverse()
-    }
-
-    /// Inverse IAU 2006 frame-bias rotation from [`EME2000`] to [`ICRS`].
-    /// Identical to [`EME2000::frame_bias_to_gcrs`] for direction purposes.
-    #[inline]
-    #[must_use]
-    pub fn frame_bias_to_icrs() -> Rotation3 {
-        frame_bias_gcrs_to_eme2000().inverse()
     }
 }
 

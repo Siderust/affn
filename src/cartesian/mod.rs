@@ -114,6 +114,6 @@ pub use xyz::XYZ;
 
 pub use direction::Direction;
 pub use position::{CenterParamsMismatchError, Position};
-pub use vector::{Displacement, Vector, Velocity};
+pub use vector::{Acceleration, Displacement, Force, Vector, Velocity};
 
 pub use line_of_sight::{line_of_sight, line_of_sight_with_distance, try_line_of_sight};

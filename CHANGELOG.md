@@ -6,10 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [0.7.1 - 2026-05-14]
+
 ### Added
 - New frame-tagged 3×3 matrix primitives in `affn::matrix3`: `FrameMatrix3<F, T>` for general matrices and `SymmetricFrameMatrix3<F, T>` for symmetry-preserving covariance-style blocks.
 - Rotation similarity helpers on the new matrix types: `rotated_by::<G>(&Rotation3)` for frame-changing `R · M · Rᵀ` transforms, with numerical re-symmetrization for `SymmetricFrameMatrix3`.
 - `Rotation3::apply_vec<F1, F2, U>` for rotating typed `Vector`/`Displacement` values while preserving units and retagging the output frame.
+- New frame-tagged 6×6 matrix primitives in `affn::matrix6`: `FrameMatrix6<F>` for general 6×6 matrices and `BlockDiagRotation6<F>` for block-diagonal `blockdiag(R, R)` frame-change transforms on `[position; velocity]` state vectors. Uses the instantaneous-rotation convention (time-derivative `Ṙ` ignored), which is correct for covariance transport and fixed-epoch STM frame changes.
+- Additional helpers on `FrameMatrix3<F>`: `from_diagonal`, matrix–matrix product `mat_mul`, transpose `transpose`, and frame-retag `retag`.
+- `Acceleration<F, U>` semantic type alias for `Vector<F, U>` where `U` is an acceleration unit, representing the second time-derivative of position. Available from `affn::cartesian`, the crate root, and `affn::prelude`.
+- `Force<F, U>` semantic type alias for `Vector<F, U>` where `U` is a force unit (e.g. `Newton`, `Kilonewton`), representing the physical cause of acceleration via Newton's second law. Available from `affn::cartesian`, the crate root, and `affn::prelude`.
 
 ### Changed
 - `Position<C, F, U>` now implements `PartialEq`, comparing both Cartesian coordinates and `center_params` so affine points only compare equal when they represent the same location relative to the same parameterized center state.

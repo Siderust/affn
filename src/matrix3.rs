@@ -56,6 +56,7 @@
 //! ```
 
 use core::marker::PhantomData;
+use core::ops::Mul;
 
 use crate::ops::Rotation3;
 
@@ -133,6 +134,152 @@ impl<F> FrameMatrix3<F> {
         Self::from_array(d)
     }
 
+    /// Diagonal matrix with the given elements on the diagonal and zeros elsewhere.
+    pub fn from_diagonal(diag: [f64; 3]) -> Self {
+        let mut d = [[0.0_f64; 3]; 3];
+        for i in 0..3 {
+            d[i][i] = diag[i];
+        }
+        Self::from_array(d)
+    }
+
+    /// Matrix–matrix product `self · rhs`, frame-tag preserving.
+    ///
+    /// Both operands must be expressed in the same frame `F`.
+    pub fn mat_mul(&self, rhs: &Self) -> Self {
+        let a = &self.data;
+        let b = &rhs.data;
+        let mut out = [[0.0_f64; 3]; 3];
+        for (i, out_row) in out.iter_mut().enumerate() {
+            for (k, &aik) in a[i].iter().enumerate() {
+                if aik == 0.0 {
+                    continue;
+                }
+                for (j, out_elt) in out_row.iter_mut().enumerate() {
+                    *out_elt += aik * b[k][j];
+                }
+            }
+        }
+        FrameMatrix3::from_array(out)
+    }
+
+    /// Add `other` into `self` element-wise, in place.
+    pub fn add_in_place(&mut self, other: &FrameMatrix3<F>) {
+        for i in 0..3 {
+            for j in 0..3 {
+                self.data[i][j] += other.data[i][j];
+            }
+        }
+    }
+
+    /// Multiply every element by the scalar `s`, in place.
+    pub fn scale_in_place(&mut self, s: f64) {
+        for row in &mut self.data {
+            for v in row.iter_mut() {
+                *v *= s;
+            }
+        }
+    }
+
+    /// Add the outer product `a ⊗ b` (i.e. `aᵢ · bⱼ`) into `self` in place.
+    pub fn add_outer_product_in_place(&mut self, a: [f64; 3], b: [f64; 3]) {
+        for (i, data_row) in self.data.iter_mut().enumerate() {
+            for (j, data_elt) in data_row.iter_mut().enumerate() {
+                *data_elt += a[i] * b[j];
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Similarity transforms
+    // -------------------------------------------------------------------------
+
+    /// General similarity transform `self · m · selfᵀ`, relabelling the result
+    /// as frame `G`.
+    ///
+    /// Treat `self` as a rotation matrix `R : F → G` (rows of `self` are the
+    /// basis vectors of `G` expressed in `F`). Given a general matrix `m` in
+    /// frame `F`, this computes `R · m · Rᵀ` and tags the result as belonging
+    /// to frame `G`.
+    ///
+    /// For covariance-like inputs that must remain symmetric, use
+    /// [`FrameMatrix3::similarity`] instead, which also numerically re-symmetrises
+    /// the output.
+    pub fn similarity_general<G>(&self, m: &FrameMatrix3<F>) -> FrameMatrix3<G> {
+        let r = &self.data;
+        let mut tmp = [[0.0_f64; 3]; 3];
+        for (i, tmp_row) in tmp.iter_mut().enumerate() {
+            for (k, &rik) in r[i].iter().enumerate() {
+                if rik == 0.0 {
+                    continue;
+                }
+                for (j, tmp_elt) in tmp_row.iter_mut().enumerate() {
+                    *tmp_elt += rik * m.data[k][j];
+                }
+            }
+        }
+        // result = tmp · Rᵀ  (Rᵀ[k][j] = R[j][k])
+        let mut res = [[0.0_f64; 3]; 3];
+        for (i, res_row) in res.iter_mut().enumerate() {
+            for (k, &tik) in tmp[i].iter().enumerate() {
+                if tik == 0.0 {
+                    continue;
+                }
+                for (j, res_elt) in res_row.iter_mut().enumerate() {
+                    *res_elt += tik * r[j][k];
+                }
+            }
+        }
+        FrameMatrix3::from_array(res)
+    }
+
+    /// Symmetric similarity transform `self · m · selfᵀ`, returning a
+    /// [`SymmetricFrameMatrix3<G>`].
+    ///
+    /// Treat `self` as a rotation matrix `R : F → G`. Given a symmetric matrix
+    /// `m` in frame `F`, the result `R · m · Rᵀ` is algebraically symmetric. A
+    /// final symmetrisation step averages `(result[i][j] + result[j][i]) / 2`
+    /// to prevent floating-point drift.
+    ///
+    /// For a general (non-symmetric) matrix, use [`FrameMatrix3::similarity_general`].
+    pub fn similarity<G>(&self, m: &SymmetricFrameMatrix3<F>) -> SymmetricFrameMatrix3<G> {
+        // Compute R · m · Rᵀ via two passes.
+        let r = &self.data;
+        let mut tmp = [[0.0_f64; 3]; 3];
+        for (i, tmp_row) in tmp.iter_mut().enumerate() {
+            for (k, &rik) in r[i].iter().enumerate() {
+                if rik == 0.0 {
+                    continue;
+                }
+                for (j, tmp_elt) in tmp_row.iter_mut().enumerate() {
+                    *tmp_elt += rik * m.data[k][j];
+                }
+            }
+        }
+        let mut raw = [[0.0_f64; 3]; 3];
+        for (i, raw_row) in raw.iter_mut().enumerate() {
+            for (k, &tik) in tmp[i].iter().enumerate() {
+                if tik == 0.0 {
+                    continue;
+                }
+                for (j, raw_elt) in raw_row.iter_mut().enumerate() {
+                    *raw_elt += tik * r[j][k];
+                }
+            }
+        }
+        // Symmetrize to guard against floating-point drift.
+        let mut data = [[0.0_f64; 3]; 3];
+        for (i, row) in data.iter_mut().enumerate() {
+            for (j, slot) in row.iter_mut().enumerate() {
+                *slot = 0.5 * (raw[i][j] + raw[j][i]);
+            }
+        }
+        SymmetricFrameMatrix3 {
+            data,
+            _frame: PhantomData,
+        }
+    }
+
     /// Compute the similarity transform `R · self · Rᵀ`, tagging the result
     /// as belonging to frame `G`.
     ///
@@ -167,6 +314,28 @@ impl<F> FrameMatrix3<F> {
             }
         }
         FrameMatrix3::from_array(res)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Operator overloads for FrameMatrix3
+// ---------------------------------------------------------------------------
+
+/// Matrix multiplication `A * B → A·B` (frame-tag preserving).
+impl<F> Mul<FrameMatrix3<F>> for FrameMatrix3<F> {
+    type Output = FrameMatrix3<F>;
+    #[inline]
+    fn mul(self, rhs: FrameMatrix3<F>) -> FrameMatrix3<F> {
+        self.mat_mul(&rhs)
+    }
+}
+
+/// Matrix multiplication by reference `&A * &B → A·B`.
+impl<F> Mul<&FrameMatrix3<F>> for &FrameMatrix3<F> {
+    type Output = FrameMatrix3<F>;
+    #[inline]
+    fn mul(self, rhs: &FrameMatrix3<F>) -> FrameMatrix3<F> {
+        self.mat_mul(rhs)
     }
 }
 
@@ -256,6 +425,39 @@ impl<F> SymmetricFrameMatrix3<F> {
     /// 3×3 identity matrix in frame `F`.
     pub fn identity() -> Self {
         Self::from_diagonal([1.0, 1.0, 1.0])
+    }
+
+    /// Add `other` into `self` element-wise, in place.
+    ///
+    /// The caller is responsible for ensuring `other` is symmetric; no
+    /// additional symmetrisation is performed.
+    pub fn add_in_place(&mut self, other: &SymmetricFrameMatrix3<F>) {
+        for i in 0..3 {
+            for j in 0..3 {
+                self.data[i][j] += other.data[i][j];
+            }
+        }
+    }
+
+    /// Multiply every element by the scalar `s`, in place.
+    pub fn scale_in_place(&mut self, s: f64) {
+        for row in &mut self.data {
+            for v in row.iter_mut() {
+                *v *= s;
+            }
+        }
+    }
+
+    /// Add the symmetric outer product `a ⊗ aᵀ` (i.e. `aᵢ · aⱼ`) into `self`
+    /// in place.
+    ///
+    /// Because `a ⊗ aᵀ` is always symmetric, the result remains symmetric.
+    pub fn add_outer_product_in_place(&mut self, a: [f64; 3]) {
+        for i in 0..3 {
+            for j in 0..3 {
+                self.data[i][j] += a[i] * a[j];
+            }
+        }
     }
 
     /// Compute `R · self · Rᵀ`, tagging the result as belonging to frame `G`.
@@ -489,5 +691,129 @@ mod tests {
             (trace_out - trace_in).abs() < 1e-12,
             "trace changed: {trace_out} != {trace_in}"
         );
+    }
+
+    // -------------------------------------------------------------------------
+    // New algebra: mat_mul, from_diagonal, similarity, in-place ops
+    // -------------------------------------------------------------------------
+
+    #[test]
+    fn frame_matrix3_from_diagonal() {
+        let m = FrameMatrix3::<F1>::from_diagonal([2.0, 3.0, 5.0]);
+        let a = m.as_array();
+        assert_eq!(a[0][0], 2.0);
+        assert_eq!(a[1][1], 3.0);
+        assert_eq!(a[2][2], 5.0);
+        assert_eq!(a[0][1], 0.0);
+        assert_eq!(a[1][2], 0.0);
+    }
+
+    #[test]
+    fn frame_matrix3_mat_mul_identity() {
+        // A * I = A
+        let data = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]];
+        let a = FrameMatrix3::<F1>::from_array(data);
+        let eye = FrameMatrix3::<F1>::identity();
+        let result = a.mat_mul(&eye);
+        for (i, row) in result.as_array().iter().enumerate() {
+            for (j, v) in row.iter().enumerate() {
+                assert!(
+                    (*v - data[i][j]).abs() < 1e-14,
+                    "A*I mismatch at [{i}][{j}]: {v} != {}",
+                    data[i][j]
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn frame_matrix3_mat_mul_known() {
+        // A = [[1,2],[3,4],[0,0]] (3x3 padded), B = [[5,6],[7,8],[0,0]] (padded)
+        // A·B[0][0] = 1*5 + 2*7 + 0 = 19; A·B[0][1] = 1*6 + 2*8 = 22
+        // A·B[1][0] = 3*5 + 4*7 = 43; A·B[1][1] = 3*6 + 4*8 = 50
+        let a = FrameMatrix3::<F1>::from_array([[1.0, 2.0, 0.0], [3.0, 4.0, 0.0], [0.0, 0.0, 1.0]]);
+        let b = FrameMatrix3::<F1>::from_array([[5.0, 6.0, 0.0], [7.0, 8.0, 0.0], [0.0, 0.0, 1.0]]);
+        let c = a.mat_mul(&b);
+        assert!((c.as_array()[0][0] - 19.0).abs() < 1e-14);
+        assert!((c.as_array()[0][1] - 22.0).abs() < 1e-14);
+        assert!((c.as_array()[1][0] - 43.0).abs() < 1e-14);
+        assert!((c.as_array()[1][1] - 50.0).abs() < 1e-14);
+        assert!((c.as_array()[2][2] - 1.0).abs() < 1e-14);
+    }
+
+    #[test]
+    fn frame_matrix3_mul_operator() {
+        let eye = FrameMatrix3::<F1>::identity();
+        let result = eye * eye;
+        assert_eq!(result.as_array(), eye.as_array());
+    }
+
+    #[test]
+    fn frame_matrix3_similarity_general_identity_rotation() {
+        let data = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]];
+        let m = FrameMatrix3::<F1>::from_array(data);
+        let eye = FrameMatrix3::<F1>::identity();
+        let result: FrameMatrix3<F2> = eye.similarity_general(&m);
+        for (i, row) in result.as_array().iter().enumerate() {
+            for (j, v) in row.iter().enumerate() {
+                assert!(
+                    (*v - data[i][j]).abs() < 1e-14,
+                    "sim_general identity failed at [{i}][{j}]"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn frame_matrix3_similarity_round_trip() {
+        use qtty::angular::Radians;
+        // rotate diagonal cov by 45° around Z, then back
+        let m = SymmetricFrameMatrix3::<F1>::from_diagonal([1.0, 4.0, 9.0]);
+        let r45 = Rotation3::rz(Radians::new(std::f64::consts::FRAC_PI_4));
+        let r45_mat = FrameMatrix3::<F1>::from_array(*r45.as_matrix());
+        let rotated: SymmetricFrameMatrix3<F2> = r45_mat.similarity(&m);
+
+        let r45_inv = r45.inverse();
+        let r45_inv_mat = FrameMatrix3::<F2>::from_array(*r45_inv.as_matrix());
+        let back: SymmetricFrameMatrix3<F1> = r45_inv_mat.similarity(&rotated);
+        let orig = m.as_array();
+        let result = back.as_array();
+        for i in 0..3 {
+            for j in 0..3 {
+                assert!(
+                    (result[i][j] - orig[i][j]).abs() < 1e-12,
+                    "round-trip similarity failed at [{i}][{j}]: {} != {}",
+                    result[i][j],
+                    orig[i][j]
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn frame_matrix3_in_place_ops() {
+        let mut m = FrameMatrix3::<F1>::from_diagonal([1.0, 2.0, 3.0]);
+        let other = FrameMatrix3::<F1>::from_diagonal([1.0, 1.0, 1.0]);
+        m.add_in_place(&other);
+        assert_eq!(m.as_array()[0][0], 2.0);
+        assert_eq!(m.as_array()[1][1], 3.0);
+        assert_eq!(m.as_array()[2][2], 4.0);
+        m.scale_in_place(2.0);
+        assert_eq!(m.as_array()[0][0], 4.0);
+        m.add_outer_product_in_place([1.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
+        assert_eq!(m.as_array()[0][1], 1.0);
+    }
+
+    #[test]
+    fn symmetric_in_place_ops() {
+        let mut m = SymmetricFrameMatrix3::<F1>::from_diagonal([1.0, 2.0, 3.0]);
+        let other = SymmetricFrameMatrix3::<F1>::from_diagonal([1.0, 1.0, 1.0]);
+        m.add_in_place(&other);
+        assert_eq!(m.diagonal(), [2.0, 3.0, 4.0]);
+        m.scale_in_place(0.5);
+        assert_eq!(m.diagonal(), [1.0, 1.5, 2.0]);
+        m.add_outer_product_in_place([1.0, 0.0, 0.0]);
+        assert_eq!(m.as_array()[0][0], 2.0);
+        assert_eq!(m.as_array()[0][1], 0.0); // stays symmetric
     }
 }

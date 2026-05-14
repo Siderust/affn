@@ -47,6 +47,24 @@
 //! assert_eq!(MyCenter::center_name(), "MyCenter");
 //! ```
 //!
+//! Typos in derive attributes are compile errors:
+//!
+//! ```compile_fail
+//! use affn::prelude::*;
+//!
+//! #[derive(Debug, Copy, Clone, ReferenceFrame)]
+//! #[frame(azimth = "Equatorial")] // typo: should be "name"
+//! struct BadFrame;
+//! ```
+//!
+//! ```compile_fail
+//! use affn::prelude::*;
+//!
+//! #[derive(Debug, Copy, Clone, ReferenceCenter)]
+//! #[center(nme = "Earth")] // typo: should be "name"
+//! struct BadCenter;
+//! ```
+//!
 //! ## Algebraic Rules
 //!
 //! The type system enforces mathematical correctness:
@@ -126,6 +144,9 @@ pub(crate) mod serde_utils;
 // Frame-tagged 3×3 matrix primitives
 pub mod matrix3;
 
+// Frame-tagged 6×6 matrix and block-diagonal rotation helper
+pub mod matrix6;
+
 // Re-export derive macros from affn-derive
 // Named with Derive prefix to avoid conflicts with trait names
 pub use affn_derive::{
@@ -142,8 +163,8 @@ pub use ops::{Isometry3, Rotation3, Translation3};
 
 // Re-export concrete Position/Direction types for standalone usage
 pub use cartesian::{
-    CenterParamsMismatchError, Direction as CartesianDirection, Displacement, Position, Vector,
-    Velocity,
+    Acceleration, CenterParamsMismatchError, Direction as CartesianDirection, Displacement, Force,
+    Position, Vector, Velocity,
 };
 pub use conic::{
     ClassifiedPeriapsisParam, ClassifiedSemiMajorAxisParam, ConicKind, ConicOrientation,
@@ -175,7 +196,8 @@ pub mod prelude {
 
     // Core coordinate types
     pub use crate::cartesian::{
-        Direction as CartesianDirection, Displacement, Position, Vector, Velocity,
+        Acceleration, Direction as CartesianDirection, Displacement, Force, Position, Vector,
+        Velocity,
     };
     pub use crate::conic::{
         ClassifiedPeriapsisParam, ClassifiedSemiMajorAxisParam, ConicKind, ConicOrientation,

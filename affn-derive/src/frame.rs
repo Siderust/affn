@@ -284,9 +284,30 @@ pub(crate) fn parse_frame_attributes(input: &DeriveInput) -> syn::Result<FrameAt
                         } else if nv.path.is_ident("ellipsoid") {
                             attrs.ellipsoid =
                                 Some(syn::Ident::new(&value_str, proc_macro2::Span::call_site()));
+                        } else {
+                            return Err(syn::Error::new_spanned(
+                                &nv.path,
+                                format!(
+                                    "unknown `frame` attribute `{}`; \
+                                     known attributes are: name, polar, azimuth, \
+                                     distance, ellipsoid, inherent",
+                                    nv.path
+                                        .get_ident()
+                                        .map(|id| id.to_string())
+                                        .unwrap_or_else(|| "<unknown>".into())
+                                ),
+                            ));
                         }
                     }
-                    _ => {}
+                    _ => {
+                        return Err(syn::Error::new_spanned(
+                            &meta,
+                            "unknown `frame` attribute; expected a name=value attribute \
+                             such as `name = \"...\"`, `polar = \"...\"`, \
+                             `azimuth = \"...\"`, `distance = \"...\"`, \
+                             `ellipsoid = \"...\"`, or the bare flag `inherent`",
+                        ));
+                    }
                 }
             }
         }
