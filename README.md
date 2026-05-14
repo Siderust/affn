@@ -33,8 +33,8 @@ Add the dependency:
 
 ```toml
 [dependencies]
-affn = "0.7.0"
-qtty = "0.7.1"
+affn = "0.7.1"
+qtty = "0.8.1"
 ```
 
 Define a center + frame and do basic affine algebra:

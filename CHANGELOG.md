@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [0.7.1 - 2026-05-14]
+
 ### Added
 - New frame-tagged 3×3 matrix primitives in `affn::matrix3`: `FrameMatrix3<F, T>` for general matrices and `SymmetricFrameMatrix3<F, T>` for symmetry-preserving covariance-style blocks.
 - Rotation similarity helpers on the new matrix types: `rotated_by::<G>(&Rotation3)` for frame-changing `R · M · Rᵀ` transforms, with numerical re-symmetrization for `SymmetricFrameMatrix3`.
