@@ -52,4 +52,3 @@ fn gcrs_to_icrs_direction_is_bit_exact_identity() {
     let r = GCRS::direction_rotation_to_icrs();
     assert_eq!(r, Rotation3::IDENTITY);
 }
-
