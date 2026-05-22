@@ -33,7 +33,7 @@ Add the dependency:
 
 ```toml
 [dependencies]
-affn = "0.7.1"
+affn = "0.7.2"
 qtty = "0.8.1"
 ```
 
