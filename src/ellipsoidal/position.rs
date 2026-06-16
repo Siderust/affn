@@ -13,7 +13,7 @@
 //! ## Type Parameters
 //!
 //! - `C`: Reference center (defines the origin)
-//! - `F`: Reference frame (carries the ellipsoid via [`HasEllipsoid`](crate::ellipsoid::HasEllipsoid))
+//! - `F`: Reference frame (carries the ellipsoid via [`HasEllipsoid`])
 //! - `U`: Length unit for the height (defaults to [`Meter`])
 //!
 //! ## Conversion to Cartesian
@@ -99,7 +99,7 @@ impl std::error::Error for GeodeticConvergenceError {}
 ///
 /// - `C`: The reference center (e.g., `Geocentric`)
 /// - `F`: The reference frame; determines the ellipsoid via
-///   [`HasEllipsoid`](crate::ellipsoid::HasEllipsoid)
+///   [`HasEllipsoid`]
 /// - `U`: The length unit for the height (defaults to [`Meter`])
 ///
 /// # Field conventions

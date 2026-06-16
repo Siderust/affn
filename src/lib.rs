@@ -15,12 +15,12 @@
 //!
 //! ### Reference Centers
 //!
-//! A [`ReferenceCenter`](centers::ReferenceCenter) defines the origin point of a coordinate system.
+//! A [`ReferenceCenter`] defines the origin point of a coordinate system.
 //! Some centers require runtime parameters (stored in `ReferenceCenter::Params`).
 //!
 //! ### Reference Frames
 //!
-//! A [`ReferenceFrame`](frames::ReferenceFrame) defines the orientation of coordinate axes.
+//! A [`ReferenceFrame`] defines the orientation of coordinate axes.
 //!
 //! ### Coordinate Types
 //!

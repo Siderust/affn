@@ -8,7 +8,7 @@ pub mod cubic_hermite;
 pub mod error;
 pub mod traits;
 
-pub use abscissa::InterpolationAbscissa;
+pub use abscissa::{AbscissaDelta, InterpolationAbscissa};
 pub use cubic_hermite::{
     CubicHermiteTable, HermiteNode, HermiteTableEvaluation, ScalarCubicHermiteTable,
     ScalarHermiteNode, ScalarHermiteTableEvaluation,

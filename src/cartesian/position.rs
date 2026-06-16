@@ -276,6 +276,12 @@ impl<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> Position<C, F, U> {
         self.xyz.z()
     }
 
+    /// Returns whether all position components are finite.
+    #[inline]
+    pub fn is_finite(&self) -> bool {
+        self.x().value().is_finite() && self.y().value().is_finite() && self.z().value().is_finite()
+    }
+
     /// Returns a reference to the underlying `[Quantity<U>; 3]` array.
     #[inline]
     pub fn as_array(&self) -> &[Quantity<U>; 3] {

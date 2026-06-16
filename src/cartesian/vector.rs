@@ -200,6 +200,12 @@ impl<F: ReferenceFrame, U: Unit> Vector<F, U> {
         Self::from_xyz(-self.xyz)
     }
 
+    /// Returns whether all vector components are finite.
+    #[inline]
+    pub fn is_finite(&self) -> bool {
+        self.x().value().is_finite() && self.y().value().is_finite() && self.z().value().is_finite()
+    }
+
     /// Divides this vector by a typed quantity, carrying the resulting unit in
     /// the output vector.
     ///

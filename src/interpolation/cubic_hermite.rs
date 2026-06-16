@@ -1,4 +1,17 @@
 //! Cubic Hermite interpolation tables.
+//!
+//! Cubic Hermite interpolation is C1 continuous when neighboring samples carry
+//! consistent first derivatives. Tables never extrapolate outside their
+//! abscissa coverage.
+//!
+//! Use typed `qtty::Quantity` abscissae for physical domains such as time,
+//! length, or angle. Raw `f64` abscissae are intended only for explicitly
+//! scalar interpolation, for example [`ScalarCubicHermiteTable`].
+//!
+//! `Position` interpolation is affine-safe: it interpolates from a segment-local
+//! origin using a chord displacement and never adds two positions. Position
+//! support currently requires centers with `Params = ()`; parameterized centers
+//! need a future checked API.
 
 use super::error::InterpolationError;
 use super::traits::{HermiteBasis, HermiteInterpolable};
@@ -6,57 +19,57 @@ use super::InterpolationAbscissa;
 
 /// A Hermite table node.
 #[derive(Debug, Clone, PartialEq)]
-pub struct HermiteNode<X, T>
+pub struct HermiteNode<A, T>
 where
-    X: InterpolationAbscissa,
-    T: HermiteInterpolable<X>,
+    A: InterpolationAbscissa,
+    T: HermiteInterpolable<A>,
 {
     /// Sample abscissa.
-    pub x: X,
+    pub abscissa: A,
     /// Sample value.
     pub value: T,
-    /// Sample derivative with respect to `x`.
+    /// Sample derivative with respect to `abscissa`.
     pub derivative: T::Derivative,
 }
 
 /// A Hermite table evaluation.
 #[derive(Debug, Clone, PartialEq)]
-pub struct HermiteTableEvaluation<X, T>
+pub struct HermiteTableEvaluation<A, T>
 where
-    X: InterpolationAbscissa,
-    T: HermiteInterpolable<X>,
+    A: InterpolationAbscissa,
+    T: HermiteInterpolable<A>,
 {
     /// Interpolated value.
     pub value: T,
-    /// Interpolated derivative with respect to `x`.
+    /// Interpolated derivative with respect to `abscissa`.
     pub derivative: T::Derivative,
     /// Evaluated abscissa.
-    pub x: X,
+    pub abscissa: A,
 }
 
 /// Piecewise cubic Hermite interpolation table for typed values.
 ///
-/// `X` may be a raw scalar parameter (`f64`) or a typed `qtty::Quantity` such
+/// `A` may be a raw scalar parameter (`f64`) or a typed `qtty::Quantity` such
 /// as seconds or days. Use typed quantities for physical domains so derivatives
 /// carry the expected units.
-pub struct CubicHermiteTable<X, T>
+pub struct CubicHermiteTable<A, T>
 where
-    X: InterpolationAbscissa,
-    T: HermiteInterpolable<X>,
+    A: InterpolationAbscissa,
+    T: HermiteInterpolable<A>,
 {
-    samples: Vec<HermiteNode<X, T>>,
+    samples: Vec<HermiteNode<A, T>>,
 }
 
-impl<X, T> CubicHermiteTable<X, T>
+impl<A, T> CubicHermiteTable<A, T>
 where
-    X: InterpolationAbscissa,
-    T: HermiteInterpolable<X>,
+    A: InterpolationAbscissa,
+    T: HermiteInterpolable<A>,
 {
-    /// Builds a typed table from nodes sorted by strictly increasing `x`.
-    pub fn new(samples: Vec<HermiteNode<X, T>>) -> Result<Self, InterpolationError> {
+    /// Builds a typed table from nodes sorted by strictly increasing abscissa.
+    pub fn new(samples: Vec<HermiteNode<A, T>>) -> Result<Self, InterpolationError> {
         validate_len(samples.len())?;
         for sample in &samples {
-            if !sample.x.raw().is_finite() {
+            if !sample.abscissa.is_finite() {
                 return Err(InterpolationError::NonFiniteAbscissa);
             }
             if !sample.value.hermite_value_is_finite()
@@ -65,54 +78,60 @@ where
                 return Err(InterpolationError::NonFiniteValue);
             }
         }
-        validate_sorted(samples.iter().map(|sample| sample.x.raw()))?;
+        validate_sorted(samples.iter().map(|sample| sample.abscissa))?;
         Ok(Self { samples })
     }
 
     /// Returns the table samples.
-    pub fn samples(&self) -> &[HermiteNode<X, T>] {
+    pub fn samples(&self) -> &[HermiteNode<A, T>] {
         &self.samples
     }
 }
 
-impl<X, T> CubicHermiteTable<X, T>
+impl<A, T> CubicHermiteTable<A, T>
 where
-    X: InterpolationAbscissa,
-    T: HermiteInterpolable<X> + Clone,
+    A: InterpolationAbscissa,
+    T: HermiteInterpolable<A> + Clone,
     T::Derivative: Clone,
 {
     /// Evaluates the table without extrapolation.
-    pub fn evaluate(&self, x: X) -> Result<HermiteTableEvaluation<X, T>, InterpolationError> {
-        let x_raw = x.raw();
-        if !x_raw.is_finite() {
+    pub fn evaluate(
+        &self,
+        abscissa: A,
+    ) -> Result<HermiteTableEvaluation<A, T>, InterpolationError> {
+        if !abscissa.is_finite() {
             return Err(InterpolationError::NonFiniteAbscissa);
         }
         let (min, max) = self.range();
-        if x_raw < min || x_raw > max {
-            return Err(InterpolationError::OutOfRange { x: x_raw, min, max });
+        if abscissa.cmp_abscissa(min).is_lt() || abscissa.cmp_abscissa(max).is_gt() {
+            return Err(InterpolationError::OutOfRange {
+                requested_raw: abscissa.diagnostic_raw(),
+                min_raw: min.diagnostic_raw(),
+                max_raw: max.diagnostic_raw(),
+            });
         }
 
-        let segment = self.segment_index(x_raw);
+        let segment = self.segment_index(abscissa);
         let s0 = &self.samples[segment];
         let s1 = &self.samples[segment + 1];
-        if x_raw == s0.x.raw() {
+        if abscissa.cmp_abscissa(s0.abscissa).is_eq() {
             return Ok(HermiteTableEvaluation {
                 value: s0.value.clone(),
                 derivative: s0.derivative.clone(),
-                x,
+                abscissa,
             });
         }
-        if x_raw == s1.x.raw() {
+        if abscissa.cmp_abscissa(s1.abscissa).is_eq() {
             return Ok(HermiteTableEvaluation {
                 value: s1.value.clone(),
                 derivative: s1.derivative.clone(),
-                x,
+                abscissa,
             });
         }
 
-        let dx = s1.x.raw() - s0.x.raw();
-        let t = (x_raw - s0.x.raw()) / dx;
-        let basis = HermiteBasis::<X>::new(t, dx);
+        let dx = s1.abscissa.delta_since(s0.abscissa);
+        let tau = abscissa.normalize_between(s0.abscissa, s1.abscissa)?;
+        let basis = HermiteBasis::<A>::new(tau, dx);
 
         Ok(HermiteTableEvaluation {
             value: T::hermite_value(
@@ -129,21 +148,21 @@ where
                 s1.value.clone(),
                 s1.derivative.clone(),
             ),
-            x,
+            abscissa,
         })
     }
 
-    fn range(&self) -> (f64, f64) {
+    fn range(&self) -> (A, A) {
         (
-            self.samples[0].x.raw(),
-            self.samples[self.samples.len() - 1].x.raw(),
+            self.samples[0].abscissa,
+            self.samples[self.samples.len() - 1].abscissa,
         )
     }
 
-    fn segment_index(&self, x: f64) -> usize {
+    fn segment_index(&self, abscissa: A) -> usize {
         match self
             .samples
-            .binary_search_by(|sample| sample.x.raw().total_cmp(&x))
+            .binary_search_by(|sample| sample.abscissa.cmp_abscissa(abscissa))
         {
             Ok(index) => index.saturating_sub(1).min(self.samples.len() - 2),
             Err(index) => (index - 1).min(self.samples.len() - 2),
@@ -173,18 +192,20 @@ fn validate_len(len: usize) -> Result<(), InterpolationError> {
     Ok(())
 }
 
-fn validate_sorted(xs: impl IntoIterator<Item = f64>) -> Result<(), InterpolationError> {
+fn validate_sorted<A: InterpolationAbscissa>(
+    abscissae: impl IntoIterator<Item = A>,
+) -> Result<(), InterpolationError> {
     let mut previous = None;
-    for x in xs {
+    for abscissa in abscissae {
         if let Some(previous) = previous {
-            if x == previous {
+            if abscissa.cmp_abscissa(previous).is_eq() {
                 return Err(InterpolationError::DuplicateAbscissa);
             }
-            if x < previous {
+            if abscissa.cmp_abscissa(previous).is_lt() {
                 return Err(InterpolationError::UnsortedAbscissa);
             }
         }
-        previous = Some(x);
+        previous = Some(abscissa);
     }
     Ok(())
 }

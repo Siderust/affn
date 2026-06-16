@@ -18,12 +18,12 @@ type TestKmPerSecond = Per<Kilometer, Second>;
 type TestKilometerPosition = Position<TestCenter, TestFrame, Kilometer>;
 type TestKilometerVelocity = Velocity<TestFrame, TestKmPerSecond>;
 
-fn cubic(x: f64) -> f64 {
-    x * x * x - 2.0 * x * x + x + 1.0
+fn cubic(abscissa: f64) -> f64 {
+    abscissa * abscissa * abscissa - 2.0 * abscissa * abscissa + abscissa + 1.0
 }
 
-fn cubic_derivative(x: f64) -> f64 {
-    3.0 * x * x - 4.0 * x + 1.0
+fn cubic_derivative(abscissa: f64) -> f64 {
+    3.0 * abscissa * abscissa - 4.0 * abscissa + 1.0
 }
 
 fn cubic_position(t: f64) -> TestKilometerPosition {
@@ -60,17 +60,17 @@ fn expect_scalar_table_error(
 fn scalar_cubic_polynomial_is_reproduced() {
     let table = ScalarCubicHermiteTable::new(vec![
         ScalarHermiteNode {
-            x: -1.0,
+            abscissa: -1.0,
             value: cubic(-1.0),
             derivative: cubic_derivative(-1.0),
         },
         ScalarHermiteNode {
-            x: 0.5,
+            abscissa: 0.5,
             value: cubic(0.5),
             derivative: cubic_derivative(0.5),
         },
         ScalarHermiteNode {
-            x: 2.0,
+            abscissa: 2.0,
             value: cubic(2.0),
             derivative: cubic_derivative(2.0),
         },
@@ -88,12 +88,12 @@ fn scalar_cubic_polynomial_is_reproduced() {
 fn exact_node_evaluation_returns_node_value_and_derivative() {
     let table = ScalarCubicHermiteTable::new(vec![
         ScalarHermiteNode {
-            x: 0.0,
+            abscissa: 0.0,
             value: 10.0,
             derivative: -3.0,
         },
         ScalarHermiteNode {
-            x: 2.0,
+            abscissa: 2.0,
             value: 20.0,
             derivative: 4.0,
         },
@@ -109,12 +109,12 @@ fn exact_node_evaluation_returns_node_value_and_derivative() {
 fn linear_motion_with_constant_velocity_is_exact() {
     let table = CubicHermiteTable::<f64, TestPosition>::new(vec![
         HermiteNode {
-            x: 0.0,
+            abscissa: 0.0,
             value: TestPosition::new(1.0, 2.0, 3.0),
             derivative: TestVelocity::new(0.5, -1.0, 2.0),
         },
         HermiteNode {
-            x: 4.0,
+            abscissa: 4.0,
             value: TestPosition::new(3.0, -2.0, 11.0),
             derivative: TestVelocity::new(0.5, -1.0, 2.0),
         },
@@ -134,7 +134,7 @@ fn linear_motion_with_constant_velocity_is_exact() {
 fn typed_abscissa_table_accepts_position_over_seconds_with_velocity() {
     let table = CubicHermiteTable::<qtty::Second, TestKilometerPosition>::new(vec![
         HermiteNode {
-            x: qtty::Second::new(0.0),
+            abscissa: qtty::Second::new(0.0),
             value: TestKilometerPosition::new(1.0, 2.0, 3.0),
             derivative: TestKilometerVelocity::new(
                 Quantity::<TestKmPerSecond>::new(0.5),
@@ -143,7 +143,7 @@ fn typed_abscissa_table_accepts_position_over_seconds_with_velocity() {
             ),
         },
         HermiteNode {
-            x: qtty::Second::new(4.0),
+            abscissa: qtty::Second::new(4.0),
             value: TestKilometerPosition::new(3.0, -2.0, 11.0),
             derivative: TestKilometerVelocity::new(
                 Quantity::<TestKmPerSecond>::new(0.5),
@@ -167,17 +167,17 @@ fn typed_abscissa_table_accepts_position_over_seconds_with_velocity() {
 fn typed_abscissa_table_reproduces_cubic_position_over_seconds() {
     let table = CubicHermiteTable::<qtty::Second, TestKilometerPosition>::new(vec![
         HermiteNode {
-            x: qtty::Second::new(-1.0),
+            abscissa: qtty::Second::new(-1.0),
             value: cubic_position(-1.0),
             derivative: cubic_velocity(-1.0),
         },
         HermiteNode {
-            x: qtty::Second::new(0.5),
+            abscissa: qtty::Second::new(0.5),
             value: cubic_position(0.5),
             derivative: cubic_velocity(0.5),
         },
         HermiteNode {
-            x: qtty::Second::new(2.0),
+            abscissa: qtty::Second::new(2.0),
             value: cubic_position(2.0),
             derivative: cubic_velocity(2.0),
         },
@@ -202,12 +202,12 @@ fn typed_abscissa_table_rejects_non_finite_abscissa() {
     let err = expect_table_error(
         CubicHermiteTable::<qtty::Second, TestKilometerPosition>::new(vec![
             HermiteNode {
-                x: qtty::Second::new(f64::NAN),
+                abscissa: qtty::Second::new(f64::NAN),
                 value: cubic_position(0.0),
                 derivative: cubic_velocity(0.0),
             },
             HermiteNode {
-                x: qtty::Second::new(1.0),
+                abscissa: qtty::Second::new(1.0),
                 value: cubic_position(1.0),
                 derivative: cubic_velocity(1.0),
             },
@@ -222,12 +222,12 @@ fn typed_abscissa_table_rejects_non_finite_position_component() {
     let err = expect_table_error(
         CubicHermiteTable::<qtty::Second, TestKilometerPosition>::new(vec![
             HermiteNode {
-                x: qtty::Second::new(0.0),
+                abscissa: qtty::Second::new(0.0),
                 value: TestKilometerPosition::new(f64::NAN, 0.0, 0.0),
                 derivative: cubic_velocity(0.0),
             },
             HermiteNode {
-                x: qtty::Second::new(1.0),
+                abscissa: qtty::Second::new(1.0),
                 value: cubic_position(1.0),
                 derivative: cubic_velocity(1.0),
             },
@@ -242,12 +242,12 @@ fn typed_abscissa_table_rejects_duplicate_seconds() {
     let err = expect_table_error(
         CubicHermiteTable::<qtty::Second, TestKilometerPosition>::new(vec![
             HermiteNode {
-                x: qtty::Second::new(0.0),
+                abscissa: qtty::Second::new(0.0),
                 value: cubic_position(0.0),
                 derivative: cubic_velocity(0.0),
             },
             HermiteNode {
-                x: qtty::Second::new(0.0),
+                abscissa: qtty::Second::new(0.0),
                 value: cubic_position(1.0),
                 derivative: cubic_velocity(1.0),
             },
@@ -281,17 +281,17 @@ fn vector_dimensional_mul_and_div_quantity_work() {
 fn non_uniform_sample_spacing_works() {
     let table = ScalarCubicHermiteTable::new(vec![
         ScalarHermiteNode {
-            x: 0.0,
+            abscissa: 0.0,
             value: cubic(0.0),
             derivative: cubic_derivative(0.0),
         },
         ScalarHermiteNode {
-            x: 0.25,
+            abscissa: 0.25,
             value: cubic(0.25),
             derivative: cubic_derivative(0.25),
         },
         ScalarHermiteNode {
-            x: 2.5,
+            abscissa: 2.5,
             value: cubic(2.5),
             derivative: cubic_derivative(2.5),
         },
@@ -307,12 +307,12 @@ fn non_uniform_sample_spacing_works() {
 fn out_of_range_queries_return_error() {
     let table = ScalarCubicHermiteTable::new(vec![
         ScalarHermiteNode {
-            x: 0.0,
+            abscissa: 0.0,
             value: 0.0,
             derivative: 1.0,
         },
         ScalarHermiteNode {
-            x: 1.0,
+            abscissa: 1.0,
             value: 1.0,
             derivative: 1.0,
         },
@@ -322,9 +322,9 @@ fn out_of_range_queries_return_error() {
     assert_eq!(
         table.evaluate(2.0),
         Err(InterpolationError::OutOfRange {
-            x: 2.0,
-            min: 0.0,
-            max: 1.0
+            requested_raw: 2.0,
+            min_raw: 0.0,
+            max_raw: 1.0
         })
     );
 }
@@ -334,12 +334,12 @@ fn duplicate_abscissae_are_rejected() {
     assert_eq!(
         expect_scalar_table_error(ScalarCubicHermiteTable::new(vec![
             ScalarHermiteNode {
-                x: 0.0,
+                abscissa: 0.0,
                 value: 0.0,
                 derivative: 0.0,
             },
             ScalarHermiteNode {
-                x: 0.0,
+                abscissa: 0.0,
                 value: 1.0,
                 derivative: 1.0,
             },
@@ -353,12 +353,12 @@ fn unsorted_abscissae_are_rejected() {
     assert_eq!(
         expect_scalar_table_error(ScalarCubicHermiteTable::new(vec![
             ScalarHermiteNode {
-                x: 1.0,
+                abscissa: 1.0,
                 value: 1.0,
                 derivative: 1.0,
             },
             ScalarHermiteNode {
-                x: 0.0,
+                abscissa: 0.0,
                 value: 0.0,
                 derivative: 0.0,
             },

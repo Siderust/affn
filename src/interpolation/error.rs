@@ -24,12 +24,12 @@ pub enum InterpolationError {
     UnsortedAbscissa,
     /// The query abscissa is outside the interpolation table range.
     OutOfRange {
-        /// Query abscissa.
-        x: f64,
-        /// Minimum supported abscissa.
-        min: f64,
-        /// Maximum supported abscissa.
-        max: f64,
+        /// Query abscissa, raw diagnostic value only.
+        requested_raw: f64,
+        /// Minimum supported abscissa, raw diagnostic value only.
+        min_raw: f64,
+        /// Maximum supported abscissa, raw diagnostic value only.
+        max_raw: f64,
     },
 }
 
@@ -47,8 +47,15 @@ impl fmt::Display for InterpolationError {
                 write!(f, "interpolation samples contain duplicate abscissae")
             }
             Self::UnsortedAbscissa => write!(f, "interpolation samples are not sorted"),
-            Self::OutOfRange { x, min, max } => {
-                write!(f, "interpolation query {x} is outside range [{min}, {max}]")
+            Self::OutOfRange {
+                requested_raw,
+                min_raw,
+                max_raw,
+            } => {
+                write!(
+                    f,
+                    "interpolation query {requested_raw} is outside diagnostic range [{min_raw}, {max_raw}]"
+                )
             }
         }
     }
