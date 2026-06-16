@@ -15,12 +15,12 @@
 //!
 //! ### Reference Centers
 //!
-//! A [`ReferenceCenter`](centers::ReferenceCenter) defines the origin point of a coordinate system.
+//! A [`ReferenceCenter`] defines the origin point of a coordinate system.
 //! Some centers require runtime parameters (stored in `ReferenceCenter::Params`).
 //!
 //! ### Reference Frames
 //!
-//! A [`ReferenceFrame`](frames::ReferenceFrame) defines the orientation of coordinate axes.
+//! A [`ReferenceFrame`] defines the orientation of coordinate axes.
 //!
 //! ### Coordinate Types
 //!
@@ -120,6 +120,7 @@ mod op_macros;
 // Coordinate type implementations
 pub mod cartesian;
 pub mod conic;
+pub mod interpolation;
 pub mod spherical;
 
 // Core traits and marker types
@@ -205,6 +206,11 @@ pub mod prelude {
         Hyperbolic, HyperbolicPeriapsis, HyperbolicSemiMajorAxis, KindMarker,
         NonParabolicKindMarker, OrientedConic, Parabolic, ParabolicPeriapsis, PeriapsisParam,
         SemiMajorAxisParam, TypedPeriapsisParam, TypedSemiMajorAxisParam,
+    };
+    pub use crate::interpolation::{
+        CubicHermiteTable, HermiteInterpolable, HermiteNode, HermiteTableEvaluation,
+        InterpolationAbscissa, InterpolationError, ScalarCubicHermiteTable, ScalarHermiteNode,
+        ScalarHermiteTableEvaluation,
     };
     pub use crate::spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 

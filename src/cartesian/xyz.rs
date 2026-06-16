@@ -277,7 +277,7 @@ impl<U: Unit> XYZ<Quantity<U>> {
         Quantity::new((x * x + y * y + z * z).sqrt())
     }
 
-    /// Extracts raw f64 values as an XYZ<f64>.
+    /// Extracts raw f64 values as an `XYZ<f64>`.
     #[inline]
     pub fn to_raw(&self) -> XYZ<f64> {
         XYZ::new(self.0[0].value(), self.0[1].value(), self.0[2].value())
@@ -320,7 +320,7 @@ impl<U: Unit + UnitMul<U>> XYZ<Quantity<U>> {
     /// This relies on `qtty`'s squared-unit support: for any `U: UnitMul<U>`
     /// the output unit is `<U as UnitMul<U>>::Output` (e.g. `Prod<Meter, Meter>`
     /// for length). If you only need a raw `f64` for ordering or comparison,
-    /// use the deprecated [`magnitude_squared_raw`](Self::magnitude_squared_raw).
+    /// use [`to_raw`](Self::to_raw) and [`XYZ<f64>::magnitude_squared`].
     #[inline]
     pub fn magnitude_squared(&self) -> Quantity<<U as UnitMul<U>>::Output> {
         let x = self.0[0].value();

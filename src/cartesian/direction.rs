@@ -75,7 +75,7 @@ use std::ops::Mul;
 /// # Invariants
 ///
 /// All public constructors ensure the direction is normalized. For unchecked
-/// construction, use [`from_xyz_unchecked`](Self::from_xyz_unchecked).
+/// construction, use the crate-internal unchecked constructor.
 ///
 /// # Zero-Cost Abstraction
 ///

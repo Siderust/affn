@@ -313,7 +313,7 @@ impl Rotation3 {
     ///
     /// Rotates the vector's components and re-tags the result with frame `F2`.
     /// The unit `U` is unchanged. This is a zero-overhead operation: the matrix
-    /// multiplication uses the same path as [`apply_array`], with a frame tag
+    /// multiplication uses the same path as [`Self::apply_array`], with a frame tag
     /// change at compile time.
     ///
     /// # Example
