@@ -51,10 +51,10 @@ use super::xyz::XYZ;
 use crate::frames::ReferenceFrame;
 use qtty::dimensionless::Ratio;
 use qtty::length::LengthUnit;
-use qtty::{Quantity, Unit, UnitMul};
+use qtty::{Quantity, Unit, UnitDiv, UnitMul};
 
 use std::marker::PhantomData;
-use std::ops::{Add, Div, Neg, Sub};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 /// A free vector in 3D Cartesian coordinates.
 ///
@@ -199,6 +199,23 @@ impl<F: ReferenceFrame, U: Unit> Vector<F, U> {
     pub fn negate(&self) -> Self {
         Self::from_xyz(-self.xyz)
     }
+
+    /// Divides this vector by a typed quantity, carrying the resulting unit in
+    /// the output vector.
+    ///
+    /// This is the dimensional counterpart to [`scale`](Self::scale). It is an
+    /// inherent method rather than a `/` operator so it can coexist with the
+    /// established same-unit division operator that returns a dimensionless
+    /// ratio vector.
+    #[inline]
+    pub fn div_quantity<X>(&self, rhs: Quantity<X>) -> Vector<F, <U as UnitDiv<X>>::Output>
+    where
+        X: Unit,
+        U: UnitDiv<X>,
+        <U as UnitDiv<X>>::Output: Unit,
+    {
+        Vector::<F, <U as UnitDiv<X>>::Output>::new(self.x() / rhs, self.y() / rhs, self.z() / rhs)
+    }
 }
 
 // =============================================================================
@@ -321,14 +338,31 @@ impl<F: ReferenceFrame, U: Unit> Neg for Vector<F, U> {
 forward_ref_unop! { impl[F: ReferenceFrame, U: Unit] Neg, neg for Vector<F, U> }
 
 // =============================================================================
-// Scalar Division: Vector<F, U> / Quantity<U> → Vector<F, Ratio>
+// Dimensional Operations: Vector<F, U> * Quantity<X> and / Quantity<X>
 // =============================================================================
+
+impl<F, U, X> Mul<Quantity<X>> for Vector<F, U>
+where
+    F: ReferenceFrame,
+    U: Unit + UnitMul<X>,
+    X: Unit,
+{
+    type Output = Vector<F, <U as UnitMul<X>>::Output>;
+
+    /// Multiplies every component by a typed quantity.
+    #[inline]
+    fn mul(self, rhs: Quantity<X>) -> Self::Output {
+        Vector::<F, <U as UnitMul<X>>::Output>::new(self.x() * rhs, self.y() * rhs, self.z() * rhs)
+    }
+}
+
+forward_ref_binop! { impl[F: ReferenceFrame, U: Unit + UnitMul<X>, X: Unit] Mul, mul for Vector<F, U>, Quantity<X> }
 
 impl<F: ReferenceFrame, U: Unit> Div<Quantity<U>> for Vector<F, U> {
     type Output = Vector<F, Ratio>;
 
     /// Divides each component by a scalar with the same unit, producing a
-    /// dimensionless velocity vector (e.g. β = v/c for aberration).
+    /// dimensionless vector (e.g. beta = v/c for aberration).
     #[inline]
     fn div(self, rhs: Quantity<U>) -> Vector<F, Ratio> {
         let c = rhs.value();

@@ -208,10 +208,9 @@ pub mod prelude {
         SemiMajorAxisParam, TypedPeriapsisParam, TypedSemiMajorAxisParam,
     };
     pub use crate::interpolation::{
-        cubic_hermite_segment, CubicHermiteQuantityTable, CubicHermiteSpline, CubicHermiteTable,
-        HermiteEvaluation, HermiteInterpolable, HermiteNode, HermiteSample, HermiteTableEvaluation,
-        InterpolationError, QuantityHermiteInterpolable, QuantityHermiteNode,
-        QuantityHermiteTableEvaluation,
+        cubic_hermite_segment, CubicHermiteSpline, CubicHermiteTable, HermiteEvaluation,
+        HermiteInterpolable, HermiteNode, HermiteSample, HermiteTableEvaluation,
+        InterpolationAbscissa, InterpolationError, ScalarHermiteNode, ScalarHermiteTableEvaluation,
     };
     pub use crate::spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 

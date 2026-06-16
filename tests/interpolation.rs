@@ -1,7 +1,6 @@
 use affn::cartesian::{Position, Velocity};
 use affn::interpolation::{
-    CubicHermiteQuantityTable, CubicHermiteSpline, CubicHermiteTable, HermiteNode, HermiteSample,
-    InterpolationError, QuantityHermiteNode,
+    CubicHermiteSpline, CubicHermiteTable, HermiteNode, HermiteSample, InterpolationError,
 };
 use affn::{DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame};
 use qtty::unit::{Kilometer, Meter, Second};
@@ -37,6 +36,15 @@ fn cubic_velocity(t: f64) -> TestKilometerVelocity {
         Quantity::<TestKmPerSecond>::new(-2.0 * cubic_derivative(t)),
         Quantity::<TestKmPerSecond>::new(0.5 * cubic_derivative(t)),
     )
+}
+
+fn expect_table_error(
+    result: Result<CubicHermiteTable<qtty::Second, TestKilometerPosition>, InterpolationError>,
+) -> InterpolationError {
+    match result {
+        Ok(_) => panic!("table construction should fail"),
+        Err(err) => err,
+    }
 }
 
 #[test]
@@ -90,7 +98,7 @@ fn exact_node_evaluation_returns_node_value_and_derivative() {
 
 #[test]
 fn linear_motion_with_constant_velocity_is_exact() {
-    let table = CubicHermiteTable::new(vec![
+    let table = CubicHermiteTable::<f64, TestPosition>::new(vec![
         HermiteNode {
             x: 0.0,
             value: TestPosition::new(1.0, 2.0, 3.0),
@@ -114,9 +122,9 @@ fn linear_motion_with_constant_velocity_is_exact() {
 }
 
 #[test]
-fn quantity_table_accepts_position_over_seconds_with_velocity() {
-    let table = CubicHermiteQuantityTable::<Second, TestKilometerPosition>::new(vec![
-        QuantityHermiteNode {
+fn typed_abscissa_table_accepts_position_over_seconds_with_velocity() {
+    let table = CubicHermiteTable::<qtty::Second, TestKilometerPosition>::new(vec![
+        HermiteNode {
             x: qtty::Second::new(0.0),
             value: TestKilometerPosition::new(1.0, 2.0, 3.0),
             derivative: TestKilometerVelocity::new(
@@ -125,7 +133,7 @@ fn quantity_table_accepts_position_over_seconds_with_velocity() {
                 Quantity::<TestKmPerSecond>::new(2.0),
             ),
         },
-        QuantityHermiteNode {
+        HermiteNode {
             x: qtty::Second::new(4.0),
             value: TestKilometerPosition::new(3.0, -2.0, 11.0),
             derivative: TestKilometerVelocity::new(
@@ -147,19 +155,19 @@ fn quantity_table_accepts_position_over_seconds_with_velocity() {
 }
 
 #[test]
-fn quantity_table_reproduces_cubic_position_over_seconds() {
-    let table = CubicHermiteQuantityTable::<Second, TestKilometerPosition>::new(vec![
-        QuantityHermiteNode {
+fn typed_abscissa_table_reproduces_cubic_position_over_seconds() {
+    let table = CubicHermiteTable::<qtty::Second, TestKilometerPosition>::new(vec![
+        HermiteNode {
             x: qtty::Second::new(-1.0),
             value: cubic_position(-1.0),
             derivative: cubic_velocity(-1.0),
         },
-        QuantityHermiteNode {
+        HermiteNode {
             x: qtty::Second::new(0.5),
             value: cubic_position(0.5),
             derivative: cubic_velocity(0.5),
         },
-        QuantityHermiteNode {
+        HermiteNode {
             x: qtty::Second::new(2.0),
             value: cubic_position(2.0),
             derivative: cubic_velocity(2.0),
@@ -178,6 +186,86 @@ fn quantity_table_reproduces_cubic_position_over_seconds() {
         assert!((evaluated.derivative.y().value() - expected_velocity.y().value()).abs() < 1e-12);
         assert!((evaluated.derivative.z().value() - expected_velocity.z().value()).abs() < 1e-12);
     }
+}
+
+#[test]
+fn typed_abscissa_table_rejects_non_finite_abscissa() {
+    let err = expect_table_error(
+        CubicHermiteTable::<qtty::Second, TestKilometerPosition>::new(vec![
+            HermiteNode {
+                x: qtty::Second::new(f64::NAN),
+                value: cubic_position(0.0),
+                derivative: cubic_velocity(0.0),
+            },
+            HermiteNode {
+                x: qtty::Second::new(1.0),
+                value: cubic_position(1.0),
+                derivative: cubic_velocity(1.0),
+            },
+        ]),
+    );
+
+    assert_eq!(err, InterpolationError::NonFiniteAbscissa);
+}
+
+#[test]
+fn typed_abscissa_table_rejects_non_finite_position_component() {
+    let err = expect_table_error(
+        CubicHermiteTable::<qtty::Second, TestKilometerPosition>::new(vec![
+            HermiteNode {
+                x: qtty::Second::new(0.0),
+                value: TestKilometerPosition::new(f64::NAN, 0.0, 0.0),
+                derivative: cubic_velocity(0.0),
+            },
+            HermiteNode {
+                x: qtty::Second::new(1.0),
+                value: cubic_position(1.0),
+                derivative: cubic_velocity(1.0),
+            },
+        ]),
+    );
+
+    assert_eq!(err, InterpolationError::NonFiniteValue);
+}
+
+#[test]
+fn typed_abscissa_table_rejects_duplicate_seconds() {
+    let err = expect_table_error(
+        CubicHermiteTable::<qtty::Second, TestKilometerPosition>::new(vec![
+            HermiteNode {
+                x: qtty::Second::new(0.0),
+                value: cubic_position(0.0),
+                derivative: cubic_velocity(0.0),
+            },
+            HermiteNode {
+                x: qtty::Second::new(0.0),
+                value: cubic_position(1.0),
+                derivative: cubic_velocity(1.0),
+            },
+        ]),
+    );
+
+    assert_eq!(err, InterpolationError::DuplicateAbscissa);
+}
+
+#[test]
+fn vector_dimensional_mul_and_div_quantity_work() {
+    let velocity = TestKilometerVelocity::new(
+        Quantity::<TestKmPerSecond>::new(2.0),
+        Quantity::<TestKmPerSecond>::new(-3.0),
+        Quantity::<TestKmPerSecond>::new(4.0),
+    );
+    let elapsed = qtty::Second::new(5.0);
+
+    let displacement = velocity * elapsed;
+    assert!((displacement.x().value() - 10.0).abs() < 1e-12);
+    assert!((displacement.y().value() + 15.0).abs() < 1e-12);
+    assert!((displacement.z().value() - 20.0).abs() < 1e-12);
+
+    let recovered_velocity = displacement.div_quantity(elapsed);
+    assert!((recovered_velocity.x().value() - 2.0).abs() < 1e-12);
+    assert!((recovered_velocity.y().value() + 3.0).abs() < 1e-12);
+    assert!((recovered_velocity.z().value() - 4.0).abs() < 1e-12);
 }
 
 #[test]
