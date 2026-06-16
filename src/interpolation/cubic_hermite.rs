@@ -1,94 +1,8 @@
 //! Cubic Hermite interpolation tables.
 
 use super::error::InterpolationError;
-use super::scalar::{cubic_hermite_segment, HermiteEvaluation};
 use super::traits::{HermiteBasis, HermiteInterpolable};
 use super::InterpolationAbscissa;
-
-/// A scalar Hermite table sample.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct HermiteSample {
-    /// Sample abscissa.
-    pub x: f64,
-    /// Sample value.
-    pub y: f64,
-    /// Sample derivative with respect to `x`.
-    pub dydx: f64,
-}
-
-/// Piecewise scalar cubic Hermite spline.
-///
-/// Derivative continuity is guaranteed only up to the first derivative supplied
-/// at each sample. Acceleration or other second derivative quantities are not
-/// generally continuous across sample boundaries.
-#[derive(Debug, Clone, PartialEq)]
-pub struct CubicHermiteSpline {
-    samples: Vec<HermiteSample>,
-}
-
-impl CubicHermiteSpline {
-    /// Builds a spline from samples sorted by strictly increasing `x`.
-    pub fn new(samples: Vec<HermiteSample>) -> Result<Self, InterpolationError> {
-        validate_len(samples.len())?;
-        for sample in &samples {
-            if !sample.x.is_finite() {
-                return Err(InterpolationError::NonFiniteAbscissa);
-            }
-            if !sample.y.is_finite() || !sample.dydx.is_finite() {
-                return Err(InterpolationError::NonFiniteValue);
-            }
-        }
-        validate_sorted(samples.iter().map(|sample| sample.x))?;
-        Ok(Self { samples })
-    }
-
-    /// Returns the table samples.
-    pub fn samples(&self) -> &[HermiteSample] {
-        &self.samples
-    }
-
-    /// Evaluates the spline without extrapolation.
-    pub fn evaluate(&self, x: f64) -> Result<HermiteEvaluation, InterpolationError> {
-        if !x.is_finite() {
-            return Err(InterpolationError::NonFiniteAbscissa);
-        }
-        let (min, max) = self.range();
-        if x < min || x > max {
-            return Err(InterpolationError::OutOfRange { x, min, max });
-        }
-
-        let segment = self.segment_index(x);
-        let s0 = self.samples[segment];
-        let s1 = self.samples[segment + 1];
-        if x == s0.x {
-            return Ok(HermiteEvaluation {
-                value: s0.y,
-                derivative: s0.dydx,
-            });
-        }
-        if x == s1.x {
-            return Ok(HermiteEvaluation {
-                value: s1.y,
-                derivative: s1.dydx,
-            });
-        }
-        cubic_hermite_segment(x, s0.x, s1.x, s0.y, s0.dydx, s1.y, s1.dydx)
-    }
-
-    fn range(&self) -> (f64, f64) {
-        (self.samples[0].x, self.samples[self.samples.len() - 1].x)
-    }
-
-    fn segment_index(&self, x: f64) -> usize {
-        match self
-            .samples
-            .binary_search_by(|sample| sample.x.total_cmp(&x))
-        {
-            Ok(index) => index.saturating_sub(1).min(self.samples.len() - 2),
-            Err(index) => (index - 1).min(self.samples.len() - 2),
-        }
-    }
-}
 
 /// A Hermite table node.
 #[derive(Debug, Clone, PartialEq)]
@@ -237,11 +151,14 @@ where
     }
 }
 
-/// Explicit scalar table node alias.
-pub type ScalarHermiteNode<T> = HermiteNode<f64, T>;
+/// Scalar cubic Hermite table alias.
+pub type ScalarCubicHermiteTable = CubicHermiteTable<f64, f64>;
 
-/// Explicit scalar table evaluation alias.
-pub type ScalarHermiteTableEvaluation<T> = HermiteTableEvaluation<f64, T>;
+/// Scalar Hermite table node alias.
+pub type ScalarHermiteNode = HermiteNode<f64, f64>;
+
+/// Scalar Hermite table evaluation alias.
+pub type ScalarHermiteTableEvaluation = HermiteTableEvaluation<f64, f64>;
 
 fn validate_len(len: usize) -> Result<(), InterpolationError> {
     if len == 0 {

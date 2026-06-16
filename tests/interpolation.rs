@@ -1,6 +1,6 @@
 use affn::cartesian::{Position, Velocity};
 use affn::interpolation::{
-    CubicHermiteSpline, CubicHermiteTable, HermiteNode, HermiteSample, InterpolationError,
+    CubicHermiteTable, HermiteNode, InterpolationError, ScalarCubicHermiteTable, ScalarHermiteNode,
 };
 use affn::{DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame};
 use qtty::unit::{Kilometer, Meter, Second};
@@ -47,29 +47,38 @@ fn expect_table_error(
     }
 }
 
+fn expect_scalar_table_error(
+    result: Result<ScalarCubicHermiteTable, InterpolationError>,
+) -> InterpolationError {
+    match result {
+        Ok(_) => panic!("scalar table construction should fail"),
+        Err(err) => err,
+    }
+}
+
 #[test]
 fn scalar_cubic_polynomial_is_reproduced() {
-    let spline = CubicHermiteSpline::new(vec![
-        HermiteSample {
+    let table = ScalarCubicHermiteTable::new(vec![
+        ScalarHermiteNode {
             x: -1.0,
-            y: cubic(-1.0),
-            dydx: cubic_derivative(-1.0),
+            value: cubic(-1.0),
+            derivative: cubic_derivative(-1.0),
         },
-        HermiteSample {
+        ScalarHermiteNode {
             x: 0.5,
-            y: cubic(0.5),
-            dydx: cubic_derivative(0.5),
+            value: cubic(0.5),
+            derivative: cubic_derivative(0.5),
         },
-        HermiteSample {
+        ScalarHermiteNode {
             x: 2.0,
-            y: cubic(2.0),
-            dydx: cubic_derivative(2.0),
+            value: cubic(2.0),
+            derivative: cubic_derivative(2.0),
         },
     ])
     .unwrap();
 
     for x in [-0.75, -0.1, 0.25, 1.25, 1.75] {
-        let evaluated = spline.evaluate(x).unwrap();
+        let evaluated = table.evaluate(x).unwrap();
         assert!((evaluated.value - cubic(x)).abs() < 1e-12);
         assert!((evaluated.derivative - cubic_derivative(x)).abs() < 1e-12);
     }
@@ -77,21 +86,21 @@ fn scalar_cubic_polynomial_is_reproduced() {
 
 #[test]
 fn exact_node_evaluation_returns_node_value_and_derivative() {
-    let spline = CubicHermiteSpline::new(vec![
-        HermiteSample {
+    let table = ScalarCubicHermiteTable::new(vec![
+        ScalarHermiteNode {
             x: 0.0,
-            y: 10.0,
-            dydx: -3.0,
+            value: 10.0,
+            derivative: -3.0,
         },
-        HermiteSample {
+        ScalarHermiteNode {
             x: 2.0,
-            y: 20.0,
-            dydx: 4.0,
+            value: 20.0,
+            derivative: 4.0,
         },
     ])
     .unwrap();
 
-    let evaluated = spline.evaluate(2.0).unwrap();
+    let evaluated = table.evaluate(2.0).unwrap();
     assert_eq!(evaluated.value, 20.0);
     assert_eq!(evaluated.derivative, 4.0);
 }
@@ -270,48 +279,48 @@ fn vector_dimensional_mul_and_div_quantity_work() {
 
 #[test]
 fn non_uniform_sample_spacing_works() {
-    let spline = CubicHermiteSpline::new(vec![
-        HermiteSample {
+    let table = ScalarCubicHermiteTable::new(vec![
+        ScalarHermiteNode {
             x: 0.0,
-            y: cubic(0.0),
-            dydx: cubic_derivative(0.0),
+            value: cubic(0.0),
+            derivative: cubic_derivative(0.0),
         },
-        HermiteSample {
+        ScalarHermiteNode {
             x: 0.25,
-            y: cubic(0.25),
-            dydx: cubic_derivative(0.25),
+            value: cubic(0.25),
+            derivative: cubic_derivative(0.25),
         },
-        HermiteSample {
+        ScalarHermiteNode {
             x: 2.5,
-            y: cubic(2.5),
-            dydx: cubic_derivative(2.5),
+            value: cubic(2.5),
+            derivative: cubic_derivative(2.5),
         },
     ])
     .unwrap();
 
-    let evaluated = spline.evaluate(1.75).unwrap();
+    let evaluated = table.evaluate(1.75).unwrap();
     assert!((evaluated.value - cubic(1.75)).abs() < 1e-12);
     assert!((evaluated.derivative - cubic_derivative(1.75)).abs() < 1e-12);
 }
 
 #[test]
 fn out_of_range_queries_return_error() {
-    let spline = CubicHermiteSpline::new(vec![
-        HermiteSample {
+    let table = ScalarCubicHermiteTable::new(vec![
+        ScalarHermiteNode {
             x: 0.0,
-            y: 0.0,
-            dydx: 1.0,
+            value: 0.0,
+            derivative: 1.0,
         },
-        HermiteSample {
+        ScalarHermiteNode {
             x: 1.0,
-            y: 1.0,
-            dydx: 1.0,
+            value: 1.0,
+            derivative: 1.0,
         },
     ])
     .unwrap();
 
     assert_eq!(
-        spline.evaluate(2.0),
+        table.evaluate(2.0),
         Err(InterpolationError::OutOfRange {
             x: 2.0,
             min: 0.0,
@@ -323,37 +332,37 @@ fn out_of_range_queries_return_error() {
 #[test]
 fn duplicate_abscissae_are_rejected() {
     assert_eq!(
-        CubicHermiteSpline::new(vec![
-            HermiteSample {
+        expect_scalar_table_error(ScalarCubicHermiteTable::new(vec![
+            ScalarHermiteNode {
                 x: 0.0,
-                y: 0.0,
-                dydx: 0.0,
+                value: 0.0,
+                derivative: 0.0,
             },
-            HermiteSample {
+            ScalarHermiteNode {
                 x: 0.0,
-                y: 1.0,
-                dydx: 1.0,
+                value: 1.0,
+                derivative: 1.0,
             },
-        ]),
-        Err(InterpolationError::DuplicateAbscissa)
+        ])),
+        InterpolationError::DuplicateAbscissa
     );
 }
 
 #[test]
 fn unsorted_abscissae_are_rejected() {
     assert_eq!(
-        CubicHermiteSpline::new(vec![
-            HermiteSample {
+        expect_scalar_table_error(ScalarCubicHermiteTable::new(vec![
+            ScalarHermiteNode {
                 x: 1.0,
-                y: 1.0,
-                dydx: 1.0,
+                value: 1.0,
+                derivative: 1.0,
             },
-            HermiteSample {
+            ScalarHermiteNode {
                 x: 0.0,
-                y: 0.0,
-                dydx: 0.0,
+                value: 0.0,
+                derivative: 0.0,
             },
-        ]),
-        Err(InterpolationError::UnsortedAbscissa)
+        ])),
+        InterpolationError::UnsortedAbscissa
     );
 }
