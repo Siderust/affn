@@ -120,6 +120,7 @@ mod op_macros;
 // Coordinate type implementations
 pub mod cartesian;
 pub mod conic;
+pub mod interpolation;
 pub mod spherical;
 
 // Core traits and marker types
@@ -205,6 +206,12 @@ pub mod prelude {
         Hyperbolic, HyperbolicPeriapsis, HyperbolicSemiMajorAxis, KindMarker,
         NonParabolicKindMarker, OrientedConic, Parabolic, ParabolicPeriapsis, PeriapsisParam,
         SemiMajorAxisParam, TypedPeriapsisParam, TypedSemiMajorAxisParam,
+    };
+    pub use crate::interpolation::{
+        cubic_hermite_segment, CubicHermiteQuantityTable, CubicHermiteSpline, CubicHermiteTable,
+        HermiteEvaluation, HermiteInterpolable, HermiteNode, HermiteSample, HermiteTableEvaluation,
+        InterpolationError, QuantityHermiteInterpolable, QuantityHermiteNode,
+        QuantityHermiteTableEvaluation,
     };
     pub use crate::spherical::{Direction as SphericalDirection, Position as SphericalPosition};
 
