@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0 - 2026-06-16]
+
+### Added
+- New `affn::interpolation` module providing domain-agnostic interpolation primitives for typed affine geometry.
+- `CubicHermiteTable<T>` for cubic Hermite interpolation over any `HermiteInterpolable` type (including `Position`, `Vector`, `Direction`, and `XYZ`).
+- `ScalarCubicHermiteTable` for efficient scalar-only interpolation.
+- `HermiteNode<T>` and `HermiteTableEvaluation<T>` for representing nodes and evaluation results in Hermite interpolation.
+- `InterpolationAbscissa` and `AbscissaDelta` for typed abscissa (e.g., time) with unit support via `qtty`.
+- `InterpolationError` for comprehensive error handling during interpolation operations (out-of-bounds, insufficient nodes, etc.).
+- Trait-based interpolation support via `HermiteInterpolable` (types that can be interpolated) and `HermiteBasis` (basis function implementations).
+- `HermiteTableEvaluation::try_value()` for fallible evaluation with proper error propagation.
+
+### Changed
+- Interpolation module is now domain-agnostic and focuses on scalar abscissae with strongly-typed values, enabling downstream crates to implement astronomy-specific epoch handling.
+
 ## [0.7.3 - 2026-05-25]
 
 ### Changed
