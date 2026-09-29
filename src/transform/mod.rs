@@ -234,10 +234,21 @@ type SystemMarker<FromCenter, FromFrame, ToCenter, ToFrame> =
 /// Source/destination tags are zero-cost phantom data. See the [module-level
 /// documentation](self) for application rules, composition, and the
 /// parameterized-center limitation.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy)]
 pub struct Transform<FromCenter, FromFrame, ToCenter, ToFrame, Op> {
     op: Op,
     _marker: SystemMarker<FromCenter, FromFrame, ToCenter, ToFrame>,
+}
+
+impl<FromCenter, FromFrame, ToCenter, ToFrame, Op> PartialEq
+    for Transform<FromCenter, FromFrame, ToCenter, ToFrame, Op>
+where
+    Op: PartialEq,
+{
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.op == other.op
+    }
 }
 
 /// Frame-only transform: same center, `FromFrame → ToFrame`, operator [`Rotation3`].
@@ -790,6 +801,32 @@ mod tests {
         let tf: FrameTransform<CenterA, FrameA, FrameB> = make_rot(rot);
         assert_eq!(tf.op(), &rot);
         assert_eq!(tf.into_op(), rot);
+    }
+
+    #[test]
+    fn partial_eq_ignores_phantom_tags() {
+        #[derive(Debug, Copy, Clone, ReferenceFrame)]
+        struct NoPartialEqFrame;
+
+        #[derive(Debug, Copy, Clone)]
+        struct NoPartialEqCenter;
+
+        impl ReferenceCenter for NoPartialEqCenter {
+            type Params = ();
+
+            fn center_name() -> &'static str {
+                "NoPartialEqCenter"
+            }
+        }
+
+        impl AffineCenter for NoPartialEqCenter {}
+
+        let a: FrameTransform<NoPartialEqCenter, FrameA, NoPartialEqFrame> =
+            make_rot(Rotation3::IDENTITY);
+        let b: FrameTransform<NoPartialEqCenter, FrameA, NoPartialEqFrame> =
+            make_rot(Rotation3::IDENTITY);
+
+        assert_eq!(a, b);
     }
 
     #[test]
