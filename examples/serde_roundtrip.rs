@@ -11,9 +11,9 @@ fn main() {
     use affn::cartesian::{Direction as CartesianDirection, Position as CartesianPosition, Vector};
     use affn::centers::ReferenceCenter;
     use affn::frames::{ReferenceFrame, SphericalNaming};
+    use affn::qtty::units::{Kilometer, Meter};
+    use affn::qtty::{DEG, M};
     use affn::spherical::{Direction as SphericalDirection, Position as SphericalPosition};
-    use qtty::units::{Kilometer, Meter};
-    use qtty::{DEG, M};
     #[derive(Debug, Copy, Clone, PartialEq)]
     struct World;
     impl ReferenceFrame for World {

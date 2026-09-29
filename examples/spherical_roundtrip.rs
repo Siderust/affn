@@ -1,12 +1,8 @@
 use affn::cartesian::Position as CPos;
 use affn::centers::ReferenceCenter;
 use affn::frames::ReferenceFrame;
+use affn::qtty::units::Meter;
 use affn::spherical::Position as SPos;
-#[allow(unused_imports)]
-use qtty::angular::{Degrees, Radians};
-#[allow(unused_imports)]
-use qtty::length::{Kilometers, Meters};
-use qtty::units::Meter;
 #[derive(Debug, Copy, Clone)]
 struct Frame;
 impl ReferenceFrame for Frame {

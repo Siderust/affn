@@ -1,11 +1,7 @@
 use affn::cartesian::{line_of_sight, Displacement, Position};
 use affn::centers::ReferenceCenter;
 use affn::frames::ReferenceFrame;
-#[allow(unused_imports)]
-use qtty::angular::{Degrees, Radians};
-#[allow(unused_imports)]
-use qtty::length::{Kilometers, Meters};
-use qtty::units::Meter;
+use affn::qtty::units::Meter;
 #[derive(Debug, Copy, Clone)]
 struct World;
 impl ReferenceFrame for World {

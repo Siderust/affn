@@ -14,9 +14,20 @@ Affine geometry primitives for strongly-typed coordinate systems.
 - **Typed coordinates**: Cartesian, spherical, and ellipsoidal positions plus directions/vectors
 - **Conic geometry**: domain-agnostic conic-family classification plus shape/orientation containers
 - **Affine operators**: `Rotation3`, `Translation3`, and `Isometry3`
-- **Units**: distances/lengths are carried via `qtty` units at the type level
+- **Units**: distances/lengths are carried via `qtty` units at the type level (re-exported as `affn::qtty`)
 
 The goal is to make invalid operations (like adding two positions) fail at compile time.
+
+## Public `qtty` dependency
+
+`affn` uses [`qtty`](https://crates.io/crates/qtty) types in its public API. The crate re-exports that dependency as `affn::qtty` so consumers can construct compatible quantities without adding a separate direct `qtty` dependency:
+
+```rust
+use affn::qtty::units::Meter;
+use affn::qtty::{Quantity, M};
+```
+
+Prefer `affn::qtty` when exchanging values with `affn` APIs. Re-exporting does **not** force Cargo to unify incompatible `qtty` versions if another crate depends on a semver-incompatible release; crates that exchange `qtty` values should still agree on compatible dependency ranges. An incompatible `qtty` upgrade is treated as a potentially breaking change for `affn`.
 
 ## Scope
 
@@ -33,8 +44,7 @@ Add the dependency:
 
 ```toml
 [dependencies]
-affn = "0.7.3"
-qtty = "0.8.1"
+affn = "0.8"
 ```
 
 Define a center + frame and do basic affine algebra:
@@ -43,7 +53,7 @@ Define a center + frame and do basic affine algebra:
 use affn::cartesian::{Displacement, Position};
 use affn::centers::ReferenceCenter;
 use affn::frames::ReferenceFrame;
-use qtty::*;
+use affn::qtty::units::Meter;
 
 #[derive(Debug, Copy, Clone)]
 struct World;
@@ -105,7 +115,7 @@ use affn::conic::{
     PeriapsisParam,
 };
 use affn::frames::ReferenceFrame;
-use qtty::*;
+use affn::qtty::{DEG, M};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 struct Inertial;
@@ -154,7 +164,8 @@ These operators preserve the existing frame tag. When you intentionally rotate f
 use affn::cartesian::Position;
 use affn::ops::Rotation3;
 use affn::prelude::*;
-use qtty::*;
+use affn::qtty::units::Meter;
+use affn::qtty::{DEG, M};
 
 #[derive(Debug, Copy, Clone, ReferenceFrame)]
 struct FrameA;
@@ -215,7 +226,7 @@ use affn::cartesian::Position as CPos;
 use affn::spherical::Position as SPos;
 use affn::centers::ReferenceCenter;
 use affn::frames::ReferenceFrame;
-use qtty::*;
+use affn::qtty::units::Meter;
 
 #[derive(Debug, Copy, Clone)]
 struct Frame;
@@ -247,7 +258,8 @@ Example:
 ```rust
 use affn::centers::ReferenceCenter;
 use affn::ellipsoidal::Position;
-use qtty::*;
+use affn::qtty::units::Meter;
+use affn::qtty::{DEG, M};
 
 #[derive(Debug, Copy, Clone)]
 struct Geocentric;
@@ -275,8 +287,7 @@ Enable the `astro` feature to use the built-in astronomy and geodesy marker fram
 
 ```toml
 [dependencies]
-affn = { version = "0.6.2", features = ["astro"] }
-qtty = "0.7.0"
+affn = { version = "0.8", features = ["astro"] }
 ```
 
 Available built-ins include:
@@ -304,11 +315,10 @@ Enable it in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-affn = { version = "0.6¡7.0", features = ["serde"] }
-qtty = "0.7.1"
+affn = { version = "0.8", features = ["serde"] }
 ```
 
-This feature also forwards serialization support to dependencies where needed, such as `qtty/serde`.
+This feature also forwards serialization support to dependencies where needed, such as `qtty/serde`. Use `affn::qtty` for quantities rather than a separate direct `qtty` dependency.
 
 To run the serde example:
 

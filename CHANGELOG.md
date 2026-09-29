@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Re-export `qtty` as `affn::qtty` so consumers can use the exact quantity types from `affn`'s public API without a separate direct `qtty` dependency ([#27](https://github.com/Siderust/affn/issues/27)).
+
 ## [0.8.0 - 2026-06-16]
 
 ### Added
