@@ -1,10 +1,6 @@
 use affn::cartesian::Position;
 use affn::prelude::*;
-#[allow(unused_imports)]
-use qtty::angular::{Degrees, Radians};
-#[allow(unused_imports)]
-use qtty::length::{Kilometers, Meters};
-use qtty::units::Meter;
+use affn::qtty::units::Meter;
 #[derive(Debug, Copy, Clone, ReferenceFrame)]
 struct LocalFrame;
 

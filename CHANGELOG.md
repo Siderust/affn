@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use fully-qualified `Transform::<…>::new(op)` when the compiler cannot infer
   the transform shape from context.
 
+- Re-export `qtty` as `affn::qtty` so consumers can use the exact quantity types from `affn`'s public API without a separate direct `qtty` dependency ([#27](https://github.com/Siderust/affn/issues/27)).
 
 ## [0.8.0 - 2026-06-16]
 

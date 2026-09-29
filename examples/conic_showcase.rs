@@ -4,11 +4,7 @@ use affn::conic::{
     OrientedConic, ParabolicPeriapsis, PeriapsisParam, SemiMajorAxisParam,
 };
 use affn::frames::ReferenceFrame;
-#[allow(unused_imports)]
-use qtty::angular::{Degrees, Radians};
-#[allow(unused_imports)]
-use qtty::length::{Kilometers, Meters};
-use qtty::{DEG, M};
+use affn::qtty::{DEG, M};
 #[derive(Debug, Copy, Clone, PartialEq)]
 struct Inertial;
 
