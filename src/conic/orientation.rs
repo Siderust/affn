@@ -1,6 +1,6 @@
 //! Frame-tagged orientation values for conic sections.
 
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 use qtty::angular::Degrees;
 

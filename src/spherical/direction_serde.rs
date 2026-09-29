@@ -4,13 +4,15 @@ use super::Direction;
 use crate::frames::SphericalNaming;
 use crate::serde_utils::{collect_field, skip_unknown, take_required};
 use crate::spherical::canonicalize_polar_azimuth;
+use core::fmt;
+use core::marker::PhantomData;
 use qtty::angular::Degrees;
 use serde::de::{MapAccess, Visitor};
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize};
 use serde::{Deserializer, Serializer};
-use std::fmt;
-use std::marker::PhantomData;
+
+use alloc::string::String;
 
 impl<F: SphericalNaming> Serialize for Direction<F> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {

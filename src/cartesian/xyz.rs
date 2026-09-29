@@ -20,7 +20,10 @@
 //! - Generic over the component type `T` (typically `f64` or `Quantity<U>`)
 //! - No external linear-algebra dependencies; all arithmetic is hand-coded
 
-use std::ops::{Add, Mul, Neg, Sub};
+use core::ops::{Add, Mul, Neg, Sub};
+
+#[cfg(not(feature = "std"))]
+use qtty::Real;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};

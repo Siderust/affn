@@ -4,12 +4,12 @@ use super::{Direction, Vector};
 use crate::cartesian::xyz::XYZ;
 use crate::frames::ReferenceFrame;
 use crate::serde_utils::{collect_field, skip_unknown, take_required};
+use core::fmt;
+use core::marker::PhantomData;
 use qtty::{Quantity, Unit};
 use serde::de::{MapAccess, Visitor};
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize};
-use std::fmt;
-use std::marker::PhantomData;
 
 // =============================================================================
 // Vector<F, U>

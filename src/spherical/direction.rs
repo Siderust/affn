@@ -49,7 +49,7 @@ use qtty::angular::Degrees;
 use qtty::length::LengthUnit;
 use qtty::Quantity;
 
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 // Serde implementations in separate module
 #[cfg(feature = "serde")]

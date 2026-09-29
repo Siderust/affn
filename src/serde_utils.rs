@@ -14,7 +14,7 @@ use serde::Deserialize;
 
 /// Returns `true` if `T` is a zero-sized type (for `skip_serializing_if`).
 pub(crate) fn is_zero_sized<T>(_: &T) -> bool {
-    std::mem::size_of::<T>() == 0
+    core::mem::size_of::<T>() == 0
 }
 
 /// Deserialize the next value from `map` and store it in `slot`, erroring

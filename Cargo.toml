@@ -2,28 +2,30 @@
 
 [package]
 name = "affn"
-version = "0.9.0"
+version = "0.10.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "Affine geometry primitives: strongly-typed coordinate systems, reference frames, and centers for scientific computing."
 license = "AGPL-3.0-only"
 readme = "README.md"
 repository = "https://github.com/Siderust/affn"
-keywords = ["geometry", "coordinates", "affine", "algebra", "science"]
-categories = ["science", "mathematics"]
+keywords = ["geometry", "coordinates", "affine", "algebra", "science", "no-std"]
+categories = ["science", "mathematics", "no-std"]
 
 [lib]
 name = "affn"
 
 [features]
-default = []
-serde = ["dep:serde", "qtty/serde"]
+default = ["std"]
+std = ["alloc", "qtty/std"]
+alloc = ["qtty/alloc"]
+serde = ["dep:serde", "alloc", "qtty/serde"]
 astro = ["qtty/astro"]
 
 [dependencies]
-affn-derive = { version = "0.9", path = "affn-derive" }
-qtty = "0.8"
-serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
+affn-derive = { version = "0.10", path = "affn-derive" }
+qtty = { version = "0.8", default-features = false, features = ["cross-unit-ops"] }
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"], optional = true }
 
 [dev-dependencies]
 criterion = "0.8"

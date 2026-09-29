@@ -3,6 +3,9 @@
 //! - [`Position<C, F, U>`]: spherical **position** (center + frame + distance)
 //! - [`Direction<F>`]: spherical **direction** (frame-only, no center)
 
+#[cfg(not(feature = "std"))]
+use qtty::{Real, Transcendental};
+
 pub mod position;
 pub use position::Position;
 

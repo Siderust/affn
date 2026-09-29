@@ -106,8 +106,8 @@ forward_ref_binop! { impl Mul, mul for Rotation2, [f64; 2] }
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core::f64::consts::{FRAC_PI_2, PI};
     use qtty::angular::Radians;
-    use std::f64::consts::{FRAC_PI_2, PI};
 
     fn approx_eq(a: f64, b: f64) -> bool {
         (a - b).abs() < 1e-12

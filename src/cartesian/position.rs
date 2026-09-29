@@ -70,8 +70,8 @@ use crate::frames::ReferenceFrame;
 use qtty::length::LengthUnit;
 use qtty::Quantity;
 
-use std::marker::PhantomData;
-use std::ops::{Add, Sub};
+use core::marker::PhantomData;
+use core::ops::{Add, Sub};
 
 // Serde implementations in separate module
 #[cfg(feature = "serde")]
@@ -96,8 +96,8 @@ pub struct CenterParamsMismatchError {
     pub operation: &'static str,
 }
 
-impl std::fmt::Display for CenterParamsMismatchError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for CenterParamsMismatchError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(
             f,
             "center parameter mismatch in `{}`: \
@@ -108,6 +108,7 @@ impl std::fmt::Display for CenterParamsMismatchError {
     }
 }
 
+#[cfg(feature = "std")]
 impl std::error::Error for CenterParamsMismatchError {}
 
 /// An affine point in 3D Cartesian coordinates.

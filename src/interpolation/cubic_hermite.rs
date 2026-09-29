@@ -13,6 +13,8 @@
 //! support currently requires centers with `Params = ()`; parameterized centers
 //! need a future checked API.
 
+use alloc::vec::Vec;
+
 use super::error::InterpolationError;
 use super::traits::{HermiteBasis, HermiteInterpolable};
 use super::InterpolationAbscissa;

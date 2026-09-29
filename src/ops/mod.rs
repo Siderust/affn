@@ -65,7 +65,7 @@ use qtty::{Quantity, Unit};
 /// for an affine operator type, eliminating boilerplate for unit-aware operations.
 macro_rules! impl_quantity_mul {
     ($OpType:ty, $apply_fn:ident, $apply_xyz_fn:ident) => {
-        impl<U: Unit> std::ops::Mul<[Quantity<U>; 3]> for $OpType {
+        impl<U: Unit> core::ops::Mul<[Quantity<U>; 3]> for $OpType {
             type Output = [Quantity<U>; 3];
 
             #[inline]
@@ -77,7 +77,7 @@ macro_rules! impl_quantity_mul {
 
         forward_ref_binop! { impl[U: Unit] Mul, mul for $OpType, [Quantity<U>; 3] }
 
-        impl<U: Unit> std::ops::Mul<XYZ<Quantity<U>>> for $OpType {
+        impl<U: Unit> core::ops::Mul<XYZ<Quantity<U>>> for $OpType {
             type Output = XYZ<Quantity<U>>;
 
             #[inline]
@@ -94,7 +94,7 @@ impl_quantity_mul!(Rotation3, apply_array, apply_xyz);
 
 // Translation3<U> and Isometry3<U> are unit-typed, so they can only multiply
 // quantities in the same unit U they were constructed with.
-impl<U: Unit> std::ops::Mul<[Quantity<U>; 3]> for Translation3<U> {
+impl<U: Unit> core::ops::Mul<[Quantity<U>; 3]> for Translation3<U> {
     type Output = [Quantity<U>; 3];
 
     #[inline]
@@ -106,7 +106,7 @@ impl<U: Unit> std::ops::Mul<[Quantity<U>; 3]> for Translation3<U> {
 
 forward_ref_binop! { impl[U: Unit] Mul, mul for Translation3<U>, [Quantity<U>; 3] }
 
-impl<U: Unit> std::ops::Mul<XYZ<Quantity<U>>> for Translation3<U> {
+impl<U: Unit> core::ops::Mul<XYZ<Quantity<U>>> for Translation3<U> {
     type Output = XYZ<Quantity<U>>;
 
     #[inline]
@@ -117,7 +117,7 @@ impl<U: Unit> std::ops::Mul<XYZ<Quantity<U>>> for Translation3<U> {
 
 forward_ref_binop! { impl[U: Unit] Mul, mul for Translation3<U>, XYZ<Quantity<U>> }
 
-impl<U: Unit> std::ops::Mul<[Quantity<U>; 3]> for Isometry3<U> {
+impl<U: Unit> core::ops::Mul<[Quantity<U>; 3]> for Isometry3<U> {
     type Output = [Quantity<U>; 3];
 
     #[inline]
@@ -129,7 +129,7 @@ impl<U: Unit> std::ops::Mul<[Quantity<U>; 3]> for Isometry3<U> {
 
 forward_ref_binop! { impl[U: Unit] Mul, mul for Isometry3<U>, [Quantity<U>; 3] }
 
-impl<U: Unit> std::ops::Mul<XYZ<Quantity<U>>> for Isometry3<U> {
+impl<U: Unit> core::ops::Mul<XYZ<Quantity<U>>> for Isometry3<U> {
     type Output = XYZ<Quantity<U>>;
 
     #[inline]
@@ -150,7 +150,7 @@ forward_ref_binop! { impl[U: Unit] Mul, mul for Isometry3<U>, XYZ<Quantity<U>> }
 /// reinterpreting the frame tag after the transform.
 macro_rules! impl_position_mul {
     ($OpType:ty, $apply_fn:ident) => {
-        impl<C, F, U> std::ops::Mul<Position<C, F, U>> for $OpType
+        impl<C, F, U> core::ops::Mul<Position<C, F, U>> for $OpType
         where
             C: ReferenceCenter,
             F: ReferenceFrame,
@@ -187,7 +187,7 @@ impl_position_mul!(Rotation3, apply_array);
 
 // Translation3<U> and Isometry3<U> enforce that the translation unit matches
 // the position unit at compile time.
-impl<C, F, U> std::ops::Mul<Position<C, F, U>> for Translation3<U>
+impl<C, F, U> core::ops::Mul<Position<C, F, U>> for Translation3<U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
@@ -218,7 +218,7 @@ forward_ref_binop! {
     )
 }
 
-impl<C, F, U> std::ops::Mul<Position<C, F, U>> for Isometry3<U>
+impl<C, F, U> core::ops::Mul<Position<C, F, U>> for Isometry3<U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
@@ -253,7 +253,7 @@ forward_ref_binop! {
 ///
 /// Translations do **not** apply to free vectors (they are translation-invariant),
 /// so this is only implemented for `Rotation3`.
-impl<F, U> std::ops::Mul<Vector<F, U>> for Rotation3
+impl<F, U> core::ops::Mul<Vector<F, U>> for Rotation3
 where
     F: ReferenceFrame,
     U: Unit,
@@ -284,7 +284,7 @@ forward_ref_binop! {
 /// Translations do **not** apply to directions; only rotation changes their
 /// orientation. The result is guaranteed to remain a unit vector because
 /// rotation preserves norms.
-impl<F: ReferenceFrame> std::ops::Mul<Direction<F>> for Rotation3 {
+impl<F: ReferenceFrame> core::ops::Mul<Direction<F>> for Rotation3 {
     type Output = Direction<F>;
 
     #[inline]

@@ -123,6 +123,31 @@
 //! crates that exchange `qtty` values should still agree on compatible
 //! dependency ranges. An incompatible `qtty` upgrade is treated as a
 //! potentially breaking change for `affn`.
+//!
+//! ## `no_std` support
+//!
+//! `affn` is `no_std`-compatible. Feature flags:
+//!
+//! - **`std`** (default): enables the Rust standard library and implies `alloc`.
+//! - **`alloc`**: enables heap-backed APIs such as [`interpolation`] and
+//!   `serde` helpers that need `String`.
+//! - **neither**: pure `core`-only geometry (no heap).
+//!
+//! ```toml
+//! # Default (std)
+//! affn = "0.10"
+//!
+//! # no_std with heap
+//! affn = { version = "0.10", default-features = false, features = ["alloc"] }
+//!
+//! # pure no_std (core only)
+//! affn = { version = "0.10", default-features = false }
+//! ```
+
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(feature = "alloc")]
+extern crate alloc;
 
 // Allow the crate to refer to itself as `::affn::` for derive macro compatibility
 extern crate self as affn;
@@ -138,6 +163,7 @@ mod op_macros;
 // Coordinate type implementations
 pub mod cartesian;
 pub mod conic;
+#[cfg(feature = "alloc")]
 pub mod interpolation;
 pub mod spherical;
 
@@ -240,6 +266,7 @@ pub mod prelude {
         NonParabolicKindMarker, OrientedConic, Parabolic, ParabolicPeriapsis, PeriapsisParam,
         SemiMajorAxisParam, TypedPeriapsisParam, TypedSemiMajorAxisParam,
     };
+    #[cfg(feature = "alloc")]
     pub use crate::interpolation::{
         CubicHermiteTable, HermiteInterpolable, HermiteNode, HermiteTableEvaluation,
         InterpolationAbscissa, InterpolationError, ScalarCubicHermiteTable, ScalarHermiteNode,

@@ -6,6 +6,9 @@ use crate::frames::ReferenceFrame;
 use qtty::angular::Radians;
 use qtty::Unit;
 
+#[cfg(not(feature = "std"))]
+use qtty::{Real, Transcendental};
+
 /// A 3x3 rotation matrix for orientation transforms.
 ///
 /// Internally stores row-major data as `[[f64; 3]; 3]`.
@@ -23,7 +26,7 @@ use qtty::Unit;
 /// ```rust
 /// use affn::Rotation3;
 /// use qtty::angular::Radians;
-/// use std::f64::consts::FRAC_PI_2;
+/// use core::f64::consts::FRAC_PI_2;
 ///
 /// // Rotate 90° around the Z axis
 /// let rot = Rotation3::rz(Radians::new(FRAC_PI_2));
@@ -322,7 +325,7 @@ impl Rotation3 {
     /// use affn::{Rotation3, cartesian::Displacement};
     /// use affn::frames::ReferenceFrame;
     /// use qtty::unit::Kilometer;
-    /// use std::f64::consts::FRAC_PI_2;
+    /// use core::f64::consts::FRAC_PI_2;
     ///
     /// #[derive(Debug, Copy, Clone)] struct FrameA;
     /// #[derive(Debug, Copy, Clone)] struct FrameB;
@@ -546,13 +549,13 @@ impl Default for Rotation3 {
 }
 
 // Matrix multiplication for composing rotations
-impl std::ops::Mul for Rotation3 {
+impl core::ops::Mul for Rotation3 {
     type Output = Self;
 
     #[inline]
     fn mul(self, rhs: Self) -> Self::Output {
         let m = self.m.map(|row| {
-            std::array::from_fn(|j| {
+            core::array::from_fn(|j| {
                 row[0] * rhs.m[0][j] + row[1] * rhs.m[1][j] + row[2] * rhs.m[2][j]
             })
         });
@@ -563,7 +566,7 @@ impl std::ops::Mul for Rotation3 {
 forward_ref_binop! { impl Mul, mul for Rotation3, Rotation3 }
 
 /// Applies a rotation to a raw `[f64; 3]` column vector: `R * v`.
-impl std::ops::Mul<[f64; 3]> for Rotation3 {
+impl core::ops::Mul<[f64; 3]> for Rotation3 {
     type Output = [f64; 3];
 
     #[inline]
@@ -581,8 +584,8 @@ forward_ref_binop! { impl Mul, mul for Rotation3, [f64; 3] }
 mod tests {
     use super::*;
     use crate::cartesian::xyz::XYZ;
+    use core::f64::consts::{FRAC_PI_2, PI};
     use qtty::angular::Radians;
-    use std::f64::consts::{FRAC_PI_2, PI};
 
     const EPSILON: f64 = 1e-12;
 
@@ -707,7 +710,7 @@ mod tests {
         assert!(Rotation3::try_from_matrix(nan).is_none());
 
         // Valid rotation: Rz(π/2)
-        let rz = *Rotation3::rz(Radians::new(std::f64::consts::FRAC_PI_2)).as_matrix();
+        let rz = *Rotation3::rz(Radians::new(core::f64::consts::FRAC_PI_2)).as_matrix();
         assert!(Rotation3::try_from_matrix(rz).is_some());
     }
 

@@ -30,6 +30,9 @@ use qtty::angular::Radians;
 use qtty::length::LengthUnit;
 use qtty::{Quantity, Unit};
 
+#[cfg(not(feature = "std"))]
+use qtty::{Real, Transcendental};
+
 #[derive(Debug, Copy, Clone)]
 pub struct PlanarSpace<C: ReferenceCenter, F: ReferenceFrame>(PhantomData<(C, F)>);
 

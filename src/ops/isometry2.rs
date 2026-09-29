@@ -1,8 +1,8 @@
 //! 2D rigid body transform.
 
 use super::{Rotation2, Translation2};
+use core::marker::PhantomData;
 use qtty::Unit;
-use std::marker::PhantomData;
 
 /// A 2D isometry combining rotation and unit-typed translation.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -114,9 +114,9 @@ forward_ref_binop! { impl[U: Unit] Mul, mul for Isometry2<U>, [f64; 2] }
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core::f64::consts::FRAC_PI_2;
     use qtty::angular::Radians;
     use qtty::units::Meter;
-    use std::f64::consts::FRAC_PI_2;
 
     fn approx_eq(a: f64, b: f64) -> bool {
         (a - b).abs() < 1e-12

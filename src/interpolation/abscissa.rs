@@ -1,8 +1,8 @@
 //! Interpolation abscissa types.
 
 use super::InterpolationError;
+use core::cmp::Ordering;
 use qtty::{Quantity, Unit};
-use std::cmp::Ordering;
 
 mod sealed {
     pub trait Sealed {}

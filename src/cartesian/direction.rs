@@ -61,8 +61,11 @@ use crate::frames::ReferenceFrame;
 use qtty::length::LengthUnit;
 use qtty::Quantity;
 
-use std::marker::PhantomData;
-use std::ops::Mul;
+use core::marker::PhantomData;
+use core::ops::Mul;
+
+#[cfg(not(feature = "std"))]
+use qtty::Transcendental;
 
 /// A unit vector representing orientation in 3D space.
 ///
@@ -415,10 +418,11 @@ impl<F: ReferenceFrame> Direction<F> {
 // Display
 // =============================================================================
 
+#[cfg(feature = "alloc")]
 impl<F: ReferenceFrame> Direction<F> {
     /// Returns a formatted string representation.
-    pub fn display(&self) -> String {
-        format!("{self}")
+    pub fn display(&self) -> alloc::string::String {
+        alloc::format!("{self}")
     }
 }
 
@@ -520,7 +524,7 @@ mod tests {
         let a = Direction::<TestFrame>::new(1.0, 0.0, 0.0);
         let b = Direction::<TestFrame>::new(0.0, 1.0, 0.0);
         let angle = a.angle_to(&b);
-        assert!((angle - std::f64::consts::FRAC_PI_2).abs() < 1e-12);
+        assert!((angle - core::f64::consts::FRAC_PI_2).abs() < 1e-12);
     }
 
     #[test]

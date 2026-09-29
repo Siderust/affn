@@ -29,6 +29,29 @@ use affn::qtty::{Quantity, M};
 
 Prefer `affn::qtty` when exchanging values with `affn` APIs. Re-exporting does **not** force Cargo to unify incompatible `qtty` versions if another crate depends on a semver-incompatible release; crates that exchange `qtty` values should still agree on compatible dependency ranges. An incompatible `qtty` upgrade is treated as a potentially breaking change for `affn`.
 
+## `no_std` support
+
+`affn` builds without the Rust standard library. Feature flags:
+
+| Features | What you get |
+|----------|--------------|
+| default (`std`) | Full API, including interpolation and `std::error::Error` |
+| `alloc` only | Heap-backed interpolation + `serde`; no `std` |
+| neither | Pure `core` geometry (no heap) |
+
+```toml
+# Default (std)
+affn = "0.10"
+
+# no_std with heap (interpolation, serde)
+affn = { version = "0.10", default-features = false, features = ["alloc"] }
+
+# pure no_std (core only)
+affn = { version = "0.10", default-features = false }
+```
+
+The optional `serde` feature implies `alloc`.
+
 ## Scope
 
 `affn` is split into a domain-agnostic kernel and an optional astronomical catalogue:
@@ -44,7 +67,7 @@ Add the dependency:
 
 ```toml
 [dependencies]
-affn = "0.9"
+affn = "0.10"
 ```
 
 Define a center + frame and do basic affine algebra:
@@ -287,7 +310,7 @@ Enable the `astro` feature to use the built-in astronomy and geodesy marker fram
 
 ```toml
 [dependencies]
-affn = { version = "0.9", features = ["astro"] }
+affn = { version = "0.10", features = ["astro"] }
 ```
 
 Available built-ins include:
@@ -315,7 +338,7 @@ Enable it in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-affn = { version = "0.9", features = ["serde"] }
+affn = { version = "0.10", features = ["serde"] }
 ```
 
 This feature also forwards serialization support to dependencies where needed, such as `qtty/serde`. Use `affn::qtty` for quantities rather than a separate direct `qtty` dependency.

@@ -57,7 +57,10 @@ use qtty::length::Meters;
 use qtty::units::{Meter, Radian};
 use qtty::Quantity;
 
-use std::marker::PhantomData;
+use core::marker::PhantomData;
+
+#[cfg(not(feature = "std"))]
+use qtty::{Real, Transcendental};
 
 // Serde implementations in separate module
 #[cfg(feature = "serde")]
@@ -76,8 +79,8 @@ pub struct GeodeticConvergenceError {
     pub last_residual: f64,
 }
 
-impl std::fmt::Display for GeodeticConvergenceError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for GeodeticConvergenceError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(
             f,
             "geodetic Bowring iteration failed to converge after {} iterations \
@@ -87,6 +90,7 @@ impl std::fmt::Display for GeodeticConvergenceError {
     }
 }
 
+#[cfg(feature = "std")]
 impl std::error::Error for GeodeticConvergenceError {}
 
 /// An ellipsoidal **position** (center + frame + height above ellipsoid).

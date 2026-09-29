@@ -1,6 +1,6 @@
 //! Validation errors produced by conic constructors and conversions.
 
-use std::fmt;
+use core::fmt;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -55,4 +55,5 @@ impl fmt::Display for ConicValidationError {
     }
 }
 
+#[cfg(feature = "std")]
 impl std::error::Error for ConicValidationError {}
