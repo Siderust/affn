@@ -534,7 +534,7 @@ mod tests {
     #[test]
     fn block_diag_rotation6_round_trip() {
         // Rotate by 45° around Z, then rotate back; should recover the original.
-        let r_fwd = Rotation3::rz(Radians::new(std::f64::consts::FRAC_PI_4));
+        let r_fwd = Rotation3::rz(Radians::new(core::f64::consts::FRAC_PI_4));
         let r_bwd = r_fwd.inverse();
 
         let rr = SymmetricFrameMatrix3::<F1>::from_upper([

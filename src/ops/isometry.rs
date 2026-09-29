@@ -2,9 +2,9 @@
 
 use super::{Rotation3, Translation3};
 use crate::cartesian::xyz::XYZ;
+use core::marker::PhantomData;
 use qtty::units::Meter;
 use qtty::Unit;
-use std::marker::PhantomData;
 
 /// A rigid body transformation combining rotation and translation.
 ///
@@ -151,7 +151,7 @@ impl<U: Unit> Default for Isometry3<U> {
     }
 }
 
-impl<U: Unit> std::ops::Mul for Isometry3<U> {
+impl<U: Unit> core::ops::Mul for Isometry3<U> {
     type Output = Self;
 
     #[inline]
@@ -166,7 +166,7 @@ forward_ref_binop! { impl[U: Unit] Mul, mul for Isometry3<U>, Isometry3<U> }
 ///
 /// The caller is responsible for ensuring the array values are in the same unit
 /// as the isometry's translation component.
-impl<U: Unit> std::ops::Mul<[f64; 3]> for Isometry3<U> {
+impl<U: Unit> core::ops::Mul<[f64; 3]> for Isometry3<U> {
     type Output = [f64; 3];
 
     #[inline]
@@ -184,9 +184,9 @@ forward_ref_binop! { impl[U: Unit] Mul, mul for Isometry3<U>, [f64; 3] }
 mod tests {
     use super::*;
     use crate::cartesian::xyz::XYZ;
+    use core::f64::consts::FRAC_PI_2;
     use qtty::angular::Radians;
     use qtty::units::Meter;
-    use std::f64::consts::FRAC_PI_2;
 
     const EPSILON: f64 = 1e-12;
 

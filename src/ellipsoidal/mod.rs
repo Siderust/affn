@@ -22,6 +22,9 @@
 //! By using a dedicated `ellipsoidal::Position`, callers must go through an
 //! explicit, ellipsoid-aware conversion.
 
+#[cfg(not(feature = "std"))]
+use qtty::Scalar;
+
 pub mod position;
 pub use position::{GeodeticConvergenceError, Position};
 

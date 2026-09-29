@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0 - 2026-09-29]
+
+### Added
+- First-class `no_std` support with an explicit feature matrix ([#30](https://github.com/Siderust/affn/issues/30)):
+  - `std` (default) enables the standard library and implies `alloc`
+  - `alloc` enables heap-backed APIs (interpolation and `serde` helpers that need `String`)
+  - pure `core`-only builds with `--no-default-features`
+- CI checks for `--no-default-features`, `--features alloc`, and `--features std`
+
+### Changed
+- `qtty` is now depended on with `default-features = false` and features forwarded via
+  `std` / `alloc` (plus always-on `cross-unit-ops` for dimensional arithmetic)
+- Library code uses `core::*` (and `alloc::*` where needed) instead of `std::*`
+- `std::error::Error` impls are gated behind the `std` feature
+- The `interpolation` module and `Direction::display` require the `alloc` feature
+- The `serde` feature now implies `alloc`
+
 ## [0.9.0 - 2026-09-29]
 
 ### Added

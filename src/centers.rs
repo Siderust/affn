@@ -49,7 +49,7 @@
 //! - [`NoCenter`]: Marker for translation-invariant objects (free vectors).
 //! - [`AffineCenter`]: Marker trait for genuine spatial centers (not `NoCenter`).
 
-use std::fmt::Debug;
+use core::fmt::Debug;
 
 /// A trait for defining a reference center (coordinate origin).
 ///
@@ -77,7 +77,7 @@ use std::fmt::Debug;
 ///     }
 /// }
 /// ```
-pub trait ReferenceCenter: Copy + Clone + std::fmt::Debug {
+pub trait ReferenceCenter: Copy + Clone + core::fmt::Debug {
     /// Runtime parameters for this center. Use `()` for centers that don't need parameters.
     type Params: Clone + Debug + Default + PartialEq;
 
@@ -169,9 +169,9 @@ mod tests {
     #[test]
     fn test_center_params_zero_size() {
         assert_eq!(
-            std::mem::size_of::<<TestCenter as ReferenceCenter>::Params>(),
+            core::mem::size_of::<<TestCenter as ReferenceCenter>::Params>(),
             0
         );
-        assert_eq!(std::mem::size_of::<<() as ReferenceCenter>::Params>(), 0);
+        assert_eq!(core::mem::size_of::<<() as ReferenceCenter>::Params>(), 0);
     }
 }

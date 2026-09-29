@@ -49,7 +49,7 @@ use qtty::length::LengthUnit;
 use qtty::units::Radian;
 use qtty::Quantity;
 
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 // Serde implementations in separate module
 #[cfg(feature = "serde")]
@@ -270,9 +270,9 @@ mod tests {
     use super::*;
     // Import the derives and traits
     use crate::{DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame};
+    use core::f64::consts::SQRT_2;
     use qtty::units::Meter;
     use qtty::{DEG, M};
-    use std::f64::consts::SQRT_2;
 
     // Define test-specific frame and center
     #[derive(Debug, Copy, Clone, ReferenceFrame)]

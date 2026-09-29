@@ -49,11 +49,12 @@ impl<S: ConicShape, F: ReferenceFrame> OrientedConic<S, F> {
 mod oriented_conic_serde {
     use super::*;
     use crate::serde_utils::{collect_field, skip_unknown, take_required};
+    use alloc::string::String;
+    use core::fmt;
+    use core::marker::PhantomData;
     use serde::de::{MapAccess, Visitor};
     use serde::ser::SerializeStruct;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
-    use std::fmt;
-    use std::marker::PhantomData;
 
     impl<S, F> Serialize for OrientedConic<S, F>
     where

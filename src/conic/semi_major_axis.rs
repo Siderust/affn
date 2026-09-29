@@ -1,6 +1,6 @@
 //! Semi-major-axis-based conic parameterisations and typed classification wrappers.
 
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 use qtty::length::LengthUnit;
 use qtty::units::Meter;

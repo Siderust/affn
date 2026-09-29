@@ -61,7 +61,7 @@
 //! use affn::transform::Transform;
 //! use qtty::angular::Radians;
 //! use qtty::units::Meter;
-//! use std::f64::consts::FRAC_PI_2;
+//! use core::f64::consts::FRAC_PI_2;
 //!
 //! #[derive(Debug, Copy, Clone, ReferenceFrame)]
 //! struct FrameA;
@@ -214,10 +214,10 @@ use crate::cartesian::Position;
 use crate::centers::{AffineCenter, ReferenceCenter};
 use crate::frames::ReferenceFrame;
 use crate::ops::{Isometry3, Rotation3, Translation3};
+use core::marker::PhantomData;
+use core::ops::Mul;
 use qtty::length::LengthUnit;
 use qtty::Quantity;
-use std::marker::PhantomData;
-use std::ops::Mul;
 
 /// Phantom carrier for the four reference-system tags on [`Transform`].
 ///
@@ -522,9 +522,9 @@ where
 mod tests {
     use super::*;
     use crate::{DeriveReferenceCenter as ReferenceCenter, DeriveReferenceFrame as ReferenceFrame};
+    use core::f64::consts::FRAC_PI_2;
     use qtty::angular::Radians;
     use qtty::units::{Kilometer, Meter};
-    use std::f64::consts::FRAC_PI_2;
 
     const EPSILON: f64 = 1e-12;
 

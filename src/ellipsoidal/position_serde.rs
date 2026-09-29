@@ -9,14 +9,16 @@ use super::Position;
 use crate::centers::ReferenceCenter;
 use crate::frames::ReferenceFrame;
 use crate::serde_utils::{collect_field, is_zero_sized, skip_unknown, take_required};
+use core::fmt;
+use core::marker::PhantomData;
 use qtty::angular::Degrees;
 use qtty::length::LengthUnit;
 use qtty::Quantity;
 use serde::de::{MapAccess, Visitor};
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize, Serializer};
-use std::fmt;
-use std::marker::PhantomData;
+
+use alloc::string::String;
 
 impl<C, F, U> Serialize for Position<C, F, U>
 where

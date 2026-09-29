@@ -672,7 +672,7 @@ mod tests {
         // Rotate a full symmetric matrix by 45° around Z.
         let upper = [[4.0, 1.0, 0.0], [99.0, 9.0, 0.0], [99.0, 99.0, 1.0]];
         let m = SymmetricFrameMatrix3::<F1>::from_upper(upper);
-        let r = Rotation3::rz(Radians::new(std::f64::consts::FRAC_PI_4));
+        let r = Rotation3::rz(Radians::new(core::f64::consts::FRAC_PI_4));
         let rotated: SymmetricFrameMatrix3<F2> = m.rotated_by(&r);
         let a = rotated.as_array();
         // Check symmetry.
@@ -769,7 +769,7 @@ mod tests {
         use qtty::angular::Radians;
         // rotate diagonal cov by 45° around Z, then back
         let m = SymmetricFrameMatrix3::<F1>::from_diagonal([1.0, 4.0, 9.0]);
-        let r45 = Rotation3::rz(Radians::new(std::f64::consts::FRAC_PI_4));
+        let r45 = Rotation3::rz(Radians::new(core::f64::consts::FRAC_PI_4));
         let r45_mat = FrameMatrix3::<F1>::from_array(*r45.as_matrix());
         let rotated: SymmetricFrameMatrix3<F2> = r45_mat.similarity(&m);
 

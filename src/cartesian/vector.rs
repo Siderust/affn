@@ -53,8 +53,8 @@ use qtty::dimensionless::Ratio;
 use qtty::length::LengthUnit;
 use qtty::{Quantity, Unit, UnitDiv, UnitMul};
 
-use std::marker::PhantomData;
-use std::ops::{Add, Div, Mul, Neg, Sub};
+use core::marker::PhantomData;
+use core::ops::{Add, Div, Mul, Neg, Sub};
 
 /// A free vector in 3D Cartesian coordinates.
 ///

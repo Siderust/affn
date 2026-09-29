@@ -1,9 +1,9 @@
 //! Translation vector operator.
 
 use crate::cartesian::xyz::XYZ;
+use core::marker::PhantomData;
 use qtty::units::Meter;
 use qtty::{Quantity, Unit};
-use std::marker::PhantomData;
 
 /// A unit-typed translation vector in 3D space.
 ///
@@ -169,7 +169,7 @@ impl<U: Unit> Default for Translation3<U> {
     }
 }
 
-impl<U: Unit> std::ops::Add for Translation3<U> {
+impl<U: Unit> core::ops::Add for Translation3<U> {
     type Output = Self;
 
     #[inline]
@@ -180,7 +180,7 @@ impl<U: Unit> std::ops::Add for Translation3<U> {
 
 forward_ref_binop! { impl[U: Unit] Add, add for Translation3<U>, Translation3<U> }
 
-impl<U: Unit> std::ops::Neg for Translation3<U> {
+impl<U: Unit> core::ops::Neg for Translation3<U> {
     type Output = Self;
 
     #[inline]
@@ -195,7 +195,7 @@ forward_ref_unop! { impl[U: Unit] Neg, neg for Translation3<U> }
 ///
 /// The caller is responsible for ensuring the array values are in the
 /// same unit as the translation.
-impl<U: Unit> std::ops::Mul<[f64; 3]> for Translation3<U> {
+impl<U: Unit> core::ops::Mul<[f64; 3]> for Translation3<U> {
     type Output = [f64; 3];
 
     #[inline]

@@ -1,6 +1,6 @@
 //! Internal helpers to factor out the repetitive
-//! [`Display`](std::fmt::Display) / [`LowerExp`](std::fmt::LowerExp) /
-//! [`UpperExp`](std::fmt::UpperExp) triplet impls used across the coordinate
+//! [`Display`](core::fmt::Display) / [`LowerExp`](core::fmt::LowerExp) /
+//! [`UpperExp`](core::fmt::UpperExp) triplet impls used across the coordinate
 //! types in this crate.
 //!
 //! This module is `#[macro_use]`d from `lib.rs` so the macros are available
@@ -9,7 +9,7 @@
 //!
 //! The single [`impl_quantity_fmt_triplet!`] macro emits the three trait
 //! implementations from one declaration. The body is written *once*; the macro
-//! supplies a per-impl alias (`use ::std::fmt::Display as $fmt_one;`, etc.)
+//! supplies a per-impl alias (`use ::core::fmt::Display as $fmt_one;`, etc.)
 //! so that the body can dispatch each per-quantity formatting call through the
 //! correct trait.
 //!
@@ -33,7 +33,7 @@
 //!   list emitted by `fmt_each`).
 //! - `fmt_each: { T1, T2, ... }` lists the types whose per-trait bound must be
 //!   added to each impl. For an impl of `Display` the macro appends
-//!   `T1: ::std::fmt::Display, T2: ::std::fmt::Display, ...`, and likewise for
+//!   `T1: ::core::fmt::Display, T2: ::core::fmt::Display, ...`, and likewise for
 //!   `LowerExp` and `UpperExp`. Pass an empty list (`fmt_each: {},`) when the
 //!   formatted quantities already implement all three traits unconditionally.
 //! - The closure-like `|this, f, FmtOne| { body }` captures the names used
@@ -46,42 +46,42 @@ macro_rules! impl_quantity_fmt_triplet {
         fmt_each: { $($fty:ty),* $(,)? },
         |$self_:ident, $f:ident, $fmt_one:ident| $body:block
     ) => {
-        impl<$($gp)*> ::std::fmt::Display for $ty
+        impl<$($gp)*> ::core::fmt::Display for $ty
         where
             $($common)*
-            $($fty: ::std::fmt::Display,)*
+            $($fty: ::core::fmt::Display,)*
         {
-            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 #[allow(non_camel_case_types)]
-                use ::std::fmt::Display as $fmt_one;
+                use ::core::fmt::Display as $fmt_one;
                 let $self_ = self;
                 let $f = f;
                 $body
             }
         }
 
-        impl<$($gp)*> ::std::fmt::LowerExp for $ty
+        impl<$($gp)*> ::core::fmt::LowerExp for $ty
         where
             $($common)*
-            $($fty: ::std::fmt::LowerExp,)*
+            $($fty: ::core::fmt::LowerExp,)*
         {
-            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 #[allow(non_camel_case_types)]
-                use ::std::fmt::LowerExp as $fmt_one;
+                use ::core::fmt::LowerExp as $fmt_one;
                 let $self_ = self;
                 let $f = f;
                 $body
             }
         }
 
-        impl<$($gp)*> ::std::fmt::UpperExp for $ty
+        impl<$($gp)*> ::core::fmt::UpperExp for $ty
         where
             $($common)*
-            $($fty: ::std::fmt::UpperExp,)*
+            $($fty: ::core::fmt::UpperExp,)*
         {
-            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 #[allow(non_camel_case_types)]
-                use ::std::fmt::UpperExp as $fmt_one;
+                use ::core::fmt::UpperExp as $fmt_one;
                 let $self_ = self;
                 let $f = f;
                 $body

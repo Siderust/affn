@@ -1,7 +1,7 @@
 //! 2D unit-typed translation operator.
 
+use core::marker::PhantomData;
 use qtty::{Quantity, Unit};
-use std::marker::PhantomData;
 
 /// A unit-typed translation vector in 2D space.
 #[derive(Debug, Clone, Copy, PartialEq)]

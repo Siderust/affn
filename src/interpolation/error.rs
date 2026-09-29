@@ -1,6 +1,6 @@
 //! Error types for interpolation routines.
 
-use std::fmt;
+use core::fmt;
 
 /// Errors returned by interpolation constructors and evaluators.
 #[derive(Debug, Clone, PartialEq)]
@@ -61,4 +61,5 @@ impl fmt::Display for InterpolationError {
     }
 }
 
+#[cfg(feature = "std")]
 impl std::error::Error for InterpolationError {}

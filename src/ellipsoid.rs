@@ -60,7 +60,7 @@ use serde::{Deserialize, Serialize};
 /// assert!((Wgs84::A - 6_378_137.0).abs() < 1e-6);
 /// assert!((Wgs84::e2() - 0.006_694_379_990_14).abs() < 1e-12);
 /// ```
-pub trait Ellipsoid: Copy + Clone + std::fmt::Debug {
+pub trait Ellipsoid: Copy + Clone + core::fmt::Debug {
     /// Semi-major axis (equatorial radius) in **metres**.
     const A: f64;
 

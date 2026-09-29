@@ -418,7 +418,7 @@ forward_ref_binop! {
 #[inline]
 fn two_sum<T>(a: T, b: T) -> (T, T)
 where
-    T: Copy + std::ops::Add<Output = T> + std::ops::Sub<Output = T>,
+    T: Copy + core::ops::Add<Output = T> + core::ops::Sub<Output = T>,
 {
     let s = a + b;
     let bb = s - a;
@@ -429,7 +429,7 @@ where
 #[inline]
 fn normalize_pair<T>(hi: T, lo: T) -> (T, T)
 where
-    T: Copy + std::ops::Add<Output = T> + std::ops::Sub<Output = T>,
+    T: Copy + core::ops::Add<Output = T> + core::ops::Sub<Output = T>,
 {
     let (sum, err) = two_sum(hi, lo);
     let (sum2, err2) = two_sum(sum, err);
