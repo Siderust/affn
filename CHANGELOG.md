@@ -7,14 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- New `affn::transform` module providing domain-agnostic typed transforms
-  `Transform<FromCenter, FromFrame, ToCenter, ToFrame, Op>` over existing
+- New `affn::transform` module with typed inter-reference-system transforms
+  `Transform<FromCenter, FromFrame, ToCenter, ToFrame, Op>` wrapping existing
   affine operators (`Rotation3`, `Translation3`, `Isometry3`).
-- Compile-time-safe application to `Position` (frame-only, center-only, and
-  rigid) plus typed composition via `Transform::then`.
+- `Transform::new`, `op`, `into_op`, `apply`, `Mul<Position>`, `then`, and
+  `inverse` for constructing, applying, and composing typed transforms.
+- Operator composition via `ComposeAfter` (`then` applies `self` first, then
+  `next`; mixed rotation/translation pairs promote to `Isometry3`).
 - Convenience aliases `FrameTransform`, `CenterTransform`, and `RigidTransform`.
-- Center-changing application is restricted to centers with `Params = ()` in
-  this MVP; frame-only transforms preserve parameterized `center_params`.
+- Compile-fail rustdoc examples for mismatched source tags and incompatible
+  composition.
+
 
 ## [0.8.0 - 2026-06-16]
 
