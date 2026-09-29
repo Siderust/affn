@@ -138,6 +138,11 @@ pub mod algebra;
 pub mod ops;
 pub mod planar;
 
+// Typed inter-reference-system transforms (not re-exported at crate root /
+// prelude to avoid colliding with domain crates that define their own
+// `Transform` traits — e.g. siderust).
+pub mod transform;
+
 // Shared serde utilities
 #[cfg(feature = "serde")]
 pub(crate) mod serde_utils;

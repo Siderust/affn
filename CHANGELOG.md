@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- New `affn::transform` module providing domain-agnostic typed transforms
+  `Transform<FromCenter, FromFrame, ToCenter, ToFrame, Op>` over existing
+  affine operators (`Rotation3`, `Translation3`, `Isometry3`).
+- Compile-time-safe application to `Position` (frame-only, center-only, and
+  rigid) plus typed composition via `Transform::then`.
+- Convenience aliases `FrameTransform`, `CenterTransform`, and `RigidTransform`.
+- Center-changing application is restricted to centers with `Params = ()` in
+  this MVP; frame-only transforms preserve parameterized `center_params`.
+
 ## [0.8.0 - 2026-06-16]
 
 ### Added
