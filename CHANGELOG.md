@@ -10,13 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `affn::transform` module with typed inter-reference-system transforms
   `Transform<FromCenter, FromFrame, ToCenter, ToFrame, Op>` wrapping existing
   affine operators (`Rotation3`, `Translation3`, `Isometry3`).
-- `Transform::new`, `op`, `into_op`, `apply`, `Mul<Position>`, `then`, and
-  `inverse` for constructing, applying, and composing typed transforms.
+- Shape-specialized `Transform::new` on valid operator/tag combinations only
+  (frame-only `Rotation3`, center-only `Translation3`, rigid `Isometry3`).
+- `op`, `into_op`, `apply`, `Mul<Position>`, `then`, and `inverse` for applying
+  and composing typed transforms.
 - Operator composition via `ComposeAfter` (`then` applies `self` first, then
   `next`; mixed rotation/translation pairs promote to `Isometry3`).
 - Convenience aliases `FrameTransform`, `CenterTransform`, and `RigidTransform`.
-- Compile-fail rustdoc examples for mismatched source tags and incompatible
-  composition.
+- Compile-fail rustdoc examples for invalid shapes, non-`AffineCenter` usage,
+  mismatched application, and incompatible composition.
+
+### Notes
+- `Transform` lives at `affn::transform::Transform` (not re-exported from the
+  crate root or prelude).
+- Center-changing transforms require `AffineCenter` with `Params = ()`.
+  Frame-only `Rotation3` transforms accept any `ReferenceCenter` and preserve
+  parameterized `center_params`.
+- Use fully-qualified `Transform::<…>::new(op)` when the compiler cannot infer
+  the transform shape from context.
 
 
 ## [0.8.0 - 2026-06-16]
