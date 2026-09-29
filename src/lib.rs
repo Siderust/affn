@@ -83,7 +83,7 @@
 //! use affn::cartesian::{Position, Displacement};
 //! use affn::frames::ReferenceFrame;
 //! use affn::centers::ReferenceCenter;
-//! use qtty::units::*; use qtty::{Quantity, M, KM, DEG, RAD, SEC}; use qtty::angular::{Degrees, Radians}; use qtty::length::{Meters, Kilometers};
+//! use affn::qtty::units::Kilometer;
 //!
 //! // Define domain-specific types
 //! #[derive(Debug, Copy, Clone)]
@@ -105,6 +105,24 @@
 //! // Positions subtract to give displacements
 //! let displacement: Displacement<WorldFrame, Kilometer> = b - a;
 //! ```
+//!
+//! ## Units via `qtty`
+//!
+//! Lengths, angles, and related quantities in `affn`'s public API use
+//! [`qtty`](https://docs.rs/qtty) types. Prefer the re-exported
+//! [`affn::qtty`](crate::qtty) path so you always get the same `qtty`
+//! instance that `affn` was compiled against:
+//!
+//! ```rust
+//! use affn::qtty::units::Meter;
+//! use affn::qtty::{Quantity, M};
+//! ```
+//!
+//! Re-exporting does **not** force Cargo to unify incompatible `qtty`
+//! versions if another crate depends on a semver-incompatible release;
+//! crates that exchange `qtty` values should still agree on compatible
+//! dependency ranges. An incompatible `qtty` upgrade is treated as a
+//! potentially breaking change for `affn`.
 
 // Allow the crate to refer to itself as `::affn::` for derive macro compatibility
 extern crate self as affn;
@@ -153,6 +171,16 @@ pub mod matrix6;
 pub use affn_derive::{
     ReferenceCenter as DeriveReferenceCenter, ReferenceFrame as DeriveReferenceFrame,
 };
+
+/// Re-export of the [`qtty`] crate used by `affn`'s public API.
+///
+/// Prefer `affn::qtty` over a separate direct `qtty` dependency when
+/// constructing quantities for `affn` types, so values share the same
+/// crate instance that `affn` was compiled against.
+///
+/// This re-export does not prevent Cargo from resolving a second,
+/// semver-incompatible `qtty` if another crate depends on one explicitly.
+pub use qtty;
 
 // Re-export traits at crate level with their original names
 // This is the standard pattern: traits and derives co-exist with same names
