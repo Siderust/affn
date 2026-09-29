@@ -44,7 +44,7 @@ Add the dependency:
 
 ```toml
 [dependencies]
-affn = "0.8"
+affn = "0.9"
 ```
 
 Define a center + frame and do basic affine algebra:
@@ -287,7 +287,7 @@ Enable the `astro` feature to use the built-in astronomy and geodesy marker fram
 
 ```toml
 [dependencies]
-affn = { version = "0.8", features = ["astro"] }
+affn = { version = "0.9", features = ["astro"] }
 ```
 
 Available built-ins include:
@@ -315,7 +315,7 @@ Enable it in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-affn = { version = "0.8", features = ["serde"] }
+affn = { version = "0.9", features = ["serde"] }
 ```
 
 This feature also forwards serialization support to dependencies where needed, such as `qtty/serde`. Use `affn::qtty` for quantities rather than a separate direct `qtty` dependency.

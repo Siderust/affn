@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "affn"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "affn-derive",
  "criterion",
@@ -15,7 +15,7 @@ dependencies = [
 
 [[package]]
 name = "affn-derive"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "proc-macro2",
  "quote",
