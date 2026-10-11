@@ -58,6 +58,7 @@ use super::vector::Displacement;
 use super::xyz::XYZ;
 use crate::centers::ReferenceCenter;
 use crate::frames::ReferenceFrame;
+use qtty::angular::Radians;
 use qtty::length::LengthUnit;
 use qtty::Quantity;
 
@@ -389,11 +390,12 @@ impl<F: ReferenceFrame> Direction<F> {
         Self::from_xyz_unchecked(self.xyz.neg())
     }
 
-    /// Returns the angle between this direction and another, in radians.
+    /// Returns the angle between this direction and another as a typed
+    /// [`Radians`] quantity.
     #[inline]
-    pub fn angle_to(&self, other: &Self) -> f64 {
+    pub fn angle_to(&self, other: &Self) -> Radians {
         // Clamp to handle floating-point errors at extremes
-        self.dot(other).clamp(-1.0, 1.0).acos()
+        Radians::new(self.dot(other).clamp(-1.0, 1.0).acos())
     }
 }
 
@@ -524,7 +526,7 @@ mod tests {
         let a = Direction::<TestFrame>::new(1.0, 0.0, 0.0);
         let b = Direction::<TestFrame>::new(0.0, 1.0, 0.0);
         let angle = a.angle_to(&b);
-        assert!((angle - core::f64::consts::FRAC_PI_2).abs() < 1e-12);
+        assert!((angle.value() - core::f64::consts::FRAC_PI_2).abs() < 1e-12);
     }
 
     #[test]
