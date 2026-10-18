@@ -186,15 +186,15 @@ impl<F: ReferenceFrame> Direction<F> {
     ///
     /// For latitudes `a`, `b` and longitude difference `d`, the east and north
     /// tangent components are `cos(b) sin(d)` and
-    /// `sin(b-a) cos²(d/2) + sin(b+a) sin²(d/2)`. Their `atan2(east, north)`
-    /// gives the bearing. This identity avoids subtracting nearly equal
-    /// products near coincidence and antipodality. Differences and complements
-    /// are formed in the stored degrees before trigonometric evaluation, also
-    /// preserving precision near poles and longitude boundaries.
+    /// `sin(b-a) + 2 sin(a) cos(b) sin²(d/2)`. Their `atan2(east, north)`
+    /// gives the bearing. Near antipodality, first reflect the destination
+    /// through the origin and then negate both components. This uses the same
+    /// stable formula near coincidence and antipodality. Degree differences
+    /// and pole complements preserve small offsets before radian conversion.
     ///
-    /// No angular tolerance is used: exact coordinate relations detect the
-    /// geometric singularities. If both computed tangent components vanish
-    /// (including underflow), returns `None` rather than an arbitrary bearing.
+    /// No angular tolerance is used: exact coincidence and antipodality give
+    /// an exact zero tangent vector after reduction. If both computed tangent
+    /// components vanish (including underflow), returns `None`.
     /// Extremely small offsets may be lost to floating-point rounding or
     /// underflow; bearings near singularities are inherently sensitive to input
     /// error. Normalization maps a rounded `2π` to zero.
@@ -216,85 +216,66 @@ impl<F: ReferenceFrame> Direction<F> {
     /// ```
     #[must_use]
     pub fn position_angle_to(&self, other: &Self) -> Option<Radians> {
-        let a = self.polar.value();
-        let b = other.polar.value();
-        let lon_a = self.azimuth.value();
-        let lon_b = other.azimuth.value();
-        if !a.is_finite()
-            || !b.is_finite()
-            || !lon_a.is_finite()
-            || !lon_b.is_finite()
-            || a.abs() == 90.0
+        let a = self.polar;
+        let mut b = other.polar;
+        if [a, b, self.azimuth, other.azimuth]
+            .iter()
+            .any(|angle| !angle.is_finite())
+            || a.abs() == Degrees::QUARTER_TURN
         {
             return None;
         }
 
-        let sin = |degrees: f64| Degrees::new(degrees).sin();
-        let cos = |degrees: f64| Degrees::new(degrees).cos();
-        let square = |x: f64| x * x;
-        let raw_delta = lon_b - lon_a;
-        // Reduce near 0/360 and 180 *before* conversion to radians. In the
-        // antipodal branch, subtract 180 from the larger longitude first so
-        // a rounded raw_delta cannot hide a small, representable residual.
-        let (east_factor, cos_half_sq, sin_half_sq, coincident_lon, antipodal_lon) =
-            if raw_delta.abs() > 90.0 && raw_delta.abs() <= 270.0 {
-                let residual = if raw_delta > 0.0 {
-                    (lon_b - 180.0) - lon_a
+        // Reflect B through the origin near antipodality, then negate its
+        // tangent components. Subtract 180° before subtracting longitudes to
+        // preserve residuals even when the direct difference rounds to 180°.
+        let mut delta = other.azimuth - self.azimuth;
+        let sign =
+            if delta.abs() > Degrees::QUARTER_TURN && delta.abs() <= Degrees::QUARTER_TURN * 3.0 {
+                b = -b;
+                delta = if delta > Degrees::new(0.0) {
+                    (other.azimuth - Degrees::HALF_TURN) - self.azimuth
                 } else {
-                    (lon_a - 180.0) - lon_b
+                    other.azimuth - (self.azimuth - Degrees::HALF_TURN)
                 };
-                (
-                    -raw_delta.signum() * sin(residual),
-                    square(sin(residual * 0.5)),
-                    square(cos(residual * 0.5)),
-                    false,
-                    residual == 0.0,
-                )
+                -1.0
             } else {
-                let delta = if raw_delta > 270.0 {
-                    -((360.0 - lon_b) + lon_a)
-                } else if raw_delta < -270.0 {
-                    (360.0 - lon_a) + lon_b
-                } else {
-                    raw_delta
-                };
-                (
-                    sin(delta),
-                    square(cos(delta * 0.5)),
-                    square(sin(delta * 0.5)),
-                    delta == 0.0,
-                    false,
-                )
+                // Preserve small offsets across the longitude boundary as well.
+                if delta > Degrees::HALF_TURN {
+                    delta = -((Degrees::FULL_TURN - other.azimuth) + self.azimuth);
+                } else if delta < -Degrees::HALF_TURN {
+                    delta = (Degrees::FULL_TURN - self.azimuth) + other.azimuth;
+                }
+                1.0
             };
-        if (a == b && coincident_lon) || (a == -b && antipodal_lon) {
-            return None;
-        }
 
-        // sin(x+y), using pole complements when a sum approaches ±180°.
-        // The small complements survive even if x+y itself rounds to ±180°.
-        let sin_sum = |x: f64, y: f64| {
-            if x * y > 0.0 && (x + y).abs() > 90.0 {
-                x.signum() * sin((90.0 - x.abs()) + (90.0 - y.abs()))
-            } else {
-                sin(x + y)
-            }
+        // Pole complements retain precision when b-a rounds to ±180° or b
+        // approaches ±90°. All differences are formed in the stored degrees.
+        let difference = b - a;
+        let sin_difference = if difference.abs() > Degrees::QUARTER_TURN {
+            difference.signum_const()
+                * ((Degrees::QUARTER_TURN - a.abs()) + (Degrees::QUARTER_TURN - b.abs())).sin()
+        } else {
+            difference.sin()
         };
-        let east = sin(90.0 - b.abs()) * east_factor;
-        let north = sin_sum(b, -a) * cos_half_sq + sin_sum(b, a) * sin_half_sq;
+        let cos_b = (Degrees::QUARTER_TURN - b.abs()).sin();
+        let half_sin = (delta * 0.5).sin();
+        // Keep angular_separation_impl's direct Vincenty calculation separate:
+        // sharing this reduction would add bearing-only branches to distance calls.
+        let east = sign * cos_b * delta.sin();
+        let north = sign * (sin_difference + 2.0 * a.sin() * cos_b * half_sin * half_sin);
+        // Exact coincidence/antipodality now give an exact zero tangent vector;
+        // the same check handles numerical underflow without an angular cutoff.
         if east == 0.0 && north == 0.0 {
             return None;
         }
-        let angle = qtty::Transcendental::atan2(east, north);
-        let angle = if angle < 0.0 {
-            angle + core::f64::consts::TAU
+        let angle = Radians::new(qtty::Transcendental::atan2(east, north)).normalize();
+        // qtty's remainder can round a tiny negative angle up to a full turn.
+        Some(if angle >= Radians::FULL_TURN {
+            Radians::new(0.0)
         } else {
             angle
-        };
-        Some(Radians::new(if angle >= core::f64::consts::TAU {
-            0.0
-        } else {
-            angle
-        }))
+        })
     }
 
     /// Converts to cartesian Direction.
@@ -646,6 +627,37 @@ mod tests {
                 direction(latitude, 40.0),
                 direction(-latitude, 40.0),
                 if latitude > 0.0 { 180.0 } else { 0.0 } * DEG,
+                tolerance,
+            );
+        }
+    }
+
+    #[test]
+    fn position_angle_pole_complements_with_unequal_offsets() {
+        let near_pole = f64::from_bits(90.0f64.to_bits() - 1);
+        let farther_from_pole = f64::from_bits(90.0f64.to_bits() - 2);
+        let tolerance = Radians::new(32.0 * f64::EPSILON);
+        // The starting polar offset is one ULP and the destination's is two.
+        // At a 90° longitude difference, east:north tends to 2:1. Reflecting
+        // latitude gives the southern case; negating the endpoint adds 180°.
+        let bearing = 63.434_948_822_922_01;
+        for hemisphere in [-1.0, 1.0] {
+            let a = direction(hemisphere * near_pole, 0.0);
+            let expected = if hemisphere > 0.0 {
+                bearing
+            } else {
+                180.0 - bearing
+            };
+            assert_bearing(
+                a,
+                direction(hemisphere * farther_from_pole, 90.0),
+                expected * DEG,
+                tolerance,
+            );
+            assert_bearing(
+                a,
+                direction(-hemisphere * farther_from_pole, 270.0),
+                (expected + 180.0) * DEG,
                 tolerance,
             );
         }
