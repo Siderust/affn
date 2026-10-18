@@ -45,7 +45,7 @@
 
 use crate::centers::ReferenceCenter;
 use crate::frames::ReferenceFrame;
-use qtty::angular::Degrees;
+use qtty::angular::{Degrees, Radians};
 use qtty::length::LengthUnit;
 use qtty::Quantity;
 
@@ -162,6 +162,139 @@ impl<F: ReferenceFrame> Direction<F> {
     /// using the Vincenty formula (numerically stable).
     pub fn angular_separation(&self, other: &Self) -> Degrees {
         super::angular_separation_impl(self.polar, self.azimuth, other.polar, other.azimuth)
+    }
+
+    /// Returns the oriented great-circle bearing from `self` towards `other`.
+    ///
+    /// The angle is measured in the tangent plane at `self`, from locally
+    /// increasing `polar` (latitude, towards the north pole) towards locally
+    /// increasing `azimuth` (longitude, east). Defined results are typed radians
+    /// in `[0, 2π)`. In an equatorial frame this is position angle north through
+    /// east. Unlike [`Self::angular_separation`], this is an orientation, not an
+    /// angular distance, and depends on the frame's polar/azimuth conventions.
+    ///
+    /// Both directions must use the same frame `F`. A frame does not encode an
+    /// observation origin; callers must ensure a common origin whenever their
+    /// physical interpretation requires one.
+    ///
+    /// # Undefined and numerical cases
+    ///
+    /// Returns `None` for coincident or antipodal directions, a starting point
+    /// at either pole (no unique local north), or any non-finite input. As with
+    /// [`Self::new_unchecked`], finite angles must satisfy the canonical ranges.
+    /// A destination at a pole is valid when the starting point is not a pole.
+    ///
+    /// For latitudes `a`, `b` and longitude difference `d`, the east and north
+    /// tangent components are `cos(b) sin(d)` and
+    /// `sin(b-a) cos²(d/2) + sin(b+a) sin²(d/2)`. Their `atan2(east, north)`
+    /// gives the bearing. This identity avoids subtracting nearly equal
+    /// products near coincidence and antipodality. Differences and complements
+    /// are formed in the stored degrees before trigonometric evaluation, also
+    /// preserving precision near poles and longitude boundaries.
+    ///
+    /// No angular tolerance is used: exact coordinate relations detect the
+    /// geometric singularities. If both computed tangent components vanish
+    /// (including underflow), returns `None` rather than an arbitrary bearing.
+    /// Extremely small offsets may be lost to floating-point rounding or
+    /// underflow; bearings near singularities are inherently sensitive to input
+    /// error. Normalization maps a rounded `2π` to zero.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use affn::{prelude::*, spherical::Direction};
+    /// use affn::qtty::{angular::Radians, units::Radian, DEG};
+    ///
+    /// #[derive(Debug, Copy, Clone, ReferenceFrame)]
+    /// struct World;
+    ///
+    /// let a = Direction::<World>::new_unchecked(0.0 * DEG, 350.0 * DEG);
+    /// let b = Direction::<World>::new_unchecked(0.0 * DEG, 10.0 * DEG);
+    /// let angle = a.position_angle_to(&b);
+    /// let east = (90.0 * DEG).to::<Radian>();
+    /// assert!((angle.unwrap() - east).abs() < Radians::new(1e-14));
+    /// ```
+    #[must_use]
+    pub fn position_angle_to(&self, other: &Self) -> Option<Radians> {
+        let a = self.polar.value();
+        let b = other.polar.value();
+        let lon_a = self.azimuth.value();
+        let lon_b = other.azimuth.value();
+        if !a.is_finite()
+            || !b.is_finite()
+            || !lon_a.is_finite()
+            || !lon_b.is_finite()
+            || a.abs() == 90.0
+        {
+            return None;
+        }
+
+        let sin = |degrees: f64| Degrees::new(degrees).sin();
+        let cos = |degrees: f64| Degrees::new(degrees).cos();
+        let square = |x: f64| x * x;
+        let raw_delta = lon_b - lon_a;
+        // Reduce near 0/360 and 180 *before* conversion to radians. In the
+        // antipodal branch, subtract 180 from the larger longitude first so
+        // a rounded raw_delta cannot hide a small, representable residual.
+        let (east_factor, cos_half_sq, sin_half_sq, coincident_lon, antipodal_lon) =
+            if raw_delta.abs() > 90.0 && raw_delta.abs() <= 270.0 {
+                let residual = if raw_delta > 0.0 {
+                    (lon_b - 180.0) - lon_a
+                } else {
+                    (lon_a - 180.0) - lon_b
+                };
+                (
+                    -raw_delta.signum() * sin(residual),
+                    square(sin(residual * 0.5)),
+                    square(cos(residual * 0.5)),
+                    false,
+                    residual == 0.0,
+                )
+            } else {
+                let delta = if raw_delta > 270.0 {
+                    -((360.0 - lon_b) + lon_a)
+                } else if raw_delta < -270.0 {
+                    (360.0 - lon_a) + lon_b
+                } else {
+                    raw_delta
+                };
+                (
+                    sin(delta),
+                    square(cos(delta * 0.5)),
+                    square(sin(delta * 0.5)),
+                    delta == 0.0,
+                    false,
+                )
+            };
+        if (a == b && coincident_lon) || (a == -b && antipodal_lon) {
+            return None;
+        }
+
+        // sin(x+y), using pole complements when a sum approaches ±180°.
+        // The small complements survive even if x+y itself rounds to ±180°.
+        let sin_sum = |x: f64, y: f64| {
+            if x * y > 0.0 && (x + y).abs() > 90.0 {
+                x.signum() * sin((90.0 - x.abs()) + (90.0 - y.abs()))
+            } else {
+                sin(x + y)
+            }
+        };
+        let east = sin(90.0 - b.abs()) * east_factor;
+        let north = sin_sum(b, -a) * cos_half_sq + sin_sum(b, a) * sin_half_sq;
+        if east == 0.0 && north == 0.0 {
+            return None;
+        }
+        let angle = qtty::Transcendental::atan2(east, north);
+        let angle = if angle < 0.0 {
+            angle + core::f64::consts::TAU
+        } else {
+            angle
+        };
+        Some(Radians::new(if angle >= core::f64::consts::TAU {
+            0.0
+        } else {
+            angle
+        }))
     }
 
     /// Converts to cartesian Direction.
@@ -307,6 +440,292 @@ mod tests {
         let a = Direction::<TestFrame>::new_unchecked(Degrees::new(45.0), Degrees::new(30.0));
         let sep = a.angular_separation(&a);
         assert!(sep.abs().value() < 1e-10, "expected 0°, got {}", sep);
+    }
+
+    fn direction(polar: f64, azimuth: f64) -> Direction<TestFrame> {
+        Direction::new_unchecked(polar * DEG, azimuth * DEG)
+    }
+
+    fn assert_bearing<F: crate::frames::ReferenceFrame>(
+        a: Direction<F>,
+        b: Direction<F>,
+        expected: Degrees,
+        tolerance: Radians,
+    ) {
+        use qtty::units::Radian;
+        let angle = a.position_angle_to(&b).expect("defined bearing");
+        assert!(angle >= Radians::new(0.0));
+        assert!(angle < Radians::new(core::f64::consts::TAU));
+        let error = (angle - expected.to::<Radian>()).abs();
+        // Compare on the circle, including the normalization boundary.
+        let error = error.value().min(core::f64::consts::TAU - error.value());
+        assert!(
+            Radians::new(error) <= tolerance,
+            "got {angle}, expected {expected}"
+        );
+    }
+
+    #[test]
+    fn position_angle_cardinals_and_destination_poles() {
+        let tolerance = Radians::new(8.0 * f64::EPSILON);
+        for latitude in [-60.0, 0.0, 60.0] {
+            assert_bearing(
+                direction(latitude, 40.0),
+                direction(80.0, 40.0),
+                0.0 * DEG,
+                tolerance,
+            );
+            assert_bearing(
+                direction(latitude, 40.0),
+                direction(-80.0, 40.0),
+                180.0 * DEG,
+                tolerance,
+            );
+            for longitude in [0.0, 120.0, 359.0] {
+                assert_bearing(
+                    direction(latitude, 40.0),
+                    direction(90.0, longitude),
+                    0.0 * DEG,
+                    tolerance,
+                );
+                assert_bearing(
+                    direction(latitude, 40.0),
+                    direction(-90.0, longitude),
+                    180.0 * DEG,
+                    tolerance,
+                );
+            }
+        }
+        assert_bearing(
+            direction(0.0, 40.0),
+            direction(0.0, 70.0),
+            90.0 * DEG,
+            tolerance,
+        );
+        assert_bearing(
+            direction(0.0, 40.0),
+            direction(0.0, 10.0),
+            270.0 * DEG,
+            tolerance,
+        );
+    }
+
+    #[test]
+    fn position_angle_normalization_and_wraparound() {
+        let tolerance = Radians::new(8.0 * f64::EPSILON);
+        for (from, to, expected) in [
+            (350.0, 10.0, 90.0),
+            (10.0, 350.0, 270.0),
+            (359.999999, 0.0, 90.0),
+            (0.0, 359.999999, 270.0),
+        ] {
+            assert_bearing(
+                direction(0.0, from),
+                direction(0.0, to),
+                expected * DEG,
+                tolerance,
+            );
+        }
+        let north = direction(45.0, 100.0);
+        let just_east = direction(60.0, 100.0 + 1e-10);
+        let just_west = direction(60.0, 100.0 - 1e-10);
+        let east_angle = north.position_angle_to(&just_east).unwrap();
+        let west_angle = north.position_angle_to(&just_west).unwrap();
+        assert!(east_angle > Radians::new(0.0) && east_angle < Radians::new(1e-10));
+        assert!(west_angle > Radians::new(core::f64::consts::TAU - 1e-10));
+        assert!(west_angle < Radians::new(core::f64::consts::TAU));
+        // Adding this tiny negative atan2 result to TAU rounds to TAU.
+        let rounded = direction(0.0, 1e-16)
+            .position_angle_to(&direction(45.0, 0.0))
+            .unwrap();
+        assert!(rounded >= Radians::new(0.0) && rounded < Radians::new(1e-14));
+    }
+
+    #[test]
+    fn position_angle_exact_singularities() {
+        for latitude in [-89.0, -30.0, 0.0, 30.0, 89.0] {
+            for longitude in [0.0, 30.0, 180.0, 330.0] {
+                let a = direction(latitude, longitude);
+                assert!(a.position_angle_to(&a).is_none());
+                let b = direction(-latitude, (longitude + 180.0) % 360.0);
+                assert!(a.position_angle_to(&b).is_none());
+            }
+        }
+        for latitude in [-90.0, 90.0] {
+            for longitude in [0.0, 90.0, 300.0] {
+                let pole = direction(latitude, longitude);
+                assert!(pole.position_angle_to(&direction(0.0, 0.0)).is_none());
+                assert!(pole.position_angle_to(&pole).is_none());
+                assert!(pole
+                    .position_angle_to(&direction(-latitude, longitude))
+                    .is_none());
+            }
+        }
+    }
+
+    #[test]
+    fn position_angle_preserves_adjacent_float_offsets() {
+        let tolerance = Radians::new(32.0 * f64::EPSILON);
+        let next = |x: f64| f64::from_bits(x.to_bits() + 1);
+        // Subtracting these latitudes *after* radian conversion loses precision.
+        assert_bearing(
+            direction(60.0, 40.0),
+            direction(next(60.0), 40.0),
+            0.0 * DEG,
+            tolerance,
+        );
+        assert_bearing(
+            direction(60.0, 40.0),
+            direction(60.0, next(40.0)),
+            90.0 * DEG,
+            tolerance,
+        );
+        assert_bearing(
+            direction(30.0, 0.0),
+            direction(-next(30.0), 180.0),
+            180.0 * DEG,
+            tolerance,
+        );
+        assert_bearing(
+            direction(0.0, 0.0),
+            direction(0.0, next(180.0)),
+            270.0 * DEG,
+            tolerance,
+        );
+        // The raw longitude difference rounds to 180, but the inputs are not antipodal.
+        assert_bearing(
+            direction(0.0, 1e-15),
+            direction(0.0, 180.0),
+            90.0 * DEG,
+            tolerance,
+        );
+        assert_bearing(
+            direction(0.0, 180.0),
+            direction(0.0, 1e-15),
+            270.0 * DEG,
+            tolerance,
+        );
+        // Both coordinates change by one ULP. The local tangent ratios tend
+        // to 1/2 near coincidence, and -4*sqrt(3) : -1 near antipodality.
+        assert_bearing(
+            direction(60.0, 40.0),
+            direction(next(60.0), next(40.0)),
+            26.565_051_177_077_99 * DEG,
+            tolerance,
+        );
+        assert_bearing(
+            direction(30.0, 40.0),
+            direction(-next(30.0), next(220.0)),
+            261.786_789_298_261_8 * DEG,
+            tolerance,
+        );
+        let below_pole = f64::from_bits(90.0f64.to_bits() - 1);
+        // For two points at the same latitude approaching the north pole,
+        // a 10° longitude step has bearing 90° - 10°/2 = 85° in the limit.
+        assert_bearing(
+            direction(below_pole, 20.0),
+            direction(below_pole, 30.0),
+            85.0 * DEG,
+            tolerance,
+        );
+        for latitude in [below_pole, -below_pole] {
+            assert_bearing(
+                direction(latitude, 40.0),
+                direction(0.0, 40.0),
+                if latitude > 0.0 { 180.0 } else { 0.0 } * DEG,
+                tolerance,
+            );
+            // Opposite meridians, at equal near-polar latitudes: north/south.
+            assert_bearing(
+                direction(latitude, 40.0),
+                direction(latitude, 220.0),
+                if latitude > 0.0 { 0.0 } else { 180.0 } * DEG,
+                tolerance,
+            );
+            assert_bearing(
+                direction(latitude, 40.0),
+                direction(-latitude, 40.0),
+                if latitude > 0.0 { 180.0 } else { 0.0 } * DEG,
+                tolerance,
+            );
+        }
+    }
+
+    #[test]
+    fn position_angle_analytic_reference_and_hemisphere_reflection() {
+        // At A=(30°,0°), B=(60°,90°), projecting B onto A's tangent basis
+        // gives east=1/2 and north=3/4, hence tan(P)=2/3.
+        let tolerance = Radians::new(16.0 * f64::EPSILON);
+        assert_bearing(
+            direction(30.0, 0.0),
+            direction(60.0, 90.0),
+            33.690_067_525_979_785 * DEG,
+            tolerance,
+        );
+        assert_bearing(
+            direction(-30.0, 0.0),
+            direction(-60.0, 90.0),
+            (180.0 - 33.690_067_525_979_785) * DEG,
+            tolerance,
+        );
+    }
+
+    #[test]
+    fn position_angle_matches_constructed_great_circle_tangents() {
+        // Construct endpoints in Cartesian space from a known initial tangent
+        // and arc length. This does not reuse the spherical bearing formula.
+        for latitude in [-75.0, -30.0, 0.0, 45.0, 80.0] {
+            for longitude in [0.0, 10.0, 170.0, 350.0] {
+                let a = direction(latitude, longitude);
+                let (sp, cp) = a.polar.sin_cos();
+                let (sl, cl) = a.azimuth.sin_cos();
+                let origin = [cp * cl, cp * sl, sp];
+                let north = [-sp * cl, -sp * sl, cp];
+                let east = [-sl, cl, 0.0];
+                for bearing in [0.0, 30.0, 90.0, 145.0, 225.0, 359.0] {
+                    let (sb, cb) = (bearing * DEG).sin_cos();
+                    for distance in [1.0, 40.0, 120.0, 179.0] {
+                        let (sd, cd) = (distance * DEG).sin_cos();
+                        let xyz: [f64; 3] = core::array::from_fn(|i| {
+                            cd * origin[i] + sd * (cb * north[i] + sb * east[i])
+                        });
+                        let cart =
+                            crate::cartesian::Direction::<TestFrame>::new(xyz[0], xyz[1], xyz[2]);
+                        let b = Direction::from_cartesian(&cart);
+                        // Endpoint conversion errors are amplified by 1/sin(distance),
+                        // at most ~58 here; 4096 eps also covers pole conditioning.
+                        assert_bearing(a, b, bearing * DEG, Radians::new(4096.0 * f64::EPSILON));
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn position_angle_rejects_non_finite_and_unresolved_inputs() {
+        for invalid in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            for a in [direction(invalid, 0.0), direction(0.0, invalid)] {
+                let b = direction(30.0, 20.0);
+                assert!(a.position_angle_to(&b).is_none());
+                assert!(b.position_angle_to(&a).is_none());
+            }
+        }
+        // The smallest degree offset underflows when converted to radians.
+        assert!(direction(0.0, 0.0)
+            .position_angle_to(&direction(f64::from_bits(1), 0.0))
+            .is_none());
+    }
+
+    #[test]
+    fn position_angle_is_frame_generic() {
+        #[derive(Debug, Copy, Clone, ReferenceFrame)]
+        struct OtherFrame;
+        assert_bearing(
+            Direction::<OtherFrame>::new_unchecked(0.0 * DEG, 0.0 * DEG),
+            Direction::<OtherFrame>::new_unchecked(0.0 * DEG, 30.0 * DEG),
+            90.0 * DEG,
+            Radians::new(8.0 * f64::EPSILON),
+        );
     }
 
     // =============================================================================
