@@ -41,13 +41,13 @@ Prefer `affn::qtty` when exchanging values with `affn` APIs. Re-exporting does *
 
 ```toml
 # Default (std)
-affn = "0.11"
+affn = "0.12"
 
 # no_std with heap (interpolation, serde)
-affn = { version = "0.11", default-features = false, features = ["alloc"] }
+affn = { version = "0.12", default-features = false, features = ["alloc"] }
 
 # pure no_std (core only)
-affn = { version = "0.11", default-features = false }
+affn = { version = "0.12", default-features = false }
 ```
 
 The optional `serde` feature implies `alloc`.
@@ -67,7 +67,7 @@ Add the dependency:
 
 ```toml
 [dependencies]
-affn = "0.11"
+affn = "0.12"
 ```
 
 Define a center + frame and do basic affine algebra:
@@ -304,13 +304,24 @@ assert!((roundtrip.height.value() - geodetic.height.value()).abs() < 1e-6);
 # }
 ```
 
+## Spherical Position Angles
+
+`Direction<F>::position_angle_to(&other)` returns `Option<qtty::angular::Radians>`:
+the great-circle bearing measured from increasing polar coordinate (north)
+towards increasing azimuth (east), normalized to `[0, 2π)`. It differs from
+`angular_separation()`, which measures angular distance. Coincident and antipodal
+directions, starting poles, non-finite inputs, and numerically unresolved
+bearings return `None`. Both directions share a frame at compile time; callers
+ensure a common observation origin when needed. See the method documentation
+for a runnable example and the numerical policy.
+
 ## Built-In Astro Frames (optional)
 
 Enable the `astro` feature to use the built-in astronomy and geodesy marker frames:
 
 ```toml
 [dependencies]
-affn = { version = "0.11", features = ["astro"] }
+affn = { version = "0.12", features = ["astro"] }
 ```
 
 Available built-ins include:
@@ -338,7 +349,7 @@ Enable it in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-affn = { version = "0.11", features = ["serde"] }
+affn = { version = "0.12", features = ["serde"] }
 ```
 
 This feature also forwards serialization support to dependencies where needed, such as `qtty/serde`. Use `affn::qtty` for quantities rather than a separate direct `qtty` dependency.

@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0 - 2026-10-18]
+
+### Added
+- `spherical::Direction<F>::position_angle_to()` returns a typed `Option<Radians>`
+  bearing from locally increasing polar coordinate towards increasing azimuth,
+  normalized to `[0, 2π)`. Coincident/antipodal directions and starting poles
+  return `None`, as do non-finite inputs and numerically unresolved bearings.
+
+### Changed
+- Bump `affn` and `affn-derive` together to `0.12.0` and update dependency examples.
+
 ## [0.11.0 - 2026-10-11]
 
 ### Changed
