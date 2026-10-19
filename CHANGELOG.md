@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.1] - Unreleased
+
+### Fixed
+- Clarify that block-diagonal covariance/STM rotation applies only to independently
+  rotated vector components, not to rotating-frame coordinate velocities.
+- Document the state/kinematics ownership decision for #36 and add independent
+  rotating-frame and inverse regression tests. No public API or Serde changes.
+
 ## [0.12.0 - 2026-10-18]
 
 ### Added

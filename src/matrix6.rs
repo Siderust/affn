@@ -20,8 +20,9 @@
 //! Both types implement the **instantaneous** convention: the rotation basis
 //! is treated as constant at the moment of evaluation. The time-derivative
 //! `Ṙ` of the rotation (which would introduce Coriolis-like off-diagonal
-//! blocks) is *ignored*. This is correct for covariance transport and for
-//! STM frame changes when the rotation is evaluated at a fixed epoch.
+//! blocks) is *ignored*. This applies to covariance/STM components defined as independently rotated
+//! vectors. For coordinate velocities in time-dependent frames, even a covariance
+//! evaluated at one epoch needs the full Jacobian `[R, 0; Rdot, R]`.
 //!
 //! ## Block layout
 //!
@@ -282,9 +283,10 @@ impl<F> Mul<&FrameMatrix6<F>> for &FrameMatrix6<F> {
 /// ## Instantaneous convention
 ///
 /// The time-derivative `Ṙ` of the rotation is **ignored**. This is the
-/// correct choice for instantaneous covariance and STM frame changes at a
-/// fixed epoch. If Coriolis corrections are required (e.g., for a rotating
-/// atmosphere drag model), apply them separately.
+/// choice for covariance and STM components defined as independently rotated
+/// vectors. It is not the Jacobian of a rotating-frame coordinate-state change:
+/// that requires `[R, 0; Rdot, R]`, even at a fixed epoch. Translating centers
+/// additionally require origin position and velocity terms.
 ///
 /// ## Efficient block-wise computation
 ///
