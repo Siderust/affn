@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.12.1] - Unreleased
 
 ### Fixed
-- Clarify that block-diagonal covariance/STM rotation applies only to independently
-  rotated vector components, not to rotating-frame coordinate velocities.
-- Document the state/kinematics ownership decision for #36 and add independent
-  rotating-frame and inverse regression tests. No public API or Serde changes.
+- Clarify the distinction between one-epoch covariance and two-epoch STM
+  transformations, and that a full kinematic Jacobian is represented by
+  `FrameMatrix6`, not `BlockDiagRotation6`.
+- Document moving-origin kinematics and add independent rotating-frame,
+  covariance, inverse, and composition regression tests. No public API or
+  Serde changes.
 
 ## [0.12.0 - 2026-10-18]
 

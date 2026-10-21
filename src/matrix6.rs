@@ -9,20 +9,28 @@
 //!   array, tagged with the reference frame `F`. Supports constructors, block
 //!   accessors, matrix multiplication, transpose, and frame relabelling.
 //!
-//! - [`BlockDiagRotation6<F>`] — a helper for the block-diagonal rotation
-//!   `T = blockdiag(R, R)` that arises when rotating a 6-dimensional Cartesian
-//!   state-space covariance or state-transition matrix between frames. All
-//!   block operations are performed as independent 3×3 similarity transforms,
-//!   avoiding the explicit 6×6 assembly.
+//! - [`BlockDiagRotation6<F>`] — a helper for the instantaneous block-diagonal
+//!   rotation `T = blockdiag(R, R)`. All block operations are performed as
+//!   independent 3×3 similarity transforms, avoiding explicit 6×6 assembly.
 //!
-//! ## Convention: instantaneous rotation
+//! [`FrameMatrix6`] is general: its four 3×3 blocks may represent a full
+//! kinematic Jacobian, including the lower-left `Rdot` block. The
+//! instantaneous block-diagonal restriction belongs specifically to
+//! [`BlockDiagRotation6`].
 //!
-//! Both types implement the **instantaneous** convention: the rotation basis
-//! is treated as constant at the moment of evaluation. The time-derivative
-//! `Ṙ` of the rotation (which would introduce Coriolis-like off-diagonal
-//! blocks) is *ignored*. This applies to covariance/STM components defined as independently rotated
-//! vectors. For coordinate velocities in time-dependent frames, even a covariance
-//! evaluated at one epoch needs the full Jacobian `[R, 0; Rdot, R]`.
+//! ## Covariance versus state-transition matrices
+//!
+//! For a time-dependent coordinate transformation, let
+//! `J(t) = [R(t), 0; Rdot(t), R(t)]`. A covariance at one epoch transforms
+//! by the congruence
+//! `P_B(t) = J(t) P_A(t) J(t)ᵀ`.
+//! A state-transition matrix between two epochs transforms instead as
+//! `Phi_B(t1, t0) = J(t1) Phi_A(t1, t0) J(t0)⁻¹`.
+//! The endpoint Jacobians generally differ, so a covariance transformation
+//! must not be substituted for the two-endpoint STM transformation. For
+//! independently rotated position and velocity vectors, where the derivative
+//! block is intentionally absent, [`BlockDiagRotation6`] still provides the
+//! established `diag(R, R)` congruence.
 //!
 //! ## Block layout
 //!
@@ -267,8 +275,8 @@ impl<F> Mul<&FrameMatrix6<F>> for &FrameMatrix6<F> {
 // BlockDiagRotation6
 // =============================================================================
 
-/// Block-diagonal rotation `T = blockdiag(R, R)` for 6-dimensional state-space
-/// transforms.
+/// Instantaneous block-diagonal rotation `T = blockdiag(R, R)` for
+/// 6-dimensional state-space transforms.
 ///
 /// Given a 3×3 rotation `R`, this type represents the 6×6 operator
 ///
@@ -284,9 +292,15 @@ impl<F> Mul<&FrameMatrix6<F>> for &FrameMatrix6<F> {
 ///
 /// The time-derivative `Ṙ` of the rotation is **ignored**. This is the
 /// choice for covariance and STM components defined as independently rotated
-/// vectors. It is not the Jacobian of a rotating-frame coordinate-state change:
-/// that requires `[R, 0; Rdot, R]`, even at a fixed epoch. Translating centers
-/// additionally require origin position and velocity terms.
+/// vectors. It is not the Jacobian of a rotating-frame coordinate-state
+/// change: that requires `[R, 0; Rdot, R]`, even at a fixed epoch.
+/// Translating centers additionally require origin position and velocity terms.
+///
+/// For a covariance of coordinate states, use a general [`FrameMatrix6`] to
+/// represent the full Jacobian and apply `J · P · Jᵀ`. For an STM between
+/// `t0` and `t1`, use the distinct endpoint expression
+/// `J(t1) · Phi(t1, t0) · J(t0)⁻¹`; this is not the same operation as a
+/// one-epoch covariance congruence.
 ///
 /// ## Efficient block-wise computation
 ///
