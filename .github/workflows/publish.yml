@@ -4,8 +4,13 @@ on:
   push:
     tags:
       - "v[0-9]*"
-  # Allows retrying a release after fixing the workflow without moving its tag.
+  # Retry an existing immutable release tag using the latest workflow from main.
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Existing release tag to retry (for example, v0.12.1)"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -16,14 +21,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Manual retries build the original tag, not whatever is now on main.
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.release_tag) || github.ref }}
 
       - uses: dtolnay/rust-toolchain@stable
 
-      - name: Check release versions on crates.io
+      - name: Check release versions in the Cargo sparse index
         id: registry
         shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
         run: |
           set -euo pipefail
+
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+              echo "::error::Manual releases must run the workflow from main"
+              exit 1
+            fi
+          elif [[ "$GITHUB_REF_TYPE" != "tag" ]]; then
+            echo "::error::Unsupported release ref: $GITHUB_REF"
+            exit 1
+          fi
 
           metadata="$(cargo metadata --no-deps --format-version 1)"
           package_version() {
@@ -35,39 +55,41 @@ jobs:
 
           affn_version="$(package_version affn)"
           derive_version="$(package_version affn-derive)"
-
-          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            if [[ "$GITHUB_REF_NAME" != "v$affn_version" ]]; then
-              echo "::error::Tag $GITHUB_REF_NAME does not match affn $affn_version"
-              exit 1
-            fi
-          elif [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
-            if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
-              echo "::error::Manual releases must run from main"
-              exit 1
-            fi
-            if ! git ls-remote --exit-code --tags --refs origin "refs/tags/v$affn_version" >/dev/null; then
-              echo "::error::No v$affn_version release tag exists"
-              exit 1
-            fi
-          else
-            echo "::error::Unsupported release event: $GITHUB_EVENT_NAME"
+          if [[ "$RELEASE_TAG" != "v$affn_version" ]]; then
+            echo "::error::Release tag $RELEASE_TAG does not match affn $affn_version"
             exit 1
           fi
 
-          # An unexpected HTTP status (including rate limits and server errors)
-          # must fail the release, not be interpreted as an unpublished crate.
+          # crates.io API can reject curl requests with HTTP 403. Cargo's
+          # official sparse index is the source of truth for published versions.
+          # Both workspace crate names have >=4 chars: the index path is
+          # <first 2>/<next 2>/<lowercase name>.
           published() {
-            local crate="$1" version="$2" status
-            status="$(curl --silent --show-error --location --retry 3 \
-              --retry-all-errors --max-time 20 --output /dev/null \
-              --write-out '%{http_code}' \
-              "https://crates.io/api/v1/crates/$crate/$version")"
+            local crate="$1" version="$2" index_path status found index_file
+            index_path="${crate:0:2}/${crate:2:2}/$crate"
+            index_file="$(mktemp)"
+            if ! status="$(curl --silent --show-error --location --retry 3 --retry-all-errors --max-time 30 --output "$index_file" --write-out '%{http_code}' --user-agent 'Siderust-affn-release/1.0 (+https://github.com/Siderust/affn)' "https://index.crates.io/$index_path")"; then
+              rm -f "$index_file"
+              echo "::error::Unable to query Cargo index for $crate" >&2
+              return 1
+            fi
             case "$status" in
-              200) echo true ;;
-              404) echo false ;;
-              *) echo "::error::crates.io returned HTTP $status for $crate@$version" >&2; return 1 ;;
+              200)
+                if ! found="$(jq -s -r --arg crate "$crate" --arg version "$version" 'if length > 0 then any(.[]; .name == $crate and .vers == $version) else error("empty index file") end' "$index_file")"; then
+                  rm -f "$index_file"
+                  echo "::error::Invalid Cargo index for $crate" >&2
+                  return 1
+                fi
+                ;;
+              404) found=false ;;
+              *)
+                rm -f "$index_file"
+                echo "::error::Cargo sparse index returned HTTP $status for $crate@$version" >&2
+                return 1
+                ;;
             esac
+            rm -f "$index_file"
+            printf '%s\n' "$found"
           }
 
           derive_published="$(published affn-derive "$derive_version")"
