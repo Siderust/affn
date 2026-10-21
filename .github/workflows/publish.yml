@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - "v[0-9]*"
+  # Allows retrying a release after fixing the workflow without moving its tag.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,16 +19,77 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
-      # Publish in dependency order: affn-derive → affn
+      - name: Check release versions on crates.io
+        id: registry
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          metadata="$(cargo metadata --no-deps --format-version 1)"
+          package_version() {
+            jq -er --arg name "$1" '
+              [.packages[] | select(.name == $name) | .version] |
+              if length == 1 then .[0] else error("missing or duplicate package: " + $name) end
+            ' <<< "$metadata"
+          }
+
+          affn_version="$(package_version affn)"
+          derive_version="$(package_version affn-derive)"
+
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            if [[ "$GITHUB_REF_NAME" != "v$affn_version" ]]; then
+              echo "::error::Tag $GITHUB_REF_NAME does not match affn $affn_version"
+              exit 1
+            fi
+          elif [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+              echo "::error::Manual releases must run from main"
+              exit 1
+            fi
+            if ! git ls-remote --exit-code --tags --refs origin "refs/tags/v$affn_version" >/dev/null; then
+              echo "::error::No v$affn_version release tag exists"
+              exit 1
+            fi
+          else
+            echo "::error::Unsupported release event: $GITHUB_EVENT_NAME"
+            exit 1
+          fi
+
+          # An unexpected HTTP status (including rate limits and server errors)
+          # must fail the release, not be interpreted as an unpublished crate.
+          published() {
+            local crate="$1" version="$2" status
+            status="$(curl --silent --show-error --location --retry 3 \
+              --retry-all-errors --max-time 20 --output /dev/null \
+              --write-out '%{http_code}' \
+              "https://crates.io/api/v1/crates/$crate/$version")"
+            case "$status" in
+              200) echo true ;;
+              404) echo false ;;
+              *) echo "::error::crates.io returned HTTP $status for $crate@$version" >&2; return 1 ;;
+            esac
+          }
+
+          derive_published="$(published affn-derive "$derive_version")"
+          affn_published="$(published affn "$affn_version")"
+          echo "derive_published=$derive_published" >> "$GITHUB_OUTPUT"
+          echo "affn_published=$affn_published" >> "$GITHUB_OUTPUT"
+          echo "affn-derive@$derive_version already published: $derive_published"
+          echo "affn@$affn_version already published: $affn_published"
+
+      # Publish in dependency order, skipping versions that already exist.
       - name: Publish affn-derive
+        if: steps.registry.outputs.derive_published == 'false'
         run: cargo publish -p affn-derive --no-verify
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
       - name: Wait for crates.io to index affn-derive
+        if: steps.registry.outputs.derive_published == 'false' && steps.registry.outputs.affn_published == 'false'
         run: sleep 30
 
       - name: Publish affn
+        if: steps.registry.outputs.affn_published == 'false'
         run: cargo publish -p affn --no-verify
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
