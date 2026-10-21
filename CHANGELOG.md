@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.1] - 2026-10-21
+
+### Fixed
+- Clarify the distinction between one-epoch covariance and two-epoch STM
+  transformations, and that a full kinematic Jacobian is represented by
+  `FrameMatrix6`, not `BlockDiagRotation6`.
+- Document moving-origin kinematics and add independent rotating-frame,
+  covariance, inverse, and composition regression tests. No public API or
+  Serde changes.
+
 ## [0.12.0 - 2026-10-18]
 
 ### Added

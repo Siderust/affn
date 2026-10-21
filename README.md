@@ -365,3 +365,6 @@ Or to run tests including serde round-trips:
 ## License
 
 Licensed under `AGPL-3.0-only`. See `LICENSE`.
+
+See [state and kinematics ownership](doc/state-kinematics.md) for coordinate-velocity
+and covariance conventions, and why no additional state wrapper is needed.
